@@ -26,7 +26,7 @@ function Icon({ type, style, ...rest }) {
       console.log("content :>> ", content);
       ref.current.insertAdjacentHTML("afterBegin", content.replace(type, id));
 
-      // animate();
+      animate();
     }, 100);
   }, [id]);
 
