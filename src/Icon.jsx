@@ -8,21 +8,37 @@ function revisedRandId() {
     .substring(2, 10);
 }
 
-function Icon({ type, style, ...rest }) {
+function Icon({
+  type,
+  style,
+  options = {},
+  path = true,
+  fill = true,
+  ...rest
+}) {
   const { current: id } = useRef(revisedRandId());
   const ref = useRef();
   const animateRef = useRef();
   useEffect(() => {
     setTimeout(() => {
       const source = document.querySelector(`#${type}`);
+      if (!source || source.querySelector(`#${id}`)) {
+        return;
+      }
+
       const clone = source.cloneNode(true);
       console.log("clone :>> ", clone);
       clone.id = id;
       const els = clone.querySelectorAll("path");
       els.forEach((el) => {
-        el.setAttribute("stroke", el.getAttribute("fill"));
+        el.setAttribute(
+          "stroke",
+          path
+            ? el.getAttribute("stroke") ?? el.getAttribute("fill") ?? "white"
+            : "none"
+        );
         // el.setAttribute("fill", "none");
-        el.setAttribute("fill", el.getAttribute("fill"));
+        el.setAttribute("fill", fill ? el.getAttribute("fill") : "none");
       });
       ref.current.prepend(clone);
       console.log(
@@ -30,18 +46,32 @@ function Icon({ type, style, ...rest }) {
         ref.current.querySelectorAll(`#${id} path`)
       );
 
-      const animate = anime({
+      const animate = anime.timeline({
         targets: ref.current.querySelectorAll(`#${id} path`),
-        strokeDashoffset: [anime.setDashoffset, 0],
-        strokeWidth: [30, 20, 15, 0],
-        fillOpacity: { value: [0, 1], delay: 2750, duration: 1000 },
-        // fill: ['#793ee6', '#c3de2c'],
         easing: "easeInOutSine",
-        duration: 3000,
-        delay: (el, i) => i * 300,
         direction: "normal",
+        duration: 2000,
+        ...options,
+        autoplay: false,
       });
+      
+      if (path) {
+        animate.add({
+          strokeDashoffset: [anime.setDashoffset, 0],
+          strokeWidth: [15, 30, 20, 10],
+          delay: (el, i) => i * 300,
+        });
+      }
 
+      if (fill) {
+        animate.add({
+          fillOpacity: [0, 1],
+          // fill: ['#793ee6', '#c3de2c'],
+          duration: 500,
+        }, '-=500');
+      }
+
+      animate.play();
       animateRef.current = animate;
     }, 100);
   }, [id]);
