@@ -5,6 +5,33 @@ import { createFromIconfontCN } from "@ant-design/icons";
 import Icon from "./Icon.jsx";
 
 const icons = [
+  "apd-a-haitunkatongdongwu",
+  "apd-a-daxiangkatongdongwu",
+  "apd-a-houzikatongdongwu",
+  "apd-a-hudiekunchongkatong",
+  "apd-a-jikatongdongwu",
+  "apd-a-laohukatongdongwu",
+  "apd-a-goukatongdongwu",
+  "apd-a-haimakatongdongwu",
+  "apd-a-mianyangkatongdongwu",
+  "apd-a-niukatongdongwu",
+  "apd-a-mifengkunchong",
+  "apd-a-qiekatongdongwu",
+  "apd-a-mumamakatongdongwu",
+  "apd-a-nainiukatongdongwu",
+  "apd-a-shekatongdongwu",
+  "apd-a-shayukatongdongwu",
+  "apd-a-zhukatongdongwu",
+  "apd-a-wuguikatongdongwu",
+  "apd-a-lukatongdongwu",
+  "apd-a-yujinyukatongdongwu",
+  "apd-a-yuhaiyukatongdongwu",
+  "apd-a-yukatongdongwu",
+  "apd-woniu",
+  "apd-a-yingkatongdongwu",
+  "apd-a-zhangyukatongdongwu",
+  "apd-a-pangxiekatongdongwu",
+  "apd-a-birdniaodongwukatong",
   "apd-tu",
   "apd-she",
   "apd-hu",
@@ -32,7 +59,7 @@ const icons = [
 ];
 
 createFromIconfontCN({
-  scriptUrl: `/icons/animated-icons.js`,
+  scriptUrl: `/icons/iconfont.js`,
 });
 
 createRoot(document.getElementById("root")).render(
@@ -40,7 +67,7 @@ createRoot(document.getElementById("root")).render(
     style={{
       display: "grid",
       gridAutoRows: 128,
-      gridTemplateColumns: "repeat(2, 1fr)",
+      gridTemplateColumns: "repeat(6, 1fr)",
       gap: 32,
     }}
   >
