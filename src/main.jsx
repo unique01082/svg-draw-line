@@ -1,8 +1,8 @@
-import { createRoot } from "react-dom/client";
-import App from "./App.jsx";
-import "./index.css";
 import { createFromIconfontCN } from "@ant-design/icons";
+import { createRoot } from "react-dom/client";
 import Icon from "./Icon.jsx";
+import "./index.css";
+import "./App.css";
 
 const icons = [
   "apd-a-haitunkatongdongwu",
