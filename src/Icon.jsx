@@ -33,8 +33,8 @@ function Icon({ type, style, ...rest }) {
       const animate = anime({
         targets: ref.current.querySelectorAll(`#${id} path`),
         strokeDashoffset: [anime.setDashoffset, 0],
-        strokeWidth: [15, 10, 5, 0],
-        fillOpacity: { value: [0, 1], delay: 2500, duration: 1000 },
+        strokeWidth: [30, 20, 15, 0],
+        fillOpacity: { value: [0, 1], delay: 2750, duration: 1000 },
         // fill: ['#793ee6', '#c3de2c'],
         easing: "easeInOutSine",
         duration: 3000,
