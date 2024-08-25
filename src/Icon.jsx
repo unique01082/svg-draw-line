@@ -2,13 +2,16 @@ import anime from "animejs";
 import { useEffect, useRef } from "react";
 
 function revisedRandId() {
-  return Math.random().toString(36).replace(/[^a-z]+/g, '').substring(2, 10);
+  return Math.random()
+    .toString(36)
+    .replace(/[^a-z]+/g, "")
+    .substring(2, 10);
 }
 
 function Icon({ type, style, ...rest }) {
   const { current: id } = useRef(revisedRandId());
   const ref = useRef();
-  const animate = () =>{
+  const animate = () => {
     console.log(1);
     anime({
       targets: ref.current.querySelectorAll(`#${id} path`),
@@ -18,13 +21,19 @@ function Icon({ type, style, ...rest }) {
       duration: 1000,
       delay: (el, i) => i * 200,
       direction: "normal",
-    });}
+    });
+  };
   useEffect(() => {
     setTimeout(() => {
       console.log("type :>> ", type);
       const content = document.querySelector(`#${type}`)?.outerHTML;
       console.log("content :>> ", content);
       ref.current.insertAdjacentHTML("afterBegin", content.replace(type, id));
+
+      console.log(
+        "ref.current.querySelectorAll(`#${id} path`) :>> ",
+        ref.current.querySelectorAll(`#${id} path`)
+      );
 
       animate();
     }, 100);
