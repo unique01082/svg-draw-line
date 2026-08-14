@@ -134,7 +134,9 @@ export class SvgPreparationError extends Error {
 }
 
 export type SvgDiagnosticCode =
-  "REMOVED_UNSAFE_CONTENT" | "REMOVED_EXTERNAL_REFERENCE";
+  | "REMOVED_UNSAFE_CONTENT"
+  | "REMOVED_EXTERNAL_REFERENCE"
+  | "NO_DRAWABLE_GEOMETRY";
 
 export interface SvgDiagnostic {
   code: SvgDiagnosticCode;
@@ -1022,5 +1024,623 @@ export async function prepareSvg(
   return {
     svg: prepared.svg,
     diagnostics: createDiagnostics(prepared.counts),
+  };
+}
+
+export type SvgMotionPreset = "draw" | "fade" | "scale" | "stagger" | "pulse";
+
+export type SvgMotionOrder = "document" | "reverse";
+
+export interface SvgMotionOptions {
+  preset?: SvgMotionPreset;
+  autoplay?: boolean;
+  duration?: number;
+  delay?: number;
+  easing?: string;
+  iterations?: number;
+  direction?: PlaybackDirection;
+  selector?: string;
+  order?: SvgMotionOrder;
+  stagger?: "auto" | number;
+}
+
+export type SvgMotionControllerState =
+  "idle" | "running" | "paused" | "finished" | "cancelled" | "destroyed";
+
+export interface SvgMotionController {
+  readonly state: SvgMotionControllerState;
+  readonly finished: Promise<void>;
+  readonly diagnostics: readonly SvgDiagnostic[];
+  play(): void;
+  pause(): void;
+  reverse(): void;
+  restart(): void;
+  finish(): void;
+  cancel(): void;
+  seek(progress: number): void;
+  destroy(): void;
+}
+
+export interface MountSvgMotionOptions
+  extends SvgMotionOptions, PrepareSvgOptions {}
+
+export interface SvgMotionInstance {
+  readonly svg: SVGSVGElement;
+  readonly controller: SvgMotionController;
+  readonly diagnostics: readonly SvgDiagnostic[];
+  destroy(): void;
+}
+
+interface ResolvedMotionOptions {
+  preset: SvgMotionPreset;
+  autoplay: boolean;
+  duration: number;
+  delay: number;
+  easing: string;
+  iterations: number;
+  direction: PlaybackDirection;
+  selector?: string;
+  order: SvgMotionOrder;
+  stagger: "auto" | number;
+}
+
+interface AttributeSnapshot {
+  element: SVGElement;
+  attributes: Map<string, string | null>;
+}
+
+interface MotionPlan {
+  target: SVGElement;
+  keyframes: Keyframe[];
+  timing: KeyframeAnimationOptions;
+  prepare?: () => void;
+}
+
+const DRAWABLE_GEOMETRY = new Set([
+  "path",
+  "line",
+  "polyline",
+  "polygon",
+  "circle",
+  "ellipse",
+  "rect",
+]);
+
+const NON_RENDERED_ELEMENTS = new Set([
+  "defs",
+  "desc",
+  "title",
+  "metadata",
+  "clipPath",
+  "mask",
+  "marker",
+  "pattern",
+  "symbol",
+  "linearGradient",
+  "radialGradient",
+  "filter",
+]);
+
+function requireFiniteNonNegative(value: number, name: string): void {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new RangeError(`${name} must be a finite non-negative number.`);
+  }
+}
+
+function resolveMotionOptions(
+  options: SvgMotionOptions,
+): ResolvedMotionOptions {
+  const duration = options.duration ?? 1200;
+  const delay = options.delay ?? 0;
+  const iterations = options.iterations ?? 1;
+  const stagger = options.stagger ?? "auto";
+
+  requireFiniteNonNegative(duration, "duration");
+  requireFiniteNonNegative(delay, "delay");
+  if (
+    iterations !== Infinity &&
+    (!Number.isFinite(iterations) || iterations <= 0)
+  ) {
+    throw new RangeError("iterations must be positive or Infinity.");
+  }
+  if (typeof stagger === "number") {
+    requireFiniteNonNegative(stagger, "stagger");
+  }
+
+  return {
+    preset: options.preset ?? "draw",
+    autoplay: options.autoplay ?? true,
+    duration,
+    delay,
+    easing: options.easing ?? "ease-in-out",
+    iterations,
+    direction: options.direction ?? "normal",
+    ...(options.selector === undefined ? {} : { selector: options.selector }),
+    order: options.order ?? "document",
+    stagger,
+  };
+}
+
+function assertAnimationEnvironment(svg: SVGSVGElement): void {
+  if (
+    svg.localName !== "svg" ||
+    svg.namespaceURI !== SVG_NAMESPACE ||
+    typeof svg.querySelectorAll !== "function"
+  ) {
+    throw new TypeError("animateSvg requires an SVG root element.");
+  }
+  if (
+    typeof Element === "undefined" ||
+    typeof Element.prototype.animate !== "function"
+  ) {
+    throw new Error("The Web Animations API is not available.");
+  }
+}
+
+function selectElements(
+  svg: SVGSVGElement,
+  selector: string | undefined,
+): SVGElement[] {
+  return [...svg.querySelectorAll(selector ?? "*")].filter(
+    (element): element is SVGElement => element instanceof SVGElement,
+  );
+}
+
+function presentationValue(element: SVGElement, property: string): string {
+  const inline = element.style.getPropertyValue(property).trim();
+  if (inline) return inline;
+  const attribute = element.getAttribute(property)?.trim();
+  if (attribute) return attribute;
+
+  try {
+    const computed = getComputedStyle(element)
+      .getPropertyValue(property)
+      .trim();
+    if (computed) return computed;
+  } catch {
+    // Detached SVG elements can still use their presentation attributes.
+  }
+
+  return property === "fill" ? "black" : property === "stroke" ? "none" : "";
+}
+
+function hasPaint(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized !== "" &&
+    normalized !== "none" &&
+    normalized !== "transparent" &&
+    !/^rgba\([^)]*,\s*0(?:\.0+)?\s*\)$/.test(normalized) &&
+    !/^color\([^)]*\/\s*0(?:\.0+)?\s*\)$/.test(normalized)
+  );
+}
+
+function isVisible(element: SVGElement): boolean {
+  for (
+    let current: Element | null = element;
+    current && current.localName !== "svg";
+    current = current.parentElement
+  ) {
+    if (NON_RENDERED_ELEMENTS.has(current.localName)) return false;
+  }
+
+  const display = presentationValue(element, "display").toLowerCase();
+  const visibility = presentationValue(element, "visibility").toLowerCase();
+  const opacity = Number.parseFloat(presentationValue(element, "opacity"));
+  return (
+    display !== "none" &&
+    visibility !== "hidden" &&
+    visibility !== "collapse" &&
+    (!Number.isFinite(opacity) || opacity > 0)
+  );
+}
+
+function isVisibleLeaf(element: SVGElement): boolean {
+  return element.children.length === 0 && isVisible(element);
+}
+
+function snapshotAttributes(
+  snapshots: AttributeSnapshot[],
+  element: SVGElement,
+  names: readonly string[],
+): void {
+  snapshots.push({
+    element,
+    attributes: new Map(
+      names.map((name) => [name, element.getAttribute(name)]),
+    ),
+  });
+}
+
+function restoreSnapshots(snapshots: readonly AttributeSnapshot[]): void {
+  for (const snapshot of snapshots) {
+    for (const [name, value] of snapshot.attributes) {
+      if (value === null) snapshot.element.removeAttribute(name);
+      else snapshot.element.setAttribute(name, value);
+    }
+  }
+}
+
+function geometryLength(element: SVGElement): number | undefined {
+  try {
+    const length = (element as SVGGeometryElement).getTotalLength();
+    return Number.isFinite(length) && length > 0 ? length : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function animationTiming(
+  options: ResolvedMotionOptions,
+  delay: number,
+  iterations = options.iterations,
+): KeyframeAnimationOptions {
+  return {
+    delay,
+    direction: options.direction,
+    duration: options.duration,
+    easing: options.easing,
+    fill: "both",
+    iterations,
+  };
+}
+
+function rootPlan(
+  svg: SVGSVGElement,
+  keyframes: Keyframe[],
+  options: ResolvedMotionOptions,
+  iterations = options.iterations,
+): MotionPlan {
+  return {
+    target: svg,
+    keyframes,
+    timing: animationTiming(options, options.delay, iterations),
+  };
+}
+
+function staggerStep(stagger: "auto" | number, count: number): number {
+  if (typeof stagger === "number") return stagger;
+  return count > 1 ? 600 / (count - 1) : 0;
+}
+
+function applyOrderingAndStagger(
+  plans: MotionPlan[],
+  options: ResolvedMotionOptions,
+): MotionPlan[] {
+  const ordered = options.order === "reverse" ? [...plans].reverse() : plans;
+  const step = staggerStep(options.stagger, ordered.length);
+  return ordered.map((plan, index) => ({
+    ...plan,
+    timing: animationTiming(options, options.delay + step * index),
+  }));
+}
+
+function buildDrawPlans(
+  svg: SVGSVGElement,
+  options: ResolvedMotionOptions,
+  snapshots: AttributeSnapshot[],
+  diagnostics: SvgDiagnostic[],
+): MotionPlan[] {
+  const selected = selectElements(svg, options.selector);
+  const drawable = new Map<SVGElement, number>();
+
+  for (const element of selected) {
+    if (!DRAWABLE_GEOMETRY.has(element.localName) || !isVisible(element))
+      continue;
+    const fill = presentationValue(element, "fill");
+    const stroke = presentationValue(element, "stroke");
+    if (!hasPaint(fill) && !hasPaint(stroke)) continue;
+    const length = geometryLength(element);
+    if (length !== undefined) drawable.set(element, length);
+  }
+
+  if (drawable.size === 0) {
+    diagnostics.push({ code: "NO_DRAWABLE_GEOMETRY", count: 1 });
+    return [rootPlan(svg, [{ opacity: 0 }, { opacity: 1 }], options)];
+  }
+
+  const plans: MotionPlan[] = [];
+  for (const element of selected) {
+    const length = drawable.get(element);
+    if (length !== undefined) {
+      const fill = presentationValue(element, "fill");
+      const stroke = presentationValue(element, "stroke");
+      snapshotAttributes(snapshots, element, ["style"]);
+      plans.push({
+        target: element,
+        keyframes: [
+          {
+            fillOpacity: 0,
+            strokeDasharray: String(length),
+            strokeDashoffset: String(length),
+          },
+          {
+            fillOpacity: 0,
+            offset: 0.8,
+            strokeDasharray: String(length),
+            strokeDashoffset: "0",
+          },
+          {
+            fillOpacity: 1,
+            strokeDasharray: String(length),
+            strokeDashoffset: "0",
+          },
+        ],
+        timing: animationTiming(options, options.delay),
+        prepare: () => {
+          if (!hasPaint(stroke)) {
+            element.style.setProperty(
+              "stroke",
+              hasPaint(fill) ? fill : "currentColor",
+            );
+          }
+          element.style.setProperty("stroke-dasharray", String(length));
+          element.style.setProperty("stroke-dashoffset", String(length));
+        },
+      });
+    } else if (
+      !DRAWABLE_GEOMETRY.has(element.localName) &&
+      isVisibleLeaf(element)
+    ) {
+      plans.push({
+        target: element,
+        keyframes: [{ opacity: 0 }, { opacity: 1 }],
+        timing: animationTiming(options, options.delay),
+      });
+    }
+  }
+
+  return applyOrderingAndStagger(plans, options);
+}
+
+function buildPlans(
+  svg: SVGSVGElement,
+  options: ResolvedMotionOptions,
+  snapshots: AttributeSnapshot[],
+  diagnostics: SvgDiagnostic[],
+): MotionPlan[] {
+  if (options.preset === "fade") {
+    return [rootPlan(svg, [{ opacity: 0 }, { opacity: 1 }], options)];
+  }
+  if (options.preset === "scale") {
+    return [
+      rootPlan(
+        svg,
+        [
+          { opacity: 0, transform: "scale(0.92)", transformOrigin: "center" },
+          { opacity: 1, transform: "scale(1)", transformOrigin: "center" },
+        ],
+        options,
+      ),
+    ];
+  }
+  if (options.preset === "pulse") {
+    return [
+      rootPlan(
+        svg,
+        [
+          { transform: "scale(1)", transformOrigin: "center" },
+          { transform: "scale(1.05)", transformOrigin: "center" },
+          { transform: "scale(1)", transformOrigin: "center" },
+        ],
+        options,
+        options.iterations === Infinity ? Infinity : 1,
+      ),
+    ];
+  }
+  if (options.preset === "stagger") {
+    const plans = selectElements(svg, options.selector)
+      .filter(isVisibleLeaf)
+      .map((target) => ({
+        target,
+        keyframes: [{ opacity: 0 }, { opacity: 1 }],
+        timing: animationTiming(options, options.delay),
+      }));
+    return plans.length > 0
+      ? applyOrderingAndStagger(plans, options)
+      : [rootPlan(svg, [{ opacity: 0 }, { opacity: 1 }], options)];
+  }
+  return buildDrawPlans(svg, options, snapshots, diagnostics);
+}
+
+function createSettledPromise(): {
+  promise: Promise<void>;
+  resolve: () => void;
+} {
+  let resolve!: () => void;
+  const promise = new Promise<void>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
+export function animateSvg(
+  svg: SVGSVGElement,
+  options: SvgMotionOptions = {},
+): SvgMotionController {
+  assertAnimationEnvironment(svg);
+  const resolved = resolveMotionOptions(options);
+  const snapshots: AttributeSnapshot[] = [];
+  const diagnostics: SvgDiagnostic[] = [];
+  const plans = buildPlans(svg, resolved, snapshots, diagnostics);
+
+  let animations: Animation[] = [];
+  let state: SvgMotionControllerState = resolved.autoplay ? "running" : "idle";
+  let generation = 0;
+  let currentRun = createSettledPromise();
+
+  const restore = () => restoreSnapshots(snapshots);
+
+  const stopAnimations = () => {
+    for (const animation of animations) animation.cancel();
+    animations = [];
+    restore();
+  };
+
+  const settle = (nextState: SvgMotionControllerState) => {
+    stopAnimations();
+    state = nextState;
+    currentRun.resolve();
+  };
+
+  const watchCurrentRun = (runGeneration: number) => {
+    const completions = animations.map((animation) => animation.finished);
+    void Promise.all(completions).then(
+      () => {
+        if (
+          generation === runGeneration &&
+          (state === "running" || state === "paused" || state === "idle")
+        ) {
+          settle("finished");
+        }
+      },
+      () => {
+        // Controller cancellation owns restoration and run settlement.
+      },
+    );
+  };
+
+  const createAnimations = (autoplay: boolean) => {
+    restore();
+    const created: Animation[] = [];
+    try {
+      for (const plan of plans) {
+        plan.prepare?.();
+        const animation = plan.target.animate(plan.keyframes, plan.timing);
+        if (!autoplay) animation.pause();
+        created.push(animation);
+      }
+    } catch (error) {
+      for (const animation of created) animation.cancel();
+      restore();
+      throw error;
+    }
+    animations = created;
+    generation += 1;
+    watchCurrentRun(generation);
+  };
+
+  createAnimations(resolved.autoplay);
+
+  const beginFreshRun = (autoplay: boolean) => {
+    generation += 1;
+    stopAnimations();
+    currentRun.resolve();
+    currentRun = createSettledPromise();
+    createAnimations(autoplay);
+  };
+
+  const controller: SvgMotionController = {
+    get state() {
+      return state;
+    },
+    get finished() {
+      return currentRun.promise;
+    },
+    diagnostics,
+    play() {
+      if (state === "destroyed") return;
+      if (animations.length === 0) beginFreshRun(true);
+      else for (const animation of animations) animation.play();
+      state = "running";
+    },
+    pause() {
+      if (state === "destroyed" || animations.length === 0) return;
+      for (const animation of animations) animation.pause();
+      state = "paused";
+    },
+    reverse() {
+      if (state === "destroyed") return;
+      if (animations.length === 0) beginFreshRun(false);
+      for (const animation of animations) animation.reverse();
+      state = "running";
+    },
+    restart() {
+      if (state === "destroyed") return;
+      beginFreshRun(false);
+      for (const animation of animations) {
+        animation.currentTime = 0;
+        animation.play();
+      }
+      state = "running";
+    },
+    finish() {
+      if (state === "destroyed" || animations.length === 0) return;
+      for (const [index, animation] of animations.entries()) {
+        const plan = plans[index];
+        if (plan?.timing.iterations === Infinity) {
+          animation.currentTime =
+            Number(plan.timing.delay ?? 0) + Number(plan.timing.duration ?? 0);
+        } else {
+          animation.finish();
+        }
+      }
+      settle("finished");
+    },
+    cancel() {
+      if (state === "destroyed") return;
+      settle("cancelled");
+    },
+    seek(progress: number) {
+      if (state === "destroyed") return;
+      if (!Number.isFinite(progress) || progress < 0 || progress > 1) {
+        throw new RangeError("seek progress must be between 0 and 1.");
+      }
+      const timelineDuration = Math.max(
+        0,
+        ...plans.map((plan) => {
+          const delay = Number(plan.timing.delay ?? 0);
+          const duration = Number(plan.timing.duration ?? 0);
+          const iterations = Number(plan.timing.iterations ?? 1);
+          return delay + duration * (iterations === Infinity ? 1 : iterations);
+        }),
+      );
+      for (const animation of animations) {
+        animation.currentTime = timelineDuration * progress;
+      }
+    },
+    destroy() {
+      if (state === "destroyed") return;
+      settle("destroyed");
+    },
+  };
+
+  return controller;
+}
+
+export async function mountSvgMotion(
+  container: Element,
+  source: SvgSource,
+  options: MountSvgMotionOptions = {},
+): Promise<SvgMotionInstance> {
+  const { trust, maxBytes, signal, ...motionOptions } = options;
+  const prepareOptions: PrepareSvgOptions = {};
+  if (trust !== undefined) prepareOptions.trust = trust;
+  if (maxBytes !== undefined) prepareOptions.maxBytes = maxBytes;
+  if (signal !== undefined) prepareOptions.signal = signal;
+
+  const prepared = await prepareSvg(source, prepareOptions);
+  container.append(prepared.svg);
+
+  let controller: SvgMotionController;
+  try {
+    controller = animateSvg(prepared.svg, motionOptions);
+  } catch (error) {
+    prepared.svg.remove();
+    throw error;
+  }
+
+  const diagnostics = [...prepared.diagnostics, ...controller.diagnostics];
+  let destroyed = false;
+  return {
+    svg: prepared.svg,
+    controller,
+    diagnostics,
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      controller.destroy();
+      prepared.svg.remove();
+    },
   };
 }
