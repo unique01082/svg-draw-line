@@ -46,6 +46,7 @@ export class RecordedAnimation {
   playbackRate = 1;
   playState: AnimationPlayState = "running";
   private resolveFinished!: (animation: Animation) => void;
+  private rejectFinished!: (reason: unknown) => void;
   readonly finished: Promise<Animation>;
 
   constructor(
@@ -56,8 +57,9 @@ export class RecordedAnimation {
     this.target = target;
     this.keyframes = normalizedKeyframes(keyframes);
     this.timing = normalizedTiming(options);
-    this.finished = new Promise((resolve) => {
+    this.finished = new Promise((resolve, reject) => {
       this.resolveFinished = resolve;
+      this.rejectFinished = reject;
     });
     this.effect = {
       getComputedTiming: () => ({
@@ -105,6 +107,11 @@ export class RecordedAnimation {
     this.currentTime = endTime ?? 0;
     this.playState = "finished";
     this.resolveFinished(this as unknown as Animation);
+  }
+
+  failNaturally(reason: unknown) {
+    this.playState = "idle";
+    this.rejectFinished(reason);
   }
 
   cancel() {

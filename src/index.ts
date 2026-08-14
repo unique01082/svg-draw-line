@@ -1031,6 +1031,26 @@ export type SvgMotionPreset = "draw" | "fade" | "scale" | "stagger" | "pulse";
 
 export type SvgMotionOrder = "document" | "reverse";
 
+export const SVG_ANIMATION_ERROR_CODES = {
+  animationFailed: "ANIMATION_FAILED",
+  invalidSvg: "INVALID_SVG",
+  setupFailed: "ANIMATION_SETUP_FAILED",
+  unsupportedEnvironment: "UNSUPPORTED_ENVIRONMENT",
+} as const;
+
+export type SvgAnimationErrorCode =
+  (typeof SVG_ANIMATION_ERROR_CODES)[keyof typeof SVG_ANIMATION_ERROR_CODES];
+
+export class SvgAnimationError extends Error {
+  readonly code: SvgAnimationErrorCode;
+
+  constructor(code: SvgAnimationErrorCode, message: string) {
+    super(message);
+    this.name = "SvgAnimationError";
+    this.code = code;
+  }
+}
+
 export interface SvgMotionOptions {
   preset?: SvgMotionPreset;
   autoplay?: boolean;
@@ -1045,7 +1065,13 @@ export interface SvgMotionOptions {
 }
 
 export type SvgMotionControllerState =
-  "idle" | "running" | "paused" | "finished" | "cancelled" | "destroyed";
+  | "idle"
+  | "running"
+  | "paused"
+  | "finished"
+  | "cancelled"
+  | "failed"
+  | "destroyed";
 
 export interface SvgMotionController {
   readonly state: SvgMotionControllerState;
@@ -1171,17 +1197,25 @@ function resolveMotionOptions(
 
 function assertAnimationEnvironment(svg: SVGSVGElement): void {
   if (
+    !svg ||
+    typeof svg !== "object" ||
     svg.localName !== "svg" ||
     svg.namespaceURI !== SVG_NAMESPACE ||
     typeof svg.querySelectorAll !== "function"
   ) {
-    throw new TypeError("animateSvg requires an SVG root element.");
+    throw new SvgAnimationError(
+      SVG_ANIMATION_ERROR_CODES.invalidSvg,
+      "animateSvg requires an SVG root element.",
+    );
   }
   if (
     typeof Element === "undefined" ||
     typeof Element.prototype.animate !== "function"
   ) {
-    throw new Error("The Web Animations API is not available.");
+    throw new SvgAnimationError(
+      SVG_ANIMATION_ERROR_CODES.unsupportedEnvironment,
+      "SVG animation requires the Web Animations API.",
+    );
   }
 }
 
@@ -1513,7 +1547,6 @@ function buildPlans(
           { transform: "scale(1)", transformOrigin: "center" },
         ],
         options,
-        options.iterations === Infinity ? Infinity : 1,
       ),
     ];
   }
@@ -1535,12 +1568,16 @@ function buildPlans(
 function createSettledPromise(): {
   promise: Promise<void>;
   resolve: () => void;
+  reject: (error: SvgAnimationError) => void;
 } {
   let resolve!: () => void;
-  const promise = new Promise<void>((settle) => {
+  let reject!: (error: SvgAnimationError) => void;
+  const promise = new Promise<void>((settle, fail) => {
     resolve = settle;
+    reject = fail;
   });
-  return { promise, resolve };
+  void promise.catch(() => undefined);
+  return { promise, resolve, reject };
 }
 
 export function animateSvg(
@@ -1567,9 +1604,28 @@ export function animateSvg(
   };
 
   const settle = (nextState: SvgMotionControllerState) => {
+    generation += 1;
     stopAnimations();
     state = nextState;
     currentRun.resolve();
+  };
+
+  const fail = (runGeneration: number) => {
+    if (
+      generation !== runGeneration ||
+      (state !== "running" && state !== "paused" && state !== "idle")
+    ) {
+      return;
+    }
+    generation += 1;
+    stopAnimations();
+    state = "failed";
+    currentRun.reject(
+      new SvgAnimationError(
+        SVG_ANIMATION_ERROR_CODES.animationFailed,
+        "The SVG animation did not complete.",
+      ),
+    );
   };
 
   const watchCurrentRun = (runGeneration: number) => {
@@ -1584,7 +1640,7 @@ export function animateSvg(
         }
       },
       () => {
-        // Controller cancellation owns restoration and run settlement.
+        fail(runGeneration);
       },
     );
   };
@@ -1596,13 +1652,17 @@ export function animateSvg(
       for (const plan of plans) {
         plan.prepare?.();
         const animation = plan.target.animate(plan.keyframes, plan.timing);
+        void animation.finished.catch(() => undefined);
         if (!autoplay) animation.pause();
         created.push(animation);
       }
-    } catch (error) {
+    } catch {
       for (const animation of created) animation.cancel();
       restore();
-      throw error;
+      throw new SvgAnimationError(
+        SVG_ANIMATION_ERROR_CODES.setupFailed,
+        "The SVG animation could not be created.",
+      );
     }
     animations = created;
     generation += 1;

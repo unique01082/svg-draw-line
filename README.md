@@ -93,6 +93,8 @@ controller.diagnostics;
 
 Preparation failures are `SvgPreparationError` instances with a safe `code`: `ABORTED`, `FETCH_FAILED`, `INVALID_SVG`, `SANITIZATION_FAILED`, `SOURCE_TOO_LARGE`, `UNSUPPORTED_ENVIRONMENT`, or `UNSUPPORTED_SOURCE`. Diagnostics use `REMOVED_UNSAFE_CONTENT`, `REMOVED_EXTERNAL_REFERENCE`, and `NO_DRAWABLE_GEOMETRY` with counts only.
 
+Animation failures are `SvgAnimationError` instances. Their safe `code` is `INVALID_SVG`, `UNSUPPORTED_ENVIRONMENT`, `ANIMATION_SETUP_FAILED`, or `ANIMATION_FAILED`. A synchronous setup failure makes `animateSvg()` throw; `mountSvgMotion()` preserves that typed error and removes the SVG it appended. An unexpected native completion failure changes `controller.state` to `failed`, restores the original artwork, removes owned animations, and rejects `controller.finished` with `SvgAnimationError`. Await or catch `controller.finished` when application behavior depends on completion.
+
 ## Security, CORS, and CSP
 
 `trust: "sanitize"` is the default. It uses DOMPurify's SVG/filter profile plus stricter rules that remove scripts, event handlers, `foreignObject`, SMIL, external stylesheets/resources, unsafe CSS, and non-local `url(...)` references. Embedded PNG, JPEG, GIF, WebP, and AVIF data images are allowed; embedded SVG images are not. IDs and local references are namespaced for every prepared instance.

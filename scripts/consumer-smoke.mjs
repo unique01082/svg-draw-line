@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 import {
   cp,
   mkdir,
@@ -9,9 +10,10 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, posix, resolve } from "node:path";
+import { extname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { chromium, firefox, webkit } from "@playwright/test";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const temporaryRoot = await mkdtemp(join(tmpdir(), "svg-motion-consumer-"));
@@ -85,6 +87,109 @@ async function installConsumer(name, tarball) {
   return target;
 }
 
+const contentTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".svg": "image/svg+xml",
+};
+
+async function serveBuiltConsumer(consumer) {
+  const dist = join(consumer, "dist");
+  const server = createServer(async (request, response) => {
+    try {
+      const pathname = decodeURIComponent(
+        new URL(request.url ?? "/", "http://127.0.0.1").pathname,
+      );
+      const requested = resolve(
+        dist,
+        `.${pathname === "/" ? "/index.html" : pathname}`,
+      );
+      const relativePath = relative(dist, requested);
+      if (relativePath.startsWith("..") || relativePath === "") {
+        response.writeHead(404).end("Not found");
+        return;
+      }
+      const body = await readFile(requested);
+      response.writeHead(200, {
+        "content-type":
+          contentTypes[extname(requested)] ?? "application/octet-stream",
+      });
+      response.end(body);
+    } catch {
+      response.writeHead(404).end("Not found");
+    }
+  });
+  await new Promise((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", resolveListen);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  return {
+    url: `http://127.0.0.1:${address.port}`,
+    async close() {
+      await new Promise((resolveClose, rejectClose) => {
+        server.close((error) => (error ? rejectClose(error) : resolveClose()));
+      });
+    },
+  };
+}
+
+async function verifyConsumerInBrowsers(name, consumer) {
+  const server = await serveBuiltConsumer(consumer);
+  try {
+    for (const [browserName, browserType] of Object.entries({
+      chromium,
+      firefox,
+      webkit,
+    })) {
+      const browser = await browserType.launch();
+      try {
+        const page = await browser.newPage();
+        const errors = [];
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        page.on("pageerror", (error) => errors.push(error.message));
+        const response = await page.goto(server.url, {
+          waitUntil: "networkidle",
+        });
+        assert.ok(response?.ok(), `${name}/${browserName} did not load.`);
+        await page.waitForFunction(
+          () => globalThis.svgMotionConsumer?.ready === true,
+          undefined,
+          { timeout: 5_000 },
+        );
+        const initial = await page.evaluate(() =>
+          globalThis.svgMotionConsumer.snapshot(),
+        );
+        assert.equal(initial.kind, name);
+        assert.equal(initial.hasNativeAnimate, true);
+        assert.equal(initial.svgCount, 1);
+        assert.equal(initial.controllerState, "idle");
+        assert.equal(initial.animationCount, 1);
+        assert.ok(initial.geometryLength > 0);
+        assert.equal(initial.reactReady, name === "react");
+        if (name === "react")
+          assert.equal(initial.ariaLabel, "Consumer fixture");
+
+        const exercised = await page.evaluate(() =>
+          globalThis.svgMotionConsumer.exercise(),
+        );
+        assert.equal(exercised.controllerState, "paused");
+        assert.equal(exercised.playState, "paused");
+        assert.ok(exercised.currentTime > 0);
+        assert.deepEqual(errors, [], `${name}/${browserName} emitted errors.`);
+      } finally {
+        await browser.close();
+      }
+    }
+  } finally {
+    await server.close();
+  }
+}
+
 try {
   await rm(packDirectory, { force: true, recursive: true });
   await mkdir(packDirectory, { recursive: true });
@@ -106,8 +211,12 @@ try {
   ).join("\n");
   assert.doesNotMatch(vanillaBundle, /react(?:\.production)?\.min/);
 
-  await installConsumer("react", tarball);
-  console.log("Tarball contents and Vanilla/React consumers verified.");
+  const react = await installConsumer("react", tarball);
+  await verifyConsumerInBrowsers("vanilla", vanilla);
+  await verifyConsumerInBrowsers("react", react);
+  console.log(
+    "Tarball contents and Vanilla/React consumers verified in Chromium, Firefox, and WebKit.",
+  );
 } finally {
   await rm(temporaryRoot, { force: true, recursive: true });
 }

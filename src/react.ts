@@ -279,6 +279,7 @@ function observeController(
   target: SvgMotionController,
   onState: (state: SvgMotionControllerState) => void,
   onSettle: (state: SvgMotionControllerState) => void,
+  onFailure: (error: unknown) => void,
 ): { controller: SvgMotionController; disconnect: () => void } {
   let active = true;
   type TerminalState = Extract<
@@ -308,15 +309,22 @@ function observeController(
     if (observed?.run === run) return observed;
     const observation: RunObservation = { run, delivered: false };
     observed = observation;
-    void run.then(() => {
-      if (!active) return;
-      if (observed === observation) {
-        const terminal = terminalState(target.state);
-        if (terminal) observation.terminal ??= terminal;
+    void run.then(
+      () => {
+        if (!active) return;
+        if (observed === observation) {
+          const terminal = terminalState(target.state);
+          if (terminal) observation.terminal ??= terminal;
+          onState(target.state);
+        }
+        deliver(observation);
+      },
+      (error: unknown) => {
+        if (!active || observed !== observation) return;
         onState(target.state);
-      }
-      deliver(observation);
-    });
+        onFailure(error);
+      },
+    );
     return observation;
   };
   const captureCurrentTerminal = () => {
@@ -478,6 +486,11 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
           (status) => {
             if (status === "finished") callbacksRef.current.onFinish?.();
             else if (status === "cancelled") callbacksRef.current.onCancel?.();
+          },
+          (error) => {
+            if (!active) return;
+            setSnapshot((current) => ({ ...current, error }));
+            callbacksRef.current.onError?.(error);
           },
         );
         destroyCurrent = () => {

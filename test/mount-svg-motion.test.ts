@@ -2,7 +2,12 @@
 
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { mountSvgMotion, SvgPreparationError } from "../src/index";
+import {
+  SVG_ANIMATION_ERROR_CODES,
+  mountSvgMotion,
+  SvgAnimationError,
+  SvgPreparationError,
+} from "../src/index";
 import {
   allAnimations,
   installWaapi,
@@ -64,16 +69,22 @@ it("leaves the container unchanged when preparation fails", async () => {
 });
 
 it("rolls back the appended SVG when animation setup fails", async () => {
-  uninstallWaapi();
-  expect(Element.prototype.animate).toBeUndefined();
   const container = document.createElement("div");
   container.innerHTML = "<span>keep</span>";
+  vi.spyOn(Element.prototype, "animate").mockImplementationOnce(() => {
+    throw new Error("private native setup detail");
+  });
 
-  await expect(
-    mountSvgMotion(
-      container,
-      '<svg xmlns="http://www.w3.org/2000/svg"><text>Hi</text></svg>',
-    ),
-  ).rejects.toThrow("Web Animations");
+  const failure = mountSvgMotion(
+    container,
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>Hi</text></svg>',
+  );
+  await expect(failure).rejects.toBeInstanceOf(SvgAnimationError);
+  await expect(failure).rejects.toEqual(
+    expect.objectContaining({
+      code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+      message: "The SVG animation could not be created.",
+    }),
+  );
   expect(container.innerHTML).toBe("<span>keep</span>");
 });

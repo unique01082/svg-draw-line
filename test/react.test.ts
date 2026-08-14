@@ -16,6 +16,7 @@ import {
   installWaapi,
   uninstallWaapi,
 } from "./waapi-test-support";
+import { SvgAnimationError } from "../src/index";
 
 const SVG_SOURCE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path fill="#f00" d="M0 0h10" /></svg>';
@@ -372,6 +373,37 @@ describe("useSvgMotion", () => {
     });
     expect(current?.status).toBe("cancelled");
     expect(events).toEqual(["finish", "cancel"]);
+  });
+
+  it("reports native animation failures without an internal unhandled rejection", async () => {
+    const errors: unknown[] = [];
+    await render(
+      createElement(Harness, {
+        options: {
+          source: SVG_SOURCE,
+          trust: "trusted",
+          onError: (error) => errors.push(error),
+        },
+      }),
+    );
+    const svg = current!.svg!;
+    const controller = current!.controller!;
+    let rejected: unknown;
+
+    await act(async () => {
+      allAnimations(svg)[0]!.failNaturally(new Error("private native detail"));
+      try {
+        await controller.finished;
+      } catch (error) {
+        rejected = error;
+      }
+    });
+
+    expect(rejected).toBeInstanceOf(SvgAnimationError);
+    expect(current?.status).toBe("failed");
+    expect(current?.error).toBe(rejected);
+    expect(errors).toEqual([rejected]);
+    expect(allAnimations(svg)).toEqual([]);
   });
 
   it("emits finish once when restart and finish settle back-to-back", async () => {

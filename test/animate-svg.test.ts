@@ -3,6 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  SVG_ANIMATION_ERROR_CODES,
+  SvgAnimationError,
   animateSvg,
   type SvgMotionController,
   type SvgMotionOptions,
@@ -363,7 +365,7 @@ describe("animateSvg presets and options", () => {
     expect(animation.keyframes).toEqual(
       expected.map((frame) => expect.objectContaining(frame)),
     );
-    expect(animation.timing.iterations).toBe(preset === "pulse" ? 1 : 4);
+    expect(animation.timing.iterations).toBe(4);
   });
 
   it("allows an explicitly infinite pulse", () => {
@@ -578,14 +580,80 @@ describe("SvgMotionController", () => {
   });
 
   it("requires an SVG root and native WAAPI", () => {
-    expect(() => animateSvg(document.createElement("div") as never)).toThrow(
-      "SVG",
-    );
+    for (const invalid of [
+      null,
+      document.createElement("div"),
+      document.createElement("svg"),
+    ]) {
+      expect(() => animateSvg(invalid as never)).toThrow(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.invalidSvg,
+          message: "animateSvg requires an SVG root element.",
+        }),
+      );
+    }
 
     uninstallWaapi();
     const root = geometry();
     expect(() => animateSvg(root, { preset: "fade" })).toThrow(
-      "Web Animations",
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.unsupportedEnvironment,
+        message: "SVG animation requires the Web Animations API.",
+      }),
     );
+  });
+
+  it("wraps synchronous native setup failures without leaking details", () => {
+    const root = geometry();
+    const original = root.outerHTML;
+    vi.spyOn(Element.prototype, "animate").mockImplementationOnce(() => {
+      throw new Error('<svg onload="attacker()">internal renderer detail');
+    });
+
+    expect(() => animateSvg(root)).toThrow(
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+        message: "The SVG animation could not be created.",
+      }),
+    );
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("rejects unexpected native completion failures with a typed error and cleans up", async () => {
+    const root = geometry();
+    const original = root.outerHTML;
+    const controller = animateSvg(root);
+    const finished = controller.finished;
+    const animation = allAnimations(root)[0]!;
+
+    animation.failNaturally(
+      new Error("<script>attacker()</script> internal renderer detail"),
+    );
+
+    await expect(finished).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+        message: "The SVG animation did not complete.",
+      }),
+    );
+    expect(controller.state).toBe("failed");
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("exports a stable typed animation error class", () => {
+    const error = new SvgAnimationError(
+      SVG_ANIMATION_ERROR_CODES.animationFailed,
+      "safe",
+    );
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe("SvgAnimationError");
+    expect(error.code).toBe("ANIMATION_FAILED");
   });
 });
