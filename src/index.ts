@@ -85,7 +85,6 @@ const SAFE_STYLE_PROPERTIES = new Set([
 const SAFE_BITMAP_DATA_URL =
   /^data:image\/(?:png|jpeg|gif|webp|avif);base64,[a-z\d+/=\s]+$/i;
 const LOCAL_URL_REFERENCE = /^#[^\s]+$/;
-const URL_FUNCTION = /url\(\s*(['"]?)(.*?)\1\s*\)/gi;
 const HAS_URL_FUNCTION = /url\s*\(/i;
 const DANGEROUS_CSS =
   /(?:expression\s*\(|javascript\s*:|@import|-moz-binding|behavior\s*:)/i;
@@ -379,15 +378,207 @@ function isAllowedHref(element: Element, value: string): boolean {
   return element.localName === "image" && SAFE_BITMAP_DATA_URL.test(trimmed);
 }
 
+interface ParsedCssEscape {
+  decoded: string;
+  end: number;
+}
+
+interface ParsedCssToken {
+  decoded: string;
+  end: number;
+}
+
+interface ParsedCssUrl {
+  target: string;
+  end: number;
+}
+
+function isCssWhitespace(character: string | undefined): boolean {
+  return character !== undefined && /[\t\n\f\r ]/.test(character);
+}
+
+function parseCssEscape(
+  value: string,
+  start: number,
+): ParsedCssEscape | undefined {
+  if (value[start] !== "\\" || start + 1 >= value.length) return undefined;
+
+  let cursor = start + 1;
+  const next = value[cursor];
+  if (next === "\n" || next === "\r" || next === "\f") return undefined;
+
+  let hexadecimal = "";
+  while (
+    cursor < value.length &&
+    hexadecimal.length < 6 &&
+    /[\da-f]/i.test(value[cursor] ?? "")
+  ) {
+    hexadecimal += value[cursor];
+    cursor += 1;
+  }
+
+  if (hexadecimal.length > 0) {
+    const codePoint = Number.parseInt(hexadecimal, 16);
+    if (isCssWhitespace(value[cursor])) {
+      if (value[cursor] === "\r" && value[cursor + 1] === "\n") cursor += 1;
+      cursor += 1;
+    }
+    return {
+      decoded:
+        codePoint === 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+          ? "�"
+          : String.fromCodePoint(codePoint),
+      end: cursor,
+    };
+  }
+
+  return { decoded: next ?? "", end: cursor + 1 };
+}
+
+function parseCssIdentifier(
+  value: string,
+  start: number,
+): ParsedCssToken | undefined {
+  let cursor = start;
+  let decoded = "";
+
+  while (cursor < value.length) {
+    const character = value[cursor];
+    if (character === "\\") {
+      const escape = parseCssEscape(value, cursor);
+      if (!escape) break;
+      decoded += escape.decoded;
+      cursor = escape.end;
+      continue;
+    }
+
+    const codePoint = character?.codePointAt(0);
+    if (
+      character !== undefined &&
+      (/[\w-]/.test(character) ||
+        (codePoint !== undefined && codePoint >= 0x80))
+    ) {
+      decoded += character;
+      cursor += character.length;
+      continue;
+    }
+    break;
+  }
+
+  return cursor === start ? undefined : { decoded, end: cursor };
+}
+
+function parseCssUrl(value: string, start: number): ParsedCssUrl | undefined {
+  const functionMatch = /^url\s*\(/i.exec(value.slice(start));
+  if (!functionMatch) return undefined;
+
+  let cursor = start + functionMatch[0].length;
+  while (isCssWhitespace(value[cursor])) cursor += 1;
+
+  const quote =
+    value[cursor] === '"' || value[cursor] === "'" ? value[cursor] : undefined;
+  if (quote) cursor += 1;
+
+  let target = "";
+  while (cursor < value.length) {
+    const character = value[cursor];
+    if (character === "\\") {
+      const escape = parseCssEscape(value, cursor);
+      if (!escape) return undefined;
+      target += escape.decoded;
+      cursor = escape.end;
+      continue;
+    }
+    if (
+      (quote && character === quote) ||
+      (!quote && (character === ")" || isCssWhitespace(character)))
+    ) {
+      break;
+    }
+    target += character;
+    cursor += 1;
+  }
+
+  if (quote) {
+    if (value[cursor] !== quote) return undefined;
+    cursor += 1;
+  }
+  while (isCssWhitespace(value[cursor])) cursor += 1;
+  if (value[cursor] !== ")") return undefined;
+
+  return { target, end: cursor + 1 };
+}
+
+function consumeCssQuotedValue(value: string, start: number): number {
+  const quote = value[start];
+  let cursor = start + 1;
+  while (cursor < value.length) {
+    if (value[cursor] === "\\") {
+      cursor = parseCssEscape(value, cursor)?.end ?? cursor + 1;
+    } else if (value[cursor] === quote) {
+      return cursor + 1;
+    } else {
+      cursor += 1;
+    }
+  }
+  return cursor;
+}
+
+function transformCssUrls(
+  value: string,
+  transform: (target: string) => string | undefined,
+): string {
+  let output = "";
+  let cursor = 0;
+
+  while (cursor < value.length) {
+    if (value.startsWith("/*", cursor)) {
+      const commentEnd = value.indexOf("*/", cursor + 2);
+      const end = commentEnd === -1 ? value.length : commentEnd + 2;
+      output += value.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (value[cursor] === '"' || value[cursor] === "'") {
+      const end = consumeCssQuotedValue(value, cursor);
+      output += value.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+
+    const parsed = parseCssUrl(value, cursor);
+    if (parsed) {
+      output += transform(parsed.target) ?? value.slice(cursor, parsed.end);
+      cursor = parsed.end;
+      continue;
+    }
+
+    output += value[cursor];
+    cursor += 1;
+  }
+
+  return output;
+}
+
+function countExternalCssReferences(value: string): number {
+  let count = 0;
+  transformCssUrls(value, (target) => {
+    if (!LOCAL_URL_REFERENCE.test(target.trim())) count += 1;
+    return undefined;
+  });
+  return count;
+}
+
 function countExternalReferences(svg: SVGSVGElement): number {
   let count = 0;
 
   for (const element of [svg, ...svg.querySelectorAll("*")]) {
-    if (
-      element.localName === "style" &&
-      /@import|url\s*\(/i.test(element.textContent ?? "")
-    ) {
-      count += 1;
+    if (element.localName === "style") {
+      const stylesheet = element.textContent ?? "";
+      if (/@import/i.test(stylesheet)) count += 1;
+      count += countExternalCssReferences(stylesheet);
     }
 
     for (const attribute of element.attributes) {
@@ -399,11 +590,7 @@ function countExternalReferences(svg: SVGSVGElement): number {
         continue;
       }
 
-      URL_FUNCTION.lastIndex = 0;
-      for (const match of value.matchAll(URL_FUNCTION)) {
-        const target = match[2]?.trim() ?? "";
-        if (!LOCAL_URL_REFERENCE.test(target)) count += 1;
-      }
+      count += countExternalCssReferences(value);
     }
   }
 
@@ -411,11 +598,7 @@ function countExternalReferences(svg: SVGSVGElement): number {
 }
 
 function hasOnlyLocalUrlFunctions(value: string): boolean {
-  URL_FUNCTION.lastIndex = 0;
-  for (const match of value.matchAll(URL_FUNCTION)) {
-    if (!LOCAL_URL_REFERENCE.test(match[2]?.trim() ?? "")) return false;
-  }
-  return true;
+  return countExternalCssReferences(value) === 0;
 }
 
 function sanitizeStyle(element: Element): number {
@@ -539,7 +722,41 @@ function nextNamespacePrefix(): string {
   return `svg-motion-${sequence}-`;
 }
 
-function rewriteReferenceValue(
+function cssEscapeIdentifier(value: string): string {
+  const characters = Array.from(value);
+  return characters
+    .map((character, index) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      if (codePoint === 0) return "�";
+      if (
+        (codePoint >= 1 && codePoint <= 31) ||
+        codePoint === 127 ||
+        (index === 0 && /\d/.test(character)) ||
+        (index === 1 && /\d/.test(character) && characters[0] === "-")
+      ) {
+        return `\\${codePoint.toString(16)} `;
+      }
+      if (index === 0 && character === "-" && characters.length === 1)
+        return "\\-";
+      if (codePoint >= 128 || /[\w-]/.test(character)) return character;
+      return `\\${character}`;
+    })
+    .join("");
+}
+
+function rewriteLocalUrlReferences(
+  value: string,
+  ids: ReadonlyMap<string, string>,
+): string {
+  return transformCssUrls(value, (target) => {
+    const trimmed = target.trim();
+    if (!trimmed.startsWith("#")) return undefined;
+    const rewritten = ids.get(trimmed.slice(1));
+    return rewritten ? `url(#${cssEscapeIdentifier(rewritten)})` : undefined;
+  });
+}
+
+function rewriteHrefReference(
   value: string,
   ids: ReadonlyMap<string, string>,
 ): string {
@@ -548,31 +765,65 @@ function rewriteReferenceValue(
     const rewritten = ids.get(trimmed.slice(1));
     if (rewritten) return `#${rewritten}`;
   }
-
-  return value.replace(
-    /url\(\s*(['"]?)#([^)'"\s]+)\1\s*\)/gi,
-    (reference, _quote: string, id: string) => {
-      const rewritten = ids.get(id);
-      return rewritten ? `url(#${rewritten})` : reference;
-    },
-  );
+  return value;
 }
 
 function rewriteSelectorIds(
   selector: string,
   ids: ReadonlyMap<string, string>,
 ): string {
-  return selector.replace(/#([A-Za-z_][\w-]*)/g, (reference, id: string) => {
-    const rewritten = ids.get(id);
-    return rewritten ? `#${rewritten}` : reference;
-  });
+  let output = "";
+  let cursor = 0;
+  let attributeDepth = 0;
+
+  while (cursor < selector.length) {
+    if (selector.startsWith("/*", cursor)) {
+      const commentEnd = selector.indexOf("*/", cursor + 2);
+      const end = commentEnd === -1 ? selector.length : commentEnd + 2;
+      output += selector.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (selector[cursor] === '"' || selector[cursor] === "'") {
+      const end = consumeCssQuotedValue(selector, cursor);
+      output += selector.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (selector[cursor] === "\\") {
+      const end = parseCssEscape(selector, cursor)?.end ?? cursor + 1;
+      output += selector.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (selector[cursor] === "[") {
+      attributeDepth += 1;
+    } else if (selector[cursor] === "]") {
+      attributeDepth = Math.max(0, attributeDepth - 1);
+    } else if (selector[cursor] === "#" && attributeDepth === 0) {
+      const parsed = parseCssIdentifier(selector, cursor + 1);
+      if (parsed) {
+        const rewritten = ids.get(parsed.decoded);
+        if (rewritten) {
+          output += `#${cssEscapeIdentifier(rewritten)}`;
+          cursor = parsed.end;
+          continue;
+        }
+      }
+    }
+
+    output += selector[cursor];
+    cursor += 1;
+  }
+
+  return output;
 }
 
 function rewriteStylesheetReferences(
   stylesheet: string,
   ids: ReadonlyMap<string, string>,
 ): string {
-  const withUrls = rewriteReferenceValue(stylesheet, ids);
+  const withUrls = rewriteLocalUrlReferences(stylesheet, ids);
   let output = "";
   let cursor = 0;
   const blockTypes: Array<"declaration" | "group"> = [];
@@ -657,7 +908,11 @@ function namespaceIds(svg: SVGSVGElement): void {
     }
 
     for (const attribute of [...element.attributes]) {
-      const rewritten = rewriteReferenceValue(attribute.value, ids);
+      const withRewrittenUrls = rewriteLocalUrlReferences(attribute.value, ids);
+      const rewritten =
+        attribute.localName.toLowerCase() === "href"
+          ? rewriteHrefReference(withRewrittenUrls, ids)
+          : withRewrittenUrls;
       if (rewritten !== attribute.value)
         element.setAttribute(attribute.name, rewritten);
     }

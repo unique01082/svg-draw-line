@@ -172,6 +172,46 @@ describe("prepareSvg sanitization", () => {
     expect(path?.getAttribute("style")).toContain(`url(#${prefix}fx)`);
   });
 
+  it("preserves hex colors when an ID has the same hash text", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <defs><linearGradient id="fff" /></defs>
+        <path fill="#fff" stroke="#fff" aria-label="#fff" />
+        <use href="#fff" xlink:href="#fff" />
+      `),
+    );
+    const namespacedId = prepared.svg.querySelector("linearGradient")?.id;
+    const path = prepared.svg.querySelector("path");
+    const use = prepared.svg.querySelector("use");
+
+    expect(namespacedId).toMatch(/^svg-motion-\d+-fff$/);
+    expect(path?.getAttribute("fill")).toBe("#fff");
+    expect(path?.getAttribute("stroke")).toBe("#fff");
+    expect(path?.getAttribute("aria-label")).toBe("#fff");
+    expect(use?.getAttribute("href")).toBe(`#${namespacedId}`);
+    expect(use?.getAttribute("xlink:href")).toBe(`#${namespacedId}`);
+  });
+
+  it("does not report local stylesheet fragment URLs as external references", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <style>.shape { fill: url(#paint) }</style>
+        <defs><linearGradient id="paint" /></defs>
+        <path class="shape" />
+      `),
+    );
+
+    expect(prepared.svg.querySelector("style")).toBeNull();
+    expect(prepared.diagnostics).toContainEqual({
+      code: "REMOVED_UNSAFE_CONTENT",
+      count: expect.any(Number),
+    });
+    expect(prepared.diagnostics).not.toContainEqual({
+      code: "REMOVED_EXTERNAL_REFERENCE",
+      count: expect.any(Number),
+    });
+  });
+
   it("bypasses filtering in trusted mode while still cloning and namespacing", async () => {
     const source = document.createElementNS(
       "http://www.w3.org/2000/svg",
@@ -214,5 +254,34 @@ describe("prepareSvg sanitization", () => {
     expect(prepared.svg.querySelector("use")?.getAttribute("href")).toBe(
       `#${prefix}shape`,
     );
+  });
+
+  it("rewrites escaped, digit-leading, and punctuated trusted CSS IDs without touching quoted hashes", async () => {
+    const prepared = await prepareSvg(
+      wrap(String.raw`
+        <style>
+          #\31 23, #punct\:dot\.value { fill: url(#punct\:dot\.value) }
+          [data-ref="#123"], [data-other='#punct:dot.value'] { stroke: red }
+        </style>
+        <defs><linearGradient id="punct:dot.value" /></defs>
+        <path id="123" />
+      `),
+      { trust: "trusted" },
+    );
+    const digitId = prepared.svg.querySelector("path")?.id;
+    const punctuatedId = prepared.svg.querySelector("linearGradient")?.id;
+    const stylesheet = prepared.svg.querySelector("style")?.textContent;
+
+    expect(digitId).toMatch(/^svg-motion-\d+-123$/);
+    expect(punctuatedId).toMatch(/^svg-motion-\d+-punct:dot\.value$/);
+    expect(stylesheet).toContain(`#${digitId}`);
+    expect(stylesheet).toContain(
+      `#${punctuatedId?.replaceAll(":", "\\:").replaceAll(".", "\\.")}`,
+    );
+    expect(stylesheet).toContain(
+      `url(#${punctuatedId?.replaceAll(":", "\\:").replaceAll(".", "\\.")})`,
+    );
+    expect(stylesheet).toContain('[data-ref="#123"]');
+    expect(stylesheet).toContain("[data-other='#punct:dot.value']");
   });
 });
