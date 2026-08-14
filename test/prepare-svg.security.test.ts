@@ -212,6 +212,39 @@ describe("prepareSvg sanitization", () => {
     });
   });
 
+  it("ignores @import text inside stylesheet comments and strings", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <style>
+          /* @import url(https://evil.test/comment.css); */
+          .shape { fill: url(#paint); font-family: "@import url(https://evil.test/string.css)" }
+        </style>
+        <defs><linearGradient id="paint" /></defs>
+        <path class="shape" />
+      `),
+    );
+
+    expect(prepared.svg.querySelector("style")).toBeNull();
+    expect(prepared.diagnostics).not.toContainEqual({
+      code: "REMOVED_EXTERNAL_REFERENCE",
+      count: expect.any(Number),
+    });
+  });
+
+  it("reports a real stylesheet @import rule as external", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <style>@import url(https://evil.test/real.css); .shape { fill: red }</style>
+        <path class="shape" />
+      `),
+    );
+
+    expect(prepared.diagnostics).toContainEqual({
+      code: "REMOVED_EXTERNAL_REFERENCE",
+      count: expect.any(Number),
+    });
+  });
+
   it("bypasses filtering in trusted mode while still cloning and namespacing", async () => {
     const source = document.createElementNS(
       "http://www.w3.org/2000/svg",
@@ -283,5 +316,36 @@ describe("prepareSvg sanitization", () => {
     );
     expect(stylesheet).toContain('[data-ref="#123"]');
     expect(stylesheet).toContain("[data-other='#punct:dot.value']");
+  });
+
+  it("rewrites a local reference in an escaped CSS url function token", async () => {
+    const prepared = await prepareSvg(
+      wrap(String.raw`
+        <style>.shape { fill: u\72l(#paint) }</style>
+        <defs><linearGradient id="paint" /></defs>
+        <path class="shape" />
+      `),
+      { trust: "trusted" },
+    );
+    const paintId = prepared.svg.querySelector("linearGradient")?.id;
+    const stylesheet = prepared.svg.querySelector("style")?.textContent;
+
+    expect(stylesheet).toContain(`url(#${paintId})`);
+    expect(stylesheet).not.toContain("u\\72l(#paint)");
+  });
+
+  it("does not rewrite a url suffix inside a larger CSS function name", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <style>.shape { fill: noturl(#paint) }</style>
+        <defs><linearGradient id="paint" /></defs>
+        <path class="shape" />
+      `),
+      { trust: "trusted" },
+    );
+
+    expect(prepared.svg.querySelector("style")?.textContent).toContain(
+      "noturl(#paint)",
+    );
   });
 });

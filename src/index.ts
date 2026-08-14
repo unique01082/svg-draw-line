@@ -470,11 +470,16 @@ function parseCssIdentifier(
   return cursor === start ? undefined : { decoded, end: cursor };
 }
 
-function parseCssUrl(value: string, start: number): ParsedCssUrl | undefined {
-  const functionMatch = /^url\s*\(/i.exec(value.slice(start));
-  if (!functionMatch) return undefined;
+function parseCssUrl(
+  value: string,
+  functionToken: ParsedCssToken,
+): ParsedCssUrl | undefined {
+  if (functionToken.decoded.toLowerCase() !== "url") return undefined;
 
-  let cursor = start + functionMatch[0].length;
+  let cursor = functionToken.end;
+  while (isCssWhitespace(value[cursor])) cursor += 1;
+  if (value[cursor] !== "(") return undefined;
+  cursor += 1;
   while (isCssWhitespace(value[cursor])) cursor += 1;
 
   const quote =
@@ -548,10 +553,16 @@ function transformCssUrls(
       continue;
     }
 
-    const parsed = parseCssUrl(value, cursor);
-    if (parsed) {
-      output += transform(parsed.target) ?? value.slice(cursor, parsed.end);
-      cursor = parsed.end;
+    const identifier = parseCssIdentifier(value, cursor);
+    if (identifier) {
+      const parsed = parseCssUrl(value, identifier);
+      if (parsed) {
+        output += transform(parsed.target) ?? value.slice(cursor, parsed.end);
+        cursor = parsed.end;
+      } else {
+        output += value.slice(cursor, identifier.end);
+        cursor = identifier.end;
+      }
       continue;
     }
 
@@ -571,13 +582,57 @@ function countExternalCssReferences(value: string): number {
   return count;
 }
 
+function countStylesheetImportRules(stylesheet: string): number {
+  let count = 0;
+  let cursor = 0;
+  let depth = 0;
+  let canStartRule = true;
+
+  while (cursor < stylesheet.length) {
+    if (stylesheet.startsWith("/*", cursor)) {
+      const commentEnd = stylesheet.indexOf("*/", cursor + 2);
+      cursor = commentEnd === -1 ? stylesheet.length : commentEnd + 2;
+      continue;
+    }
+    if (stylesheet[cursor] === '"' || stylesheet[cursor] === "'") {
+      cursor = consumeCssQuotedValue(stylesheet, cursor);
+      if (depth === 0) canStartRule = false;
+      continue;
+    }
+
+    const character = stylesheet[cursor];
+    if (character === "{") {
+      depth += 1;
+      canStartRule = false;
+    } else if (character === "}") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) canStartRule = true;
+    } else if (depth === 0 && character === ";") {
+      canStartRule = true;
+    } else if (depth === 0 && canStartRule && character === "@") {
+      const atRule = parseCssIdentifier(stylesheet, cursor + 1);
+      if (atRule?.decoded.toLowerCase() === "import") count += 1;
+      canStartRule = false;
+      if (atRule) {
+        cursor = atRule.end;
+        continue;
+      }
+    } else if (depth === 0 && !isCssWhitespace(character)) {
+      canStartRule = false;
+    }
+    cursor += 1;
+  }
+
+  return count;
+}
+
 function countExternalReferences(svg: SVGSVGElement): number {
   let count = 0;
 
   for (const element of [svg, ...svg.querySelectorAll("*")]) {
     if (element.localName === "style") {
       const stylesheet = element.textContent ?? "";
-      if (/@import/i.test(stylesheet)) count += 1;
+      count += countStylesheetImportRules(stylesheet);
       count += countExternalCssReferences(stylesheet);
     }
 
