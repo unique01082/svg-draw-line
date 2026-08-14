@@ -6,6 +6,12 @@
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["src/index.ts", "test/**/*.ts", "vite.config.ts"],
-  "exclude": ["test/package-consumer.ts"]
+  "include": [
+    "src/index.ts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ],
+  "exclude": ["test/package-consumer.ts", "test/consumers"]
 }

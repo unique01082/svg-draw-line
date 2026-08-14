@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Motion browser integration</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #e5e7eb;
+      }
+
+      body {
+        padding: 40px;
+      }
+
+      #stage {
+        display: grid;
+        width: 360px;
+        height: 200px;
+        place-items: center;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      #stage > svg {
+        display: block;
+        width: 320px;
+        height: 160px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="stage"></main>
+    <script type="module" src="./harness.ts"></script>
+  </body>
+</html>

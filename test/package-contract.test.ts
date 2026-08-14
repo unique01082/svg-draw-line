@@ -32,6 +32,6 @@ it("publishes ESM-only core and optional external React entries", async () => {
   expect(packageJson.peerDependenciesMeta.react).toEqual({ optional: true });
   expect(viteConfig).toMatch(/external:\s*\[[^\]]*"react"[^\]]*\]/s);
   expect(packageJson.scripts["verify:package"]).toMatch(
-    /vite build.*package-runtime\.mjs.*tsconfig\.package\.json/,
+    /package-runtime\.mjs.*tsconfig\.package\.json/,
   );
 });

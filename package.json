@@ -11,7 +11,8 @@
   "packageManager": "pnpm@10.33.0",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -38,14 +39,16 @@
   },
   "homepage": "https://github.com/unique01082/svg-draw-line#readme",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
-    "lint": "eslint src test vite.config.ts",
-    "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"test/**/*.mjs\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
-    "format:write": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"test/**/*.mjs\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
+    "lint": "eslint src test scripts vite.config.ts playwright.config.ts",
+    "format": "prettier --check . --ignore-unknown",
+    "format:write": "prettier --write . --ignore-unknown",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.node-next.json",
-    "verify:package": "vite build && node test/package-runtime.mjs && tsc --noEmit -p tsconfig.package.json",
-    "test": "vitest run"
+    "verify:package": "node test/package-runtime.mjs && tsc --noEmit -p tsconfig.package.json",
+    "test": "vitest run --exclude 'test/browser/**'",
+    "test:browser": "playwright test",
+    "test:consumer": "node scripts/consumer-smoke.mjs",
+    "verify": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm test:browser && pnpm build && pnpm verify:package && pnpm test:consumer"
   },
   "dependencies": {
     "dompurify": "^3.4.13"
@@ -60,6 +63,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.20.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
