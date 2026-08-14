@@ -42,7 +42,17 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.body.replaceChildren();
+  document.head
+    .querySelectorAll("[data-svg-motion-test]")
+    .forEach((element) => element.remove());
 });
+
+function addStyles(css: string) {
+  const style = document.createElement("style");
+  style.dataset.svgMotionTest = "";
+  style.textContent = css;
+  document.head.append(style);
+}
 
 describe("animateSvg presets and options", () => {
   it("draws every supported geometry with defaults and fades fallback leaves", () => {
@@ -57,6 +67,8 @@ describe("animateSvg presets and options", () => {
       <text>Label</text>
     `);
     const original = root.outerHTML;
+    const path = root.querySelector("path")!;
+    const computedFill = getComputedStyle(path).fill;
 
     const controller = animateSvg(root);
 
@@ -64,7 +76,7 @@ describe("animateSvg presets and options", () => {
     expect(controller.diagnostics).toEqual([]);
     const running = allAnimations(root);
     expect(running).toHaveLength(8);
-    const pathAnimation = animationsFor(root.querySelector("path")!)[0]!;
+    const pathAnimation = animationsFor(path)[0]!;
     expect(pathAnimation.keyframes[0]).toEqual(
       expect.objectContaining({ fillOpacity: 0, strokeDashoffset: "10" }),
     );
@@ -79,10 +91,9 @@ describe("animateSvg presets and options", () => {
       fill: "both",
       iterations: 1,
     });
-    const path = root.querySelector("path")!;
     expect(path.getAttribute("stroke")).toBeNull();
     expect(path.getAttribute("fill")).toBe("#f00");
-    expect(path.style.stroke).toBe("rgb(255, 0, 0)");
+    expect(path.style.stroke).toBe(computedFill);
     expect(path.style.strokeDasharray).toBe("10");
     expect(path.style.strokeDashoffset).toBe("10");
     expect(animationsFor(root.querySelector("text")!)[0]?.keyframes).toEqual([
@@ -148,6 +159,61 @@ describe("animateSvg presets and options", () => {
     expect(delays).toEqual([40, 140, 240, 340, 440, 540, 640]);
   });
 
+  it("uses computed CSS presentation instead of conflicting paint attributes", () => {
+    addStyles(`
+      .css-drawn { fill: rgb(0, 128, 0); stroke: none }
+      .css-hidden { fill: none; stroke: none }
+    `);
+    const root = geometry(`
+      <path id="drawn" class="css-drawn" fill="none" stroke="#f00" d="M0 0h10" />
+      <path id="hidden" class="css-hidden" fill="#f00" stroke="#00f" d="M0 0h10" />
+    `);
+    const drawn = root.querySelector<SVGElement>("#drawn")!;
+    const hidden = root.querySelector<SVGElement>("#hidden")!;
+    expect(getComputedStyle(drawn).fill).toBe("rgb(0, 128, 0)");
+    expect(getComputedStyle(hidden).fill).toBe("rgba(0, 0, 0, 0)");
+
+    const controller = animateSvg(root, { stagger: 0 });
+
+    expect(controller.diagnostics).toEqual([]);
+    expect(animationsFor(drawn)).toHaveLength(1);
+    expect(drawn.style.stroke).toBe("rgb(0, 128, 0)");
+    expect(animationsFor(hidden)).toEqual([]);
+    expect(allAnimations(root)).toHaveLength(1);
+  });
+
+  it("does not treat CSS-hidden paint as drawable geometry", () => {
+    addStyles(".no-paint { fill: none; stroke: none }");
+    const root = geometry(`
+      <path class="no-paint" fill="#f00" stroke="#00f" d="M0 0h10" />
+    `);
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    expect(animationsFor(root)).toHaveLength(1);
+    expect(allAnimations(root)).toHaveLength(1);
+  });
+
+  it("falls back to root fade when every geometry has a hidden ancestor", () => {
+    const root = geometry(`
+      <g style="display: none"><path id="display-hidden" d="M0 0h10" /></g>
+      <g style="opacity: 0"><path id="opacity-hidden" d="M0 0h10" /></g>
+    `);
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    expect(animationsFor(root.querySelector("#display-hidden")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#opacity-hidden")!)).toEqual([]);
+    expect(animationsFor(root)).toHaveLength(1);
+    expect(allAnimations(root)).toHaveLength(1);
+  });
+
   it.each<{
     preset: SvgMotionPreset;
     expected: Array<Record<string, unknown>>;
@@ -198,7 +264,7 @@ describe("animateSvg presets and options", () => {
       <desc id="description">Description</desc>
       <mask id="mask"><rect id="masked" /></mask>
       <g><path id="one" /><text id="two">Two</text></g>
-      <image id="hidden" opacity="0.0" />
+      <image id="hidden" style="opacity: 0.0" />
       <use id="three" href="#definition" />
     `);
 
@@ -216,6 +282,23 @@ describe("animateSvg presets and options", () => {
           animationsFor(root.querySelector(selector)!)[0]?.timing.delay,
       ),
     ).toEqual([10, 40, 70]);
+  });
+
+  it("excludes stagger leaves under display-none and transparent ancestors", () => {
+    const root = svg(`
+      <g style="display: none"><path id="display-hidden" /></g>
+      <g style="opacity: 0"><text id="opacity-hidden">Hidden</text></g>
+      <g><path id="visible" /></g>
+    `);
+
+    animateSvg(root, { preset: "stagger", delay: 15, stagger: 30 });
+
+    expect(animationsFor(root.querySelector("#display-hidden")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#opacity-hidden")!)).toEqual([]);
+    expect(
+      animationsFor(root.querySelector("#visible")!)[0]?.timing.delay,
+    ).toBe(15);
+    expect(allAnimations(root)).toHaveLength(1);
   });
 
   it("falls back to a whole-root fade and emits a stable diagnostic", () => {
@@ -293,6 +376,24 @@ describe("SvgMotionController", () => {
 
     await finished;
     expect(controller.state).toBe("cancelled");
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("settles and cleans up after all native animations finish naturally", async () => {
+    const root = geometry(`
+      <path fill="#f00" d="M0 0h10" />
+      <path stroke="#0f0" d="M0 0h10" />
+    `);
+    const original = root.outerHTML;
+    const controller = animateSvg(root, { stagger: 25 });
+    const finished = controller.finished;
+    const owned = allAnimations(root);
+
+    for (const animation of owned) animation.completeNaturally();
+    await finished;
+
+    expect(controller.state).toBe("finished");
     expect(root.outerHTML).toBe(original);
     expect(allAnimations(root)).toEqual([]);
   });

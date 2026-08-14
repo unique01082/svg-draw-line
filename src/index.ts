@@ -1187,19 +1187,21 @@ function selectElements(
 }
 
 function presentationValue(element: SVGElement, property: string): string {
+  if (element.isConnected) {
+    try {
+      const computed = getComputedStyle(element)
+        .getPropertyValue(property)
+        .trim();
+      if (computed) return computed;
+    } catch {
+      // Fall through to local presentation for incomplete DOM implementations.
+    }
+  }
+
   const inline = element.style.getPropertyValue(property).trim();
   if (inline) return inline;
   const attribute = element.getAttribute(property)?.trim();
   if (attribute) return attribute;
-
-  try {
-    const computed = getComputedStyle(element)
-      .getPropertyValue(property)
-      .trim();
-    if (computed) return computed;
-  } catch {
-    // Detached SVG elements can still use their presentation attributes.
-  }
 
   return property === "fill" ? "black" : property === "stroke" ? "none" : "";
 }
@@ -1218,21 +1220,27 @@ function hasPaint(value: string): boolean {
 function isVisible(element: SVGElement): boolean {
   for (
     let current: Element | null = element;
-    current && current.localName !== "svg";
+    current instanceof SVGElement;
     current = current.parentElement
   ) {
     if (NON_RENDERED_ELEMENTS.has(current.localName)) return false;
+
+    const display = presentationValue(current, "display").toLowerCase();
+    const visibility = presentationValue(current, "visibility").toLowerCase();
+    const opacity = Number.parseFloat(presentationValue(current, "opacity"));
+    if (
+      display === "none" ||
+      visibility === "hidden" ||
+      visibility === "collapse" ||
+      (Number.isFinite(opacity) && opacity <= 0)
+    ) {
+      return false;
+    }
+
+    if (current.localName === "svg") break;
   }
 
-  const display = presentationValue(element, "display").toLowerCase();
-  const visibility = presentationValue(element, "visibility").toLowerCase();
-  const opacity = Number.parseFloat(presentationValue(element, "opacity"));
-  return (
-    display !== "none" &&
-    visibility !== "hidden" &&
-    visibility !== "collapse" &&
-    (!Number.isFinite(opacity) || opacity > 0)
-  );
+  return true;
 }
 
 function isVisibleLeaf(element: SVGElement): boolean {

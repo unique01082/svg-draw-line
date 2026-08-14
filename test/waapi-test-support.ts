@@ -97,6 +97,11 @@ export class RecordedAnimation {
         "InvalidStateError",
       );
     }
+    this.completeNaturally();
+  }
+
+  completeNaturally() {
+    const endTime = this.effect.getComputedTiming().endTime;
     this.currentTime = endTime ?? 0;
     this.playState = "finished";
     this.resolveFinished(this as unknown as Animation);
