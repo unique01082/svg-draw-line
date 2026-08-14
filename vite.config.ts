@@ -9,20 +9,22 @@ const rootDirectory = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   plugins: [
     dts({
-      include: ["src/index.ts"],
-      insertTypesEntry: true,
+      include: ["src/index.ts", "src/react.ts"],
     }),
   ],
   build: {
     copyPublicDir: false,
     lib: {
-      entry: resolve(rootDirectory, "src/index.ts"),
+      entry: {
+        index: resolve(rootDirectory, "src/index.ts"),
+        react: resolve(rootDirectory, "src/react.ts"),
+      },
       formats: ["es"],
-      fileName: "index",
+      fileName: (_format, entryName) => `${entryName}.js`,
     },
     sourcemap: true,
     rollupOptions: {
-      external: ["dompurify"],
+      external: ["dompurify", "react"],
     },
   },
 });

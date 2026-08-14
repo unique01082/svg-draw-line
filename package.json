@@ -21,7 +21,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./react": null
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    }
   },
   "publishConfig": {
     "access": "public"
@@ -38,21 +41,33 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint src test vite.config.ts",
-    "format": "prettier --check src/index.ts \"test/**/*.ts\" vite.config.ts eslint.config.js package.json tsconfig.json tsconfig.test.json",
-    "format:write": "prettier --write src/index.ts \"test/**/*.ts\" vite.config.ts eslint.config.js package.json tsconfig.json tsconfig.test.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
+    "format:write": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.node-next.json",
     "test": "vitest run"
   },
   "dependencies": {
     "dompurify": "^3.4.13"
   },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.1",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "eslint": "^10.8.1",
     "globals": "^17.11.0",
     "jsdom": "^29.0.0",
     "prettier": "^3.9.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
     "vite": "^8.2.1",
