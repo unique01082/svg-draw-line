@@ -5,6 +5,7 @@ const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 const INSTANCE_SEQUENCE = Symbol.for(
   "@baole-space/svg-motion.instance-sequence",
 );
+const FAILED_SETUP_ANIMATIONS = new WeakMap<SVGSVGElement, Animation[]>();
 
 const FORBIDDEN_TAGS = [
   "script",
@@ -959,7 +960,7 @@ function rewriteAttributeSelector(
 
   const encodedValue = quote
     ? `${quote}${escapeCssString(rewritten, quote)}${quote}`
-    : rewritten;
+    : cssEscapeIdentifier(rewritten);
   return `${prefix}${rawName}${beforeOperator}${operator}${afterOperator}${encodedValue}${suffix}`;
 }
 
@@ -1862,12 +1863,32 @@ function animationFailedError(): SvgAnimationError {
   );
 }
 
+function retryFailedSetupAnimations(svg: SVGSVGElement): void {
+  const pending = FAILED_SETUP_ANIMATIONS.get(svg);
+  if (!pending) return;
+
+  const retained: Animation[] = [];
+  for (const animation of pending) {
+    try {
+      animation.cancel();
+    } catch {
+      retained.push(animation);
+    }
+  }
+  if (retained.length > 0) {
+    FAILED_SETUP_ANIMATIONS.set(svg, retained);
+    throw animationSetupError();
+  }
+  FAILED_SETUP_ANIMATIONS.delete(svg);
+}
+
 export function animateSvg(
   svg: SVGSVGElement,
   options: SvgMotionOptions = {},
 ): SvgMotionController {
   assertAnimationEnvironment(svg);
   const resolved = resolveMotionOptions(options);
+  retryFailedSetupAnimations(svg);
   const snapshots: AttributeSnapshot[] = [];
   const diagnostics: SvgDiagnostic[] = [];
   let plans: MotionPlan[];
@@ -1966,13 +1987,15 @@ export function animateSvg(
         if (!autoplay) animation.pause();
       }
     } catch {
+      const retained: Animation[] = [];
       for (const animation of created) {
         try {
           animation.cancel();
         } catch {
-          // Continue rolling back every animation and presentation snapshot.
+          retained.push(animation);
         }
       }
+      animations = retained;
       restore();
       throw animationSetupError();
     }
@@ -1981,7 +2004,15 @@ export function animateSvg(
     watchCurrentRun(generation, completions);
   };
 
-  createAnimations(resolved.autoplay);
+  try {
+    createAnimations(resolved.autoplay);
+  } catch (error) {
+    stopAnimations();
+    if (animations.length > 0) {
+      FAILED_SETUP_ANIMATIONS.set(svg, [...animations]);
+    }
+    throw error;
+  }
 
   const beginFreshRun = (autoplay: boolean, activate?: () => void) => {
     generation += 1;

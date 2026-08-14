@@ -861,6 +861,141 @@ describe("SvgMotionController", () => {
     },
   );
 
+  it("retains initial setup cleanup for a later animate retry", () => {
+    const root = geometry(`
+      <path fill="#f00" d="M0 0h10" />
+      <path fill="#0f0" d="M0 0h10" />
+    `);
+    const original = root.outerHTML;
+    const nativeAnimate = vi
+      .mocked(Element.prototype.animate)
+      .getMockImplementation()!;
+    const created: RecordedAnimation[] = [];
+    let firstCancel: ReturnType<typeof vi.spyOn> | undefined;
+    const animateSpy = vi
+      .spyOn(Element.prototype, "animate")
+      .mockImplementation(function (this: Element, keyframes, options) {
+        const animation = nativeAnimate.call(
+          this,
+          keyframes,
+          options,
+        ) as unknown as RecordedAnimation;
+        const index = created.length;
+        created.push(animation);
+        if (index === 0) {
+          const cancel = animation.cancel.bind(animation);
+          firstCancel = vi
+            .spyOn(animation, "cancel")
+            .mockImplementationOnce(() => {
+              throw new Error("private initial cancel failure one");
+            })
+            .mockImplementationOnce(() => {
+              throw new Error("private initial cancel failure two");
+            })
+            .mockImplementation(cancel);
+        } else {
+          Object.defineProperty(animation, "finished", {
+            configurable: true,
+            get() {
+              throw new Error("private initial finished getter failure");
+            },
+          });
+        }
+        return animation as unknown as Animation;
+      });
+
+    expect(() => animateSvg(root, { autoplay: false, stagger: 0 })).toThrow(
+      expect.objectContaining({
+        code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+        message: "The SVG animation could not be created.",
+      }),
+    );
+    expect(created).toHaveLength(2);
+    expect(firstCancel).toHaveBeenCalledTimes(2);
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([created[0]]);
+
+    animateSpy.mockImplementation(nativeAnimate);
+    const controller = animateSvg(root, { autoplay: false, stagger: 0 });
+    expect(firstCancel).toHaveBeenCalledTimes(3);
+    controller.destroy();
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("retains partial fresh-run ownership until controller cleanup can retry", async () => {
+    const root = geometry(`
+      <path fill="#f00" d="M0 0h10" />
+      <path fill="#0f0" d="M0 0h10" />
+    `);
+    const original = root.outerHTML;
+    const controller = animateSvg(root, { autoplay: false, stagger: 0 });
+    controller.cancel();
+    await controller.finished;
+
+    const nativeAnimate = vi
+      .mocked(Element.prototype.animate)
+      .getMockImplementation()!;
+    const created: RecordedAnimation[] = [];
+    let firstCancel: ReturnType<typeof vi.spyOn> | undefined;
+    vi.spyOn(Element.prototype, "animate").mockImplementation(function (
+      this: Element,
+      keyframes,
+      options,
+    ) {
+      const animation = nativeAnimate.call(
+        this,
+        keyframes,
+        options,
+      ) as unknown as RecordedAnimation;
+      const index = created.length;
+      created.push(animation);
+      if (index === 0) {
+        const cancel = animation.cancel.bind(animation);
+        firstCancel = vi
+          .spyOn(animation, "cancel")
+          .mockImplementationOnce(() => {
+            throw new Error("private fresh cancel failure one");
+          })
+          .mockImplementationOnce(() => {
+            throw new Error("private fresh cancel failure two");
+          })
+          .mockImplementation(cancel);
+      } else {
+        Object.defineProperty(animation, "finished", {
+          configurable: true,
+          get() {
+            throw new Error("private fresh finished getter failure");
+          },
+        });
+      }
+      return animation as unknown as Animation;
+    });
+
+    let thrown: unknown;
+    try {
+      controller.restart();
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toEqual(
+      expect.objectContaining({
+        code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+        message: "The SVG animation could not be created.",
+      }),
+    );
+    await expect(controller.finished).rejects.toBe(thrown);
+    expect(firstCancel).toHaveBeenCalledTimes(2);
+    expect(controller.state).toBe("failed");
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([created[0]]);
+
+    expect(() => controller.cancel()).not.toThrow();
+    expect(firstCancel).toHaveBeenCalledTimes(3);
+    expect(controller.state).toBe("cancelled");
+    expect(allAnimations(root)).toEqual([]);
+  });
+
   it.each([
     ["reverse", "reverse"],
     ["restart", "play"],

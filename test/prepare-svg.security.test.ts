@@ -366,6 +366,37 @@ describe("prepareSvg sanitization", () => {
     expect(stylesheet.match(/#fff/g)).toHaveLength(4);
   });
 
+  it("serializes rewritten unquoted reference selectors as valid escaped CSS", async () => {
+    const prepared = await prepareSvg(
+      wrap(String.raw`
+        <style>
+          [id=punct\:dot\.value],
+          [href=\#punct\:dot\.value],
+          [xlink\:href=\#punct\:dot\.value],
+          [aria-controls=punct\:dot\.value],
+          [aria-labelledby~=punct\:dot\.value] { fill: #fff }
+          [data-ref=\#punct\:dot\.value] { stroke: #fff }
+        </style>
+        <path id="punct:dot.value" />
+        <path id="fff" />
+      `),
+      { trust: "trusted" },
+    );
+    const punctuatedId = prepared.svg.querySelector("path")!.id;
+    const escapedId = punctuatedId
+      .replaceAll(":", "\\:")
+      .replaceAll(".", "\\.");
+    const stylesheet = prepared.svg.querySelector("style")!.textContent!;
+
+    expect(stylesheet).toContain(`[id=${escapedId}]`);
+    expect(stylesheet).toContain(`[href=\\#${escapedId}]`);
+    expect(stylesheet).toContain(`[xlink\\:href=\\#${escapedId}]`);
+    expect(stylesheet).toContain(`[aria-controls=${escapedId}]`);
+    expect(stylesheet).toContain(`[aria-labelledby~=${escapedId}]`);
+    expect(stylesheet).toContain(String.raw`[data-ref=\#punct\:dot\.value]`);
+    expect(stylesheet.match(/#fff/g)).toHaveLength(2);
+  });
+
   it("sanitizes namespace confusion and DOM-clobbering-shaped input without mutation", async () => {
     const source = document.createElementNS(
       "http://www.w3.org/2000/svg",
