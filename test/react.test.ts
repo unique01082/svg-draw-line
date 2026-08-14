@@ -16,7 +16,7 @@ import {
   installWaapi,
   uninstallWaapi,
 } from "./waapi-test-support";
-import { SvgAnimationError } from "../src/index";
+import { SVG_ANIMATION_ERROR_CODES, SvgAnimationError } from "../src/index";
 
 const SVG_SOURCE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path fill="#f00" d="M0 0h10" /></svg>';
@@ -404,6 +404,49 @@ describe("useSvgMotion", () => {
     expect(current?.error).toBe(rejected);
     expect(errors).toEqual([rejected]);
     expect(allAnimations(svg)).toEqual([]);
+  });
+
+  it("observes a rejected fresh run when a controller method throws", async () => {
+    const errors: unknown[] = [];
+    await render(
+      createElement(Harness, {
+        options: {
+          autoplay: false,
+          source: SVG_SOURCE,
+          trust: "trusted",
+          onError: (error) => errors.push(error),
+        },
+      }),
+    );
+    const controller = current!.controller!;
+    await act(async () => {
+      controller.cancel();
+      await controller.finished;
+    });
+    vi.spyOn(Element.prototype, "animate").mockImplementationOnce(() => {
+      throw new Error("private fresh-run setup detail");
+    });
+    let thrown: unknown;
+
+    await act(async () => {
+      try {
+        controller.play();
+      } catch (error) {
+        thrown = error;
+      }
+      await expect(controller.finished).rejects.toBe(thrown);
+    });
+
+    expect(thrown).toEqual(
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+        message: "The SVG animation could not be created.",
+      }),
+    );
+    expect(current?.status).toBe("failed");
+    expect(current?.error).toBe(thrown);
+    expect(errors).toEqual([thrown]);
   });
 
   it("emits finish once when restart and finish settle back-to-back", async () => {

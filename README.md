@@ -93,7 +93,7 @@ controller.diagnostics;
 
 Preparation failures are `SvgPreparationError` instances with a safe `code`: `ABORTED`, `FETCH_FAILED`, `INVALID_SVG`, `SANITIZATION_FAILED`, `SOURCE_TOO_LARGE`, `UNSUPPORTED_ENVIRONMENT`, or `UNSUPPORTED_SOURCE`. Diagnostics use `REMOVED_UNSAFE_CONTENT`, `REMOVED_EXTERNAL_REFERENCE`, and `NO_DRAWABLE_GEOMETRY` with counts only.
 
-Animation failures are `SvgAnimationError` instances. Their safe `code` is `INVALID_SVG`, `UNSUPPORTED_ENVIRONMENT`, `ANIMATION_SETUP_FAILED`, or `ANIMATION_FAILED`. A synchronous setup failure makes `animateSvg()` throw; `mountSvgMotion()` preserves that typed error and removes the SVG it appended. An unexpected native completion failure changes `controller.state` to `failed`, restores the original artwork, removes owned animations, and rejects `controller.finished` with `SvgAnimationError`. Await or catch `controller.finished` when application behavior depends on completion.
+Animation failures are `SvgAnimationError` instances. Their safe `code` is `INVALID_SVG`, `UNSUPPORTED_ENVIRONMENT`, `ANIMATION_SETUP_FAILED`, or `ANIMATION_FAILED`. A synchronous setup failure makes `animateSvg()` throw; `mountSvgMotion()` preserves that typed error and removes the SVG it appended. If `play()`, `reverse()`, or `restart()` cannot create or activate a new run, the method throws while the new `controller.finished` rejects with the same typed error. An unexpected native completion failure changes `controller.state` to `failed`, restores the original artwork, removes owned animations, and rejects `controller.finished` with `SvgAnimationError`. Await or catch `controller.finished` when application behavior depends on completion.
 
 ## Security, CORS, and CSP
 

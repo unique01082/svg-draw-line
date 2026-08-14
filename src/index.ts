@@ -1580,6 +1580,20 @@ function createSettledPromise(): {
   return { promise, resolve, reject };
 }
 
+function animationSetupError(): SvgAnimationError {
+  return new SvgAnimationError(
+    SVG_ANIMATION_ERROR_CODES.setupFailed,
+    "The SVG animation could not be created.",
+  );
+}
+
+function animationFailedError(): SvgAnimationError {
+  return new SvgAnimationError(
+    SVG_ANIMATION_ERROR_CODES.animationFailed,
+    "The SVG animation did not complete.",
+  );
+}
+
 export function animateSvg(
   svg: SVGSVGElement,
   options: SvgMotionOptions = {},
@@ -1598,8 +1612,15 @@ export function animateSvg(
   const restore = () => restoreSnapshots(snapshots);
 
   const stopAnimations = () => {
-    for (const animation of animations) animation.cancel();
+    const owned = animations;
     animations = [];
+    for (const animation of owned) {
+      try {
+        animation.cancel();
+      } catch {
+        // Restoration and settlement must not depend on native cancellation.
+      }
+    }
     restore();
   };
 
@@ -1610,6 +1631,13 @@ export function animateSvg(
     currentRun.resolve();
   };
 
+  const failCurrentRun = (error: SvgAnimationError) => {
+    generation += 1;
+    stopAnimations();
+    state = "failed";
+    currentRun.reject(error);
+  };
+
   const fail = (runGeneration: number) => {
     if (
       generation !== runGeneration ||
@@ -1617,19 +1645,13 @@ export function animateSvg(
     ) {
       return;
     }
-    generation += 1;
-    stopAnimations();
-    state = "failed";
-    currentRun.reject(
-      new SvgAnimationError(
-        SVG_ANIMATION_ERROR_CODES.animationFailed,
-        "The SVG animation did not complete.",
-      ),
-    );
+    failCurrentRun(animationFailedError());
   };
 
-  const watchCurrentRun = (runGeneration: number) => {
-    const completions = animations.map((animation) => animation.finished);
+  const watchCurrentRun = (
+    runGeneration: number,
+    completions: readonly Promise<Animation>[],
+  ) => {
     void Promise.all(completions).then(
       () => {
         if (
@@ -1648,35 +1670,59 @@ export function animateSvg(
   const createAnimations = (autoplay: boolean) => {
     restore();
     const created: Animation[] = [];
+    const completions: Promise<Animation>[] = [];
     try {
       for (const plan of plans) {
         plan.prepare?.();
         const animation = plan.target.animate(plan.keyframes, plan.timing);
-        void animation.finished.catch(() => undefined);
-        if (!autoplay) animation.pause();
         created.push(animation);
+        const completion = animation.finished;
+        void completion.catch(() => undefined);
+        completions.push(completion);
+        if (!autoplay) animation.pause();
       }
     } catch {
-      for (const animation of created) animation.cancel();
+      for (const animation of created) {
+        try {
+          animation.cancel();
+        } catch {
+          // Continue rolling back every animation and presentation snapshot.
+        }
+      }
       restore();
-      throw new SvgAnimationError(
-        SVG_ANIMATION_ERROR_CODES.setupFailed,
-        "The SVG animation could not be created.",
-      );
+      throw animationSetupError();
     }
     animations = created;
     generation += 1;
-    watchCurrentRun(generation);
+    watchCurrentRun(generation, completions);
   };
 
   createAnimations(resolved.autoplay);
 
-  const beginFreshRun = (autoplay: boolean) => {
+  const beginFreshRun = (autoplay: boolean, activate?: () => void) => {
     generation += 1;
     stopAnimations();
     currentRun.resolve();
     currentRun = createSettledPromise();
-    createAnimations(autoplay);
+    try {
+      createAnimations(autoplay);
+      activate?.();
+    } catch (error) {
+      const typed =
+        error instanceof SvgAnimationError ? error : animationSetupError();
+      failCurrentRun(typed);
+      throw typed;
+    }
+  };
+
+  const runActiveOperation = (operation: () => void) => {
+    try {
+      operation();
+    } catch {
+      const error = animationFailedError();
+      failCurrentRun(error);
+      throw error;
+    }
   };
 
   const controller: SvgMotionController = {
@@ -1690,7 +1736,10 @@ export function animateSvg(
     play() {
       if (state === "destroyed") return;
       if (animations.length === 0) beginFreshRun(true);
-      else for (const animation of animations) animation.play();
+      else
+        runActiveOperation(() => {
+          for (const animation of animations) animation.play();
+        });
       state = "running";
     },
     pause() {
@@ -1700,17 +1749,25 @@ export function animateSvg(
     },
     reverse() {
       if (state === "destroyed") return;
-      if (animations.length === 0) beginFreshRun(false);
-      for (const animation of animations) animation.reverse();
+      if (animations.length === 0) {
+        beginFreshRun(false, () => {
+          for (const animation of animations) animation.reverse();
+        });
+      } else {
+        runActiveOperation(() => {
+          for (const animation of animations) animation.reverse();
+        });
+      }
       state = "running";
     },
     restart() {
       if (state === "destroyed") return;
-      beginFreshRun(false);
-      for (const animation of animations) {
-        animation.currentTime = 0;
-        animation.play();
-      }
+      beginFreshRun(false, () => {
+        for (const animation of animations) {
+          animation.currentTime = 0;
+          animation.play();
+        }
+      });
       state = "running";
     },
     finish() {

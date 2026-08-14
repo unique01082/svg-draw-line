@@ -349,8 +349,11 @@ function observeController(
     },
     play() {
       captureCurrentTerminal();
-      target.play();
-      update();
+      try {
+        target.play();
+      } finally {
+        update();
+      }
     },
     pause() {
       target.pause();
@@ -358,13 +361,19 @@ function observeController(
     },
     reverse() {
       captureCurrentTerminal();
-      target.reverse();
-      update();
+      try {
+        target.reverse();
+      } finally {
+        update();
+      }
     },
     restart() {
       captureCurrentTerminal();
-      target.restart();
-      update();
+      try {
+        target.restart();
+      } finally {
+        update();
+      }
     },
     finish() {
       target.finish();

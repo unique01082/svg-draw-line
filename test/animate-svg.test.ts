@@ -11,6 +11,7 @@ import {
   type SvgMotionPreset,
 } from "../src/index";
 import {
+  RecordedAnimation,
   allAnimations,
   animationsFor,
   installWaapi,
@@ -656,4 +657,184 @@ describe("SvgMotionController", () => {
     expect(error.name).toBe("SvgAnimationError");
     expect(error.code).toBe("ANIMATION_FAILED");
   });
+
+  it.each([
+    ["cancelled", "play"],
+    ["cancelled", "reverse"],
+    ["cancelled", "restart"],
+    ["finished", "play"],
+    ["finished", "reverse"],
+    ["finished", "restart"],
+    ["failed", "play"],
+    ["failed", "reverse"],
+    ["failed", "restart"],
+  ] as const)(
+    "fails the new run transaction after %s when %s setup throws",
+    async (terminal, control) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root, { autoplay: false });
+      const oldFinished = controller.finished;
+
+      if (terminal === "cancelled") {
+        controller.cancel();
+        await oldFinished;
+      } else if (terminal === "finished") {
+        controller.finish();
+        await oldFinished;
+      } else {
+        allAnimations(root)[0]!.failNaturally(
+          new Error("private terminal failure"),
+        );
+        await expect(oldFinished).rejects.toBeInstanceOf(SvgAnimationError);
+      }
+
+      vi.spyOn(Element.prototype, "animate").mockImplementationOnce(() => {
+        throw new Error("private fresh-run setup failure");
+      });
+
+      let thrown: unknown;
+      try {
+        controller[control]();
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toEqual(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      const newFinished = controller.finished;
+      expect(newFinished).not.toBe(oldFinished);
+      const settlement = await Promise.race([
+        newFinished.then(
+          () => ({ kind: "resolved" as const }),
+          (error: unknown) => ({ error, kind: "rejected" as const }),
+        ),
+        new Promise<{ kind: "pending" }>((resolve) => {
+          setTimeout(() => resolve({ kind: "pending" }), 25);
+        }),
+      ]);
+      expect(settlement.kind).toBe("rejected");
+      if (settlement.kind === "rejected") {
+        expect(settlement.error).toBe(thrown);
+      }
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it.each(["finished", "pause"] as const)(
+    "owns and cancels every partially created animation when %s access throws",
+    (failurePoint) => {
+      const root = geometry(`
+        <path fill="#f00" d="M0 0h10" />
+        <path fill="#0f0" d="M0 0h10" />
+      `);
+      const original = root.outerHTML;
+      const created: Array<{ cancel: ReturnType<typeof vi.fn> }> = [];
+      vi.spyOn(Element.prototype, "animate").mockImplementation(() => {
+        const index = created.length;
+        const cancel = vi.fn();
+        const animation = {
+          cancel,
+          get finished() {
+            if (index === 1 && failurePoint === "finished") {
+              throw new Error("private finished getter failure");
+            }
+            return new Promise<Animation>(() => undefined);
+          },
+          pause() {
+            if (index === 1 && failurePoint === "pause") {
+              throw new Error("private initial pause failure");
+            }
+          },
+        } as unknown as Animation;
+        created.push({ cancel });
+        return animation;
+      });
+
+      expect(() => animateSvg(root, { autoplay: false, stagger: 0 })).toThrow(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      expect(created).toHaveLength(2);
+      expect(
+        created.every(({ cancel }) => cancel.mock.calls.length === 1),
+      ).toBe(true);
+      expect(root.outerHTML).toBe(original);
+    },
+  );
+
+  it.each([
+    ["reverse", "reverse"],
+    ["restart", "play"],
+  ] as const)(
+    "fails and rolls back a fresh %s run when native %s throws",
+    async (control, nativeMethod) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root, { autoplay: false });
+      controller.cancel();
+      await controller.finished;
+      vi.spyOn(
+        RecordedAnimation.prototype,
+        nativeMethod,
+      ).mockImplementationOnce(() => {
+        throw new Error("private native activation detail");
+      });
+
+      expect(() => controller[control]()).toThrow(
+        expect.objectContaining({
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      await expect(controller.finished).rejects.toEqual(
+        expect.objectContaining({
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it.each(["play", "reverse"] as const)(
+    "fails the active run when native %s throws",
+    async (control) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root, { autoplay: false });
+      vi.spyOn(RecordedAnimation.prototype, control).mockImplementationOnce(
+        () => {
+          throw new Error("private native control detail");
+        },
+      );
+
+      expect(() => controller[control]()).toThrow(
+        expect.objectContaining({
+          code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+          message: "The SVG animation did not complete.",
+        }),
+      );
+      await expect(controller.finished).rejects.toEqual(
+        expect.objectContaining({
+          code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+          message: "The SVG animation did not complete.",
+        }),
+      );
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
 });
