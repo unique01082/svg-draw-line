@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.node-next.json",
+  "compilerOptions": {
+    "skipLibCheck": false
+  },
+  "include": ["test/package-consumer.ts"]
+}

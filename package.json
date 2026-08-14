@@ -41,9 +41,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint src test vite.config.ts",
-    "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
-    "format:write": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
+    "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"test/**/*.mjs\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
+    "format:write": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"test/**/*.mjs\" vite.config.ts eslint.config.js package.json \"tsconfig*.json\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.node-next.json",
+    "verify:package": "vite build && node test/package-runtime.mjs && tsc --noEmit -p tsconfig.package.json",
     "test": "vitest run"
   },
   "dependencies": {

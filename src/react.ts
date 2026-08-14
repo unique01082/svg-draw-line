@@ -267,14 +267,10 @@ function applySvgProps(svg: SVGSVGElement, props: SvgMotionSvgProps) {
     const role = validRole(svg.getAttribute("role"));
     if (!role || DECORATIVE_ROLES.has(role)) svg.setAttribute("role", "img");
     svg.removeAttribute("aria-hidden");
-  } else if (sourceRole) {
-    svg.setAttribute("role", sourceRole);
-    if (DECORATIVE_ROLES.has(sourceRole))
-      svg.setAttribute("aria-hidden", "true");
-    else svg.removeAttribute("aria-hidden");
   } else {
-    if (!props.role || !DECORATIVE_ROLES.has(props.role))
-      svg.removeAttribute("role");
+    const role = props.role ?? sourceRole;
+    if (role) svg.setAttribute("role", role);
+    else svg.removeAttribute("role");
     svg.setAttribute("aria-hidden", "true");
   }
 }
@@ -285,17 +281,48 @@ function observeController(
   onSettle: (state: SvgMotionControllerState) => void,
 ): { controller: SvgMotionController; disconnect: () => void } {
   let active = true;
-  let observedRun: Promise<void> | undefined;
+  type TerminalState = Extract<
+    SvgMotionControllerState,
+    "finished" | "cancelled"
+  >;
+  interface RunObservation {
+    run: Promise<void>;
+    terminal?: TerminalState;
+    delivered: boolean;
+  }
+  let observed: RunObservation | undefined;
+
+  const terminalState = (
+    state: SvgMotionControllerState,
+  ): TerminalState | undefined =>
+    state === "finished" || state === "cancelled" ? state : undefined;
+
+  const deliver = (observation: RunObservation) => {
+    if (!active || observation.delivered || !observation.terminal) return;
+    observation.delivered = true;
+    onSettle(observation.terminal);
+  };
 
   const watch = () => {
     const run = target.finished;
-    if (observedRun === run) return;
-    observedRun = run;
+    if (observed?.run === run) return observed;
+    const observation: RunObservation = { run, delivered: false };
+    observed = observation;
     void run.then(() => {
-      if (!active || observedRun !== run) return;
-      onState(target.state);
-      onSettle(target.state);
+      if (!active) return;
+      if (observed === observation) {
+        const terminal = terminalState(target.state);
+        if (terminal) observation.terminal ??= terminal;
+        onState(target.state);
+      }
+      deliver(observation);
     });
+    return observation;
+  };
+  const captureCurrentTerminal = () => {
+    const observation = watch();
+    const terminal = terminalState(target.state);
+    if (terminal) observation.terminal ??= terminal;
   };
   const update = () => {
     if (active) onState(target.state);
@@ -313,6 +340,7 @@ function observeController(
       return target.diagnostics;
     },
     play() {
+      captureCurrentTerminal();
       target.play();
       update();
     },
@@ -321,10 +349,12 @@ function observeController(
       update();
     },
     reverse() {
+      captureCurrentTerminal();
       target.reverse();
       update();
     },
     restart() {
+      captureCurrentTerminal();
       target.restart();
       update();
     },

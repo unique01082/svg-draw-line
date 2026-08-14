@@ -419,6 +419,54 @@ describe("useSvgMotion", () => {
     expect(current?.status).toBe("cancelled");
     expect(events).toEqual(["cancel"]);
   });
+
+  it("preserves a finished run callback when restart immediately begins a new run", async () => {
+    const events: string[] = [];
+    await render(
+      createElement(Harness, {
+        options: {
+          source: SVG_SOURCE,
+          trust: "trusted",
+          onFinish: () => events.push("finish"),
+        },
+      }),
+    );
+    const controller = current!.controller!;
+    const finishedRun = controller.finished;
+
+    await act(async () => {
+      controller.finish();
+      controller.restart();
+      await finishedRun;
+    });
+
+    expect(current?.status).toBe("running");
+    expect(events).toEqual(["finish"]);
+  });
+
+  it("preserves a cancelled run callback when restart immediately begins a new run", async () => {
+    const events: string[] = [];
+    await render(
+      createElement(Harness, {
+        options: {
+          source: SVG_SOURCE,
+          trust: "trusted",
+          onCancel: () => events.push("cancel"),
+        },
+      }),
+    );
+    const controller = current!.controller!;
+    const cancelledRun = controller.finished;
+
+    await act(async () => {
+      controller.cancel();
+      controller.restart();
+      await cancelledRun;
+    });
+
+    expect(current?.status).toBe("running");
+    expect(events).toEqual(["cancel"]);
+  });
 });
 
 describe("SVG accessibility lifecycle", () => {
@@ -458,7 +506,7 @@ describe("SVG accessibility lifecycle", () => {
     expect(ref.current?.svg?.hasAttribute("aria-hidden")).toBe(false);
   });
 
-  it("preserves a valid source role", async () => {
+  it("preserves a valid source role when the caller omits role", async () => {
     const ref = createRef<SvgMotionHandle>();
     await render(
       createElement(SvgMotion, {
@@ -470,7 +518,39 @@ describe("SVG accessibility lifecycle", () => {
     );
 
     expect(ref.current?.svg?.getAttribute("role")).toBe("img");
-    expect(ref.current?.svg?.hasAttribute("aria-hidden")).toBe(false);
+    expect(ref.current?.svg?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("lets a caller semantic role override a different source role", async () => {
+    const ref = createRef<SvgMotionHandle>();
+    await render(
+      createElement(SvgMotion, {
+        ref,
+        source:
+          '<svg xmlns="http://www.w3.org/2000/svg" role="graphics-document"><text>Chart</text></svg>',
+        trust: "trusted",
+        svgProps: { role: "graphics-object" },
+      }),
+    );
+
+    expect(ref.current?.svg?.getAttribute("role")).toBe("graphics-object");
+    expect(ref.current?.svg?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("lets a caller presentation role override a source image role", async () => {
+    const ref = createRef<SvgMotionHandle>();
+    await render(
+      createElement(SvgMotion, {
+        ref,
+        source:
+          '<svg xmlns="http://www.w3.org/2000/svg" role="img"><text>Chart</text></svg>',
+        trust: "trusted",
+        svgProps: { role: "presentation" },
+      }),
+    );
+
+    expect(ref.current?.svg?.getAttribute("role")).toBe("presentation");
+    expect(ref.current?.svg?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("does not let an unnamed caller role bypass the decorative fallback", async () => {
@@ -485,7 +565,7 @@ describe("SVG accessibility lifecycle", () => {
     );
 
     expect(ref.current?.svg?.getAttribute("aria-hidden")).toBe("true");
-    expect(ref.current?.svg?.hasAttribute("role")).toBe(false);
+    expect(ref.current?.svg?.getAttribute("role")).toBe("img");
   });
 
   it("does not use a nested title as the root SVG name", async () => {

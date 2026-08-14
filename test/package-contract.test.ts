@@ -10,6 +10,7 @@ it("publishes ESM-only core and optional external React entries", async () => {
     packageManager: string;
     peerDependencies: Record<string, string>;
     peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    scripts: Record<string, string>;
     sideEffects: boolean;
   };
   const viteConfig = await readFile(
@@ -30,4 +31,7 @@ it("publishes ESM-only core and optional external React entries", async () => {
   expect(packageJson.peerDependencies.react).toBe(">=18");
   expect(packageJson.peerDependenciesMeta.react).toEqual({ optional: true });
   expect(viteConfig).toMatch(/external:\s*\[[^\]]*"react"[^\]]*\]/s);
+  expect(packageJson.scripts["verify:package"]).toMatch(
+    /vite build.*package-runtime\.mjs.*tsconfig\.package\.json/,
+  );
 });
