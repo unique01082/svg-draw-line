@@ -22,6 +22,21 @@ function animationCount(svg: SVGSVGElement): number {
   );
 }
 
+function nativeAnimations() {
+  if (!instance) throw new Error("Mount a fixture first.");
+  return [instance.svg, ...instance.svg.querySelectorAll("*")].flatMap(
+    (element) =>
+      element.getAnimations().map((animation) => ({
+        currentTime:
+          typeof animation.currentTime === "number"
+            ? animation.currentTime
+            : null,
+        playbackRate: animation.playbackRate,
+        playState: animation.playState,
+      })),
+  );
+}
+
 async function mount(
   fixture: FixtureName,
   options: MountSvgMotionOptions = {},
@@ -97,6 +112,7 @@ window.svgMotionHarness = {
     return summary();
   },
   mount,
+  nativeAnimations,
   references: referenceSummary,
   restart() {
     instance?.controller.restart();
@@ -135,6 +151,7 @@ declare global {
         fixture: FixtureName,
         options?: MountSvgMotionOptions,
       ): Promise<ReturnType<typeof summary>>;
+      nativeAnimations(): ReturnType<typeof nativeAnimations>;
       pause(): ReturnType<typeof summary>;
       play(): ReturnType<typeof summary>;
       references(): ReturnType<typeof referenceSummary>;

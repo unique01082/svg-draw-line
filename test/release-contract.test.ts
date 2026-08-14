@@ -92,5 +92,15 @@ describe("release contract", () => {
     expect(tagGuard).toMatch(/package\.json/);
     expect(tagGuard).toMatch(/GITHUB_REF_NAME/);
     expect(release).toMatch(/npm publish --access public --provenance/);
+
+    for (const workflow of [ci, release]) {
+      const actions = [...workflow.matchAll(/^\s*- uses:\s+(\S+)/gm)].map(
+        ([, action]) => action,
+      );
+      expect(actions.length).toBeGreaterThan(0);
+      for (const action of actions) {
+        expect(action).toMatch(/^[^@]+@[0-9a-f]{40}$/);
+      }
+    }
   });
 });

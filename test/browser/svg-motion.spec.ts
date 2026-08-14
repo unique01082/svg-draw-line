@@ -70,25 +70,105 @@ test("controller operations and instance destroy clean up", async ({
 }) => {
   await page.evaluate(() => window.svgMotionHarness.mount("primitives"));
 
-  const running = await page.evaluate(() => window.svgMotionHarness.play());
-  expect(running.state).toBe("running");
+  const idleAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expect(idleAnimations).toHaveLength(7);
+  expect(
+    idleAnimations.every(
+      ({ currentTime, playbackRate, playState }) =>
+        currentTime === 0 && playbackRate === 1 && playState === "paused",
+    ),
+  ).toBe(true);
 
-  const paused = await page.evaluate(() => window.svgMotionHarness.pause());
-  expect(paused.state).toBe("paused");
+  await page.evaluate(() => window.svgMotionHarness.play());
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.ready),
+    );
+  });
+  await page.waitForTimeout(50);
+  const runningAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expect(
+    runningAnimations.every(
+      ({ currentTime, playbackRate, playState }) =>
+        currentTime !== null &&
+        currentTime > 0 &&
+        playbackRate === 1 &&
+        playState === "running",
+    ),
+  ).toBe(true);
+
+  await page.evaluate(() => window.svgMotionHarness.pause());
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.ready),
+    );
+  });
+  const pausedAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expect(
+    pausedAnimations.every(({ playState }) => playState === "paused"),
+  ).toBe(true);
+  await page.waitForTimeout(50);
+  expect(
+    await page.evaluate(() => window.svgMotionHarness.nativeAnimations()),
+  ).toEqual(pausedAnimations);
   await page.evaluate(() => window.svgMotionHarness.seek(0.5));
+  expect(
+    (
+      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
+    ).every(
+      ({ currentTime, playState }) =>
+        currentTime === 500 && playState === "paused",
+    ),
+  ).toBe(true);
 
-  const reversed = await page.evaluate(() => window.svgMotionHarness.reverse());
-  expect(reversed.state).toBe("running");
+  await page.evaluate(() => window.svgMotionHarness.reverse());
+  await page.evaluate(async () => {
+    await Promise.all(
+      document.getAnimations().map((animation) => animation.ready),
+    );
+  });
+  await page.waitForTimeout(50);
+  expect(
+    (
+      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
+    ).every(
+      ({ currentTime, playbackRate, playState }) =>
+        currentTime !== null &&
+        currentTime < 500 &&
+        playbackRate === -1 &&
+        playState === "running",
+    ),
+  ).toBe(true);
 
   const cancelled = await page.evaluate(() => window.svgMotionHarness.cancel());
   expect(cancelled.state).toBe("cancelled");
   expect(cancelled.animationCount).toBe(0);
+  expect(
+    await page.evaluate(() => window.svgMotionHarness.nativeAnimations()),
+  ).toEqual([]);
 
   const restarted = await page.evaluate(() =>
     window.svgMotionHarness.restart(),
   );
   expect(restarted.state).toBe("running");
   expect(restarted.animationCount).toBe(7);
+  expect(
+    (
+      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
+    ).every(
+      ({ currentTime, playbackRate, playState }) =>
+        currentTime !== null &&
+        currentTime < 100 &&
+        playbackRate === 1 &&
+        playState === "running",
+    ),
+  ).toBe(true);
 
   const finished = await page.evaluate(() => window.svgMotionHarness.finish());
   expect(finished.state).toBe("finished");

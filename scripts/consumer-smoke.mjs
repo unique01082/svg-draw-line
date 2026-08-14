@@ -9,7 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
@@ -36,15 +36,29 @@ async function verifyTarball(tarball) {
     "package/LICENSE",
     "package/README.md",
     "package/dist/index.d.ts",
-    "package/dist/index.d.ts.map",
     "package/dist/index.js",
     "package/dist/index.js.map",
     "package/dist/react.d.ts",
-    "package/dist/react.d.ts.map",
     "package/dist/react.js",
     "package/dist/react.js.map",
     "package/package.json",
   ]);
+
+  for (const entry of entries.filter((path) => path.endsWith(".map"))) {
+    const sourceMap = JSON.parse(
+      execFileSync("tar", ["-xOf", tarball, entry], { encoding: "utf8" }),
+    );
+    for (const [index, source] of sourceMap.sources.entries()) {
+      const embedded = sourceMap.sourcesContent?.[index] != null;
+      const packagedSource = posix.normalize(
+        posix.join(posix.dirname(entry), sourceMap.sourceRoot ?? "", source),
+      );
+      assert.ok(
+        embedded || entries.includes(packagedSource),
+        `${entry} references unpublished source ${source}.`,
+      );
+    }
+  }
 }
 
 async function installConsumer(name, tarball) {

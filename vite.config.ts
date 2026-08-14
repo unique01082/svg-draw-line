@@ -9,6 +9,7 @@ const rootDirectory = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   plugins: [
     dts({
+      compilerOptions: { declarationMap: false },
       include: ["src/index.ts", "src/react.ts"],
     }),
   ],
