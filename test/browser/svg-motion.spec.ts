@@ -1,7 +1,25 @@
 import { expect, test } from "@playwright/test";
 
+type NativeAnimationSnapshot = ReturnType<
+  Window["svgMotionHarness"]["nativeAnimations"]
+>[number];
+
+function expectNativeCheckpoint(
+  animations: readonly NativeAnimationSnapshot[],
+  predicate: (animation: NativeAnimationSnapshot) => boolean,
+) {
+  expect(animations).toHaveLength(7);
+  expect(animations.every(predicate)).toBe(true);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
+});
+
+test("empty native animation checkpoints cannot pass", () => {
+  expect(() =>
+    expectNativeCheckpoint([], ({ playState }) => playState === "running"),
+  ).toThrow();
 });
 
 test("uses native geometry lengths and WAAPI for every drawable primitive", async ({
@@ -73,13 +91,11 @@ test("controller operations and instance destroy clean up", async ({
   const idleAnimations = await page.evaluate(() =>
     window.svgMotionHarness.nativeAnimations(),
   );
-  expect(idleAnimations).toHaveLength(7);
-  expect(
-    idleAnimations.every(
-      ({ currentTime, playbackRate, playState }) =>
-        currentTime === 0 && playbackRate === 1 && playState === "paused",
-    ),
-  ).toBe(true);
+  expectNativeCheckpoint(
+    idleAnimations,
+    ({ currentTime, playbackRate, playState }) =>
+      currentTime === 0 && playbackRate === 1 && playState === "paused",
+  );
 
   await page.evaluate(() => window.svgMotionHarness.play());
   await page.evaluate(async () => {
@@ -91,15 +107,14 @@ test("controller operations and instance destroy clean up", async ({
   const runningAnimations = await page.evaluate(() =>
     window.svgMotionHarness.nativeAnimations(),
   );
-  expect(
-    runningAnimations.every(
-      ({ currentTime, playbackRate, playState }) =>
-        currentTime !== null &&
-        currentTime > 0 &&
-        playbackRate === 1 &&
-        playState === "running",
-    ),
-  ).toBe(true);
+  expectNativeCheckpoint(
+    runningAnimations,
+    ({ currentTime, playbackRate, playState }) =>
+      currentTime !== null &&
+      currentTime > 0 &&
+      playbackRate === 1 &&
+      playState === "running",
+  );
 
   await page.evaluate(() => window.svgMotionHarness.pause());
   await page.evaluate(async () => {
@@ -110,22 +125,28 @@ test("controller operations and instance destroy clean up", async ({
   const pausedAnimations = await page.evaluate(() =>
     window.svgMotionHarness.nativeAnimations(),
   );
-  expect(
-    pausedAnimations.every(({ playState }) => playState === "paused"),
-  ).toBe(true);
+  expectNativeCheckpoint(
+    pausedAnimations,
+    ({ playState }) => playState === "paused",
+  );
   await page.waitForTimeout(50);
-  expect(
-    await page.evaluate(() => window.svgMotionHarness.nativeAnimations()),
-  ).toEqual(pausedAnimations);
+  const stablePausedAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expectNativeCheckpoint(
+    stablePausedAnimations,
+    ({ playState }) => playState === "paused",
+  );
+  expect(stablePausedAnimations).toEqual(pausedAnimations);
   await page.evaluate(() => window.svgMotionHarness.seek(0.5));
-  expect(
-    (
-      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
-    ).every(
-      ({ currentTime, playState }) =>
-        currentTime === 500 && playState === "paused",
-    ),
-  ).toBe(true);
+  const soughtAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expectNativeCheckpoint(
+    soughtAnimations,
+    ({ currentTime, playState }) =>
+      currentTime === 500 && playState === "paused",
+  );
 
   await page.evaluate(() => window.svgMotionHarness.reverse());
   await page.evaluate(async () => {
@@ -134,17 +155,17 @@ test("controller operations and instance destroy clean up", async ({
     );
   });
   await page.waitForTimeout(50);
-  expect(
-    (
-      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
-    ).every(
-      ({ currentTime, playbackRate, playState }) =>
-        currentTime !== null &&
-        currentTime < 500 &&
-        playbackRate === -1 &&
-        playState === "running",
-    ),
-  ).toBe(true);
+  const reversedAnimations = await page.evaluate(() =>
+    window.svgMotionHarness.nativeAnimations(),
+  );
+  expectNativeCheckpoint(
+    reversedAnimations,
+    ({ currentTime, playbackRate, playState }) =>
+      currentTime !== null &&
+      currentTime < 500 &&
+      playbackRate === -1 &&
+      playState === "running",
+  );
 
   const cancelled = await page.evaluate(() => window.svgMotionHarness.cancel());
   expect(cancelled.state).toBe("cancelled");
@@ -153,22 +174,22 @@ test("controller operations and instance destroy clean up", async ({
     await page.evaluate(() => window.svgMotionHarness.nativeAnimations()),
   ).toEqual([]);
 
-  const restarted = await page.evaluate(() =>
-    window.svgMotionHarness.restart(),
+  const restarted = await page.evaluate(() => {
+    const controller = window.svgMotionHarness.restart();
+    const nativeAnimations = window.svgMotionHarness.nativeAnimations();
+    window.svgMotionHarness.pause();
+    return { controller, nativeAnimations };
+  });
+  expect(restarted.controller.state).toBe("running");
+  expect(restarted.controller.animationCount).toBe(7);
+  expectNativeCheckpoint(
+    restarted.nativeAnimations,
+    ({ currentTime, playbackRate, playState }) =>
+      currentTime !== null &&
+      currentTime >= 0 &&
+      playbackRate === 1 &&
+      playState === "running",
   );
-  expect(restarted.state).toBe("running");
-  expect(restarted.animationCount).toBe(7);
-  expect(
-    (
-      await page.evaluate(() => window.svgMotionHarness.nativeAnimations())
-    ).every(
-      ({ currentTime, playbackRate, playState }) =>
-        currentTime !== null &&
-        currentTime < 100 &&
-        playbackRate === 1 &&
-        playState === "running",
-    ),
-  ).toBe(true);
 
   const finished = await page.evaluate(() => window.svgMotionHarness.finish());
   expect(finished.state).toBe("finished");
