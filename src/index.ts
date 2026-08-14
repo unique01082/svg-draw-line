@@ -1096,6 +1096,14 @@ interface MotionPlan {
   prepare?: () => void;
 }
 
+interface DrawableGeometry {
+  length: number;
+  fill: string;
+  fillOpacity: number;
+  fillVisible: boolean;
+  strokeVisible: boolean;
+}
+
 const DRAWABLE_GEOMETRY = new Set([
   "path",
   "line",
@@ -1217,6 +1225,78 @@ function hasPaint(value: string): boolean {
   );
 }
 
+function presentationNumber(
+  element: SVGElement,
+  property: string,
+  fallback: number,
+): number {
+  const value = presentationValue(element, property).trim();
+  const number = Number.parseFloat(value);
+  if (!Number.isFinite(number)) return fallback;
+  return value.endsWith("%") ? number / 100 : number;
+}
+
+function pointsHaveFillArea(element: SVGElement): boolean {
+  const coordinates = (element.getAttribute("points") ?? "")
+    .match(/[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi)
+    ?.map(Number);
+  if (!coordinates || coordinates.length < 6) return false;
+
+  const points: Array<readonly [number, number]> = [];
+  for (let index = 0; index + 1 < coordinates.length; index += 2) {
+    const x = coordinates[index];
+    const y = coordinates[index + 1];
+    if (x !== undefined && y !== undefined) points.push([x, y]);
+  }
+  if (points.length < 3) return false;
+
+  const origin = points[0];
+  if (!origin) return false;
+  for (let firstIndex = 1; firstIndex < points.length - 1; firstIndex += 1) {
+    const first = points[firstIndex];
+    if (!first) continue;
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < points.length;
+      secondIndex += 1
+    ) {
+      const second = points[secondIndex];
+      if (!second) continue;
+      const crossProduct =
+        (first[0] - origin[0]) * (second[1] - origin[1]) -
+        (first[1] - origin[1]) * (second[0] - origin[0]);
+      if (Math.abs(crossProduct) > Number.EPSILON) return true;
+    }
+  }
+  return false;
+}
+
+function fillApplies(element: SVGElement): boolean {
+  if (element.localName === "line") return false;
+  if (element.localName === "polyline" || element.localName === "polygon") {
+    return pointsHaveFillArea(element);
+  }
+  return true;
+}
+
+function effectiveGeometryPaint(
+  element: SVGElement,
+  length: number,
+): DrawableGeometry | undefined {
+  const fill = presentationValue(element, "fill");
+  const fillOpacity = presentationNumber(element, "fill-opacity", 1);
+  const stroke = presentationValue(element, "stroke");
+  const strokeOpacity = presentationNumber(element, "stroke-opacity", 1);
+  const strokeWidth = presentationNumber(element, "stroke-width", 1);
+  const fillVisible = fillApplies(element) && hasPaint(fill) && fillOpacity > 0;
+  const strokeVisible =
+    hasPaint(stroke) && strokeOpacity > 0 && strokeWidth > 0;
+
+  return fillVisible || strokeVisible
+    ? { length, fill, fillOpacity, fillVisible, strokeVisible }
+    : undefined;
+}
+
 function isVisible(element: SVGElement): boolean {
   for (
     let current: Element | null = element;
@@ -1330,16 +1410,15 @@ function buildDrawPlans(
   diagnostics: SvgDiagnostic[],
 ): MotionPlan[] {
   const selected = selectElements(svg, options.selector);
-  const drawable = new Map<SVGElement, number>();
+  const drawable = new Map<SVGElement, DrawableGeometry>();
 
   for (const element of selected) {
     if (!DRAWABLE_GEOMETRY.has(element.localName) || !isVisible(element))
       continue;
-    const fill = presentationValue(element, "fill");
-    const stroke = presentationValue(element, "stroke");
-    if (!hasPaint(fill) && !hasPaint(stroke)) continue;
     const length = geometryLength(element);
-    if (length !== undefined) drawable.set(element, length);
+    if (length === undefined) continue;
+    const paint = effectiveGeometryPaint(element, length);
+    if (paint) drawable.set(element, paint);
   }
 
   if (drawable.size === 0) {
@@ -1349,38 +1428,40 @@ function buildDrawPlans(
 
   const plans: MotionPlan[] = [];
   for (const element of selected) {
-    const length = drawable.get(element);
-    if (length !== undefined) {
-      const fill = presentationValue(element, "fill");
-      const stroke = presentationValue(element, "stroke");
+    const paint = drawable.get(element);
+    if (paint) {
+      const { fill, fillOpacity, fillVisible, length, strokeVisible } = paint;
+      const startFrame: Keyframe = {
+        strokeDasharray: String(length),
+        strokeDashoffset: String(length),
+      };
+      const drawnFrame: Keyframe = {
+        offset: 0.8,
+        strokeDasharray: String(length),
+        strokeDashoffset: "0",
+      };
+      const finalFrame: Keyframe = {
+        strokeDasharray: String(length),
+        strokeDashoffset: "0",
+      };
+      if (fillVisible) {
+        startFrame.fillOpacity = 0;
+        drawnFrame.fillOpacity = 0;
+        finalFrame.fillOpacity = fillOpacity;
+      }
       snapshotAttributes(snapshots, element, ["style"]);
       plans.push({
         target: element,
-        keyframes: [
-          {
-            fillOpacity: 0,
-            strokeDasharray: String(length),
-            strokeDashoffset: String(length),
-          },
-          {
-            fillOpacity: 0,
-            offset: 0.8,
-            strokeDasharray: String(length),
-            strokeDashoffset: "0",
-          },
-          {
-            fillOpacity: 1,
-            strokeDasharray: String(length),
-            strokeDashoffset: "0",
-          },
-        ],
+        keyframes: [startFrame, drawnFrame, finalFrame],
         timing: animationTiming(options, options.delay),
         prepare: () => {
-          if (!hasPaint(stroke)) {
+          if (!strokeVisible) {
             element.style.setProperty(
               "stroke",
-              hasPaint(fill) ? fill : "currentColor",
+              fillVisible ? fill : "currentColor",
             );
+            element.style.setProperty("stroke-width", "1");
+            element.style.setProperty("stroke-opacity", "1");
           }
           element.style.setProperty("stroke-dasharray", String(length));
           element.style.setProperty("stroke-dashoffset", String(length));

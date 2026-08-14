@@ -58,12 +58,12 @@ describe("animateSvg presets and options", () => {
   it("draws every supported geometry with defaults and fades fallback leaves", () => {
     const root = geometry(`
       <path fill="#f00" data-length="10" d="M0 0h10" />
-      <line stroke="#0f0" data-length="20" />
-      <polyline fill="#00f" data-length="30" />
-      <polygon fill="#ff0" data-length="40" />
-      <circle fill="#0ff" data-length="50" />
-      <ellipse fill="#f0f" data-length="60" />
-      <rect fill="#333" data-length="70" />
+      <line style="stroke: #0f0" data-length="20" x1="0" y1="0" x2="10" y2="0" />
+      <polyline fill="#00f" data-length="30" points="0,0 10,0 10,10" />
+      <polygon fill="#ff0" data-length="40" points="0,0 10,0 10,10" />
+      <circle fill="#0ff" data-length="50" r="5" />
+      <ellipse fill="#f0f" data-length="60" rx="5" ry="3" />
+      <rect fill="#333" data-length="70" width="10" height="10" />
       <text>Label</text>
     `);
     const original = root.outerHTML;
@@ -195,6 +195,123 @@ describe("animateSvg presets and options", () => {
     ]);
     expect(animationsFor(root)).toHaveLength(1);
     expect(allAnimations(root)).toHaveLength(1);
+  });
+
+  it("does not treat an unstyled stroke-less line as visible from default fill", () => {
+    const root = geometry('<line id="line" x1="0" y1="0" x2="10" y2="0" />');
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    expect(animationsFor(root.querySelector("#line")!)).toEqual([]);
+    expect(animationsFor(root)).toHaveLength(1);
+  });
+
+  it("derives a visible temporary stroke for zero-width fill-only geometry and restores on finish", () => {
+    const root = geometry(
+      '<rect id="shape" style="fill: #f00; stroke: none; stroke-width: 0" width="10" height="10" />',
+    );
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+
+    expect(shape.style.stroke).toBe("rgb(255, 0, 0)");
+    expect(shape.style.strokeWidth).toBe("1");
+    expect(shape.style.strokeOpacity).toBe("1");
+    controller.finish();
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("derives a visible temporary stroke for zero-opacity stroke and restores on cancel", () => {
+    const root = geometry(
+      '<circle id="shape" style="fill: #0f0; stroke: #00f; stroke-opacity: 0" r="5" />',
+    );
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+
+    expect(shape.style.stroke).toBe("rgb(0, 255, 0)");
+    expect(shape.style.strokeWidth).toBe("1");
+    expect(shape.style.strokeOpacity).toBe("1");
+    controller.cancel();
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("restores all temporary stroke repairs on destroy", () => {
+    const root = geometry(
+      '<ellipse id="shape" style="fill: #ff0; stroke: #00f; stroke-width: 0; stroke-opacity: 0" rx="5" ry="3" />',
+    );
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+
+    expect(shape.style.stroke).toBe("rgb(255, 255, 0)");
+    expect(shape.style.strokeWidth).toBe("1");
+    expect(shape.style.strokeOpacity).toBe("1");
+    controller.destroy();
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("does not reveal geometry whose only paint has zero fill opacity", () => {
+    const root = geometry(
+      '<path id="shape" style="fill: #f00; fill-opacity: 0; stroke: none" d="M0 0h10" />',
+    );
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    expect(animationsFor(root.querySelector("#shape")!)).toEqual([]);
+    expect(animationsFor(root)).toHaveLength(1);
+    controller.destroy();
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("draws a visible stroke without revealing its zero-opacity fill", () => {
+    const root = geometry(
+      '<path id="shape" style="fill: #f00; fill-opacity: 0; stroke: #00f; stroke-width: 2" d="M0 0h10" />',
+    );
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+    const animation = animationsFor(shape)[0]!;
+
+    expect(
+      animation.keyframes.every((frame) => !("fillOpacity" in frame)),
+    ).toBe(true);
+    expect(shape.style.fillOpacity).toBe("0");
+    controller.finish();
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([]);
+  });
+
+  it("fills open and self-intersecting polylines with area but ignores two points", () => {
+    const root = geometry(`
+      <polyline id="area" style="fill: #f00; stroke: none" points="0,0 10,0 10,10" />
+      <polyline id="self-intersecting" style="fill: #f00; stroke: none" points="0,0 10,10 0,10 10,0" />
+      <polyline id="line" style="fill: #f00; stroke: none" points="0,0 10,0" />
+    `);
+
+    animateSvg(root, { stagger: 0 });
+
+    expect(animationsFor(root.querySelector("#area")!)).toHaveLength(1);
+    expect(
+      animationsFor(root.querySelector("#self-intersecting")!),
+    ).toHaveLength(1);
+    expect(animationsFor(root.querySelector("#line")!)).toEqual([]);
+    expect(allAnimations(root)).toHaveLength(2);
   });
 
   it("falls back to root fade when every geometry has a hidden ancestor", () => {
