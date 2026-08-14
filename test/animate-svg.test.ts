@@ -438,6 +438,47 @@ describe("animateSvg presets and options", () => {
       expect.objectContaining({ opacity: 1 }),
     ]);
   });
+
+  it("honors inherited presentation paint on a detached caller-owned tree", () => {
+    const root = document.createElementNS(SVG_NAMESPACE, "svg");
+    root.innerHTML = `
+      <g fill="none" stroke="#f00" stroke-width="3">
+        <path id="shape" d="M0 0h10" />
+      </g>
+    `;
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    setLength(shape, 10);
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+    const animation = animationsFor(shape)[0]!;
+
+    expect(root.isConnected).toBe(false);
+    expect(animation).toBeDefined();
+    expect(
+      animation.keyframes.every((frame) => !("fillOpacity" in frame)),
+    ).toBe(true);
+    expect(shape.style.stroke).toBe("");
+    controller.cancel();
+    expect(root.outerHTML).toBe(original);
+  });
+
+  it("excludes detached geometry hidden by an ancestor", () => {
+    const root = document.createElementNS(SVG_NAMESPACE, "svg");
+    root.innerHTML = `
+      <g visibility="hidden"><path id="shape" fill="#f00" d="M0 0h10" /></g>
+    `;
+    const shape = root.querySelector<SVGElement>("#shape")!;
+    setLength(shape, 10);
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    expect(animationsFor(shape)).toEqual([]);
+    expect(animationsFor(root)).toHaveLength(1);
+  });
 });
 
 describe("SvgMotionController", () => {
@@ -571,14 +612,62 @@ describe("SvgMotionController", () => {
     expect(() => controller.seek(1.1)).toThrow(RangeError);
   });
 
-  it("rejects invalid selectors before changing presentation", () => {
+  it("wraps invalid selectors as safe setup failures before changing presentation", () => {
     const root = geometry();
     const original = root.outerHTML;
 
-    expect(() => animateSvg(root, { selector: "[" })).toThrow();
+    expect(() => animateSvg(root, { selector: "[" })).toThrow(
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+        message: "The SVG animation could not be created.",
+      }),
+    );
     expect(root.outerHTML).toBe(original);
     expect(allAnimations(root)).toEqual([]);
   });
+
+  it.each(["missing", "throwing"] as const)(
+    "wraps %s getTotalLength as a safe setup failure",
+    (failure) => {
+      const root = svg('<path fill="#f00" d="M0 0h10" />');
+      const path = root.querySelector("path")!;
+      const original = root.outerHTML;
+      if (failure === "throwing") {
+        Object.defineProperty(path, "getTotalLength", {
+          configurable: true,
+          value() {
+            throw new Error("<script>private length detail</script>");
+          },
+        });
+      }
+
+      expect(() => animateSvg(root)).toThrow(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it.each([0, NaN, Infinity])(
+    "keeps a legitimate %s geometry length on the documented fallback",
+    (length) => {
+      const root = geometry();
+      setLength(root.querySelector("path")!, length);
+
+      const controller = animateSvg(root);
+
+      expect(controller.diagnostics).toEqual([
+        { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+      ]);
+      expect(animationsFor(root)).toHaveLength(1);
+    },
+  );
 
   it("requires an SVG root and native WAAPI", () => {
     for (const invalid of [
@@ -837,4 +926,168 @@ describe("SvgMotionController", () => {
       expect(allAnimations(root)).toEqual([]);
     },
   );
+
+  it.each(["pause", "finish", "seek"] as const)(
+    "fails an active multi-animation run transactionally when native %s throws",
+    async (control) => {
+      const root = geometry(`
+        <path id="first" fill="#f00" d="M0 0h10" />
+        <path id="second" fill="#0f0" d="M0 0h10" />
+      `);
+      const original = root.outerHTML;
+      const controller = animateSvg(root, { stagger: 0 });
+      const finished = controller.finished;
+      const owned = allAnimations(root);
+      const cancels = owned.map((animation) => vi.spyOn(animation, "cancel"));
+
+      if (control === "pause") {
+        vi.spyOn(owned[1]!, "pause").mockImplementationOnce(() => {
+          throw new Error("private pause detail");
+        });
+      } else if (control === "finish") {
+        vi.spyOn(owned[1]!, "finish").mockImplementationOnce(() => {
+          throw new Error("private finish detail");
+        });
+      } else {
+        const setCurrentTime = vi.fn().mockImplementationOnce(() => {
+          throw new Error("private seek detail");
+        });
+        Object.defineProperty(owned[1]!, "currentTime", {
+          configurable: true,
+          get: () => 0,
+          set: setCurrentTime,
+        });
+      }
+
+      let thrown: unknown;
+      try {
+        if (control === "seek") controller.seek(0.5);
+        else controller[control]();
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toEqual(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+          message: "The SVG animation did not complete.",
+        }),
+      );
+      await expect(finished).rejects.toBe(thrown);
+      expect(cancels.every((cancel) => cancel.mock.calls.length === 1)).toBe(
+        true,
+      );
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it("wraps an infinite finish currentTime failure transactionally", async () => {
+    const root = geometry();
+    const original = root.outerHTML;
+    const controller = animateSvg(root, {
+      preset: "pulse",
+      iterations: Infinity,
+    });
+    const finished = controller.finished;
+    const animation = allAnimations(root)[0]!;
+    Object.defineProperty(animation, "currentTime", {
+      configurable: true,
+      get: () => 0,
+      set: () => {
+        throw new Error("private infinite currentTime detail");
+      },
+    });
+
+    let thrown: unknown;
+    try {
+      controller.finish();
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toEqual(
+      expect.objectContaining({
+        code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+        message: "The SVG animation did not complete.",
+      }),
+    );
+    await expect(finished).rejects.toBe(thrown);
+    expect(controller.state).toBe("failed");
+    expect(root.outerHTML).toBe(original);
+  });
+
+  it.each(["cancel", "destroy"] as const)(
+    "reports native %s cleanup failure and retains failed ownership for retry",
+    async (control) => {
+      const root = geometry(`
+        <path id="first" fill="#f00" d="M0 0h10" />
+        <path id="second" fill="#0f0" d="M0 0h10" />
+      `);
+      const original = root.outerHTML;
+      const controller = animateSvg(root, { stagger: 0 });
+      const finished = controller.finished;
+      const owned = allAnimations(root);
+      const firstCancel = vi
+        .spyOn(owned[0]!, "cancel")
+        .mockImplementationOnce(() => {
+          throw new Error("private cancel detail");
+        });
+      const secondCancel = vi.spyOn(owned[1]!, "cancel");
+
+      let thrown: unknown;
+      try {
+        controller[control]();
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toEqual(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+          message: "The SVG animation did not complete.",
+        }),
+      );
+      await expect(finished).rejects.toBe(thrown);
+      expect(firstCancel).toHaveBeenCalledTimes(1);
+      expect(secondCancel).toHaveBeenCalledTimes(1);
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([owned[0]]);
+
+      expect(() => controller[control]()).not.toThrow();
+      expect(firstCancel).toHaveBeenCalledTimes(2);
+      expect(controller.state).toBe(
+        control === "cancel" ? "cancelled" : "destroyed",
+      );
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it("rejects naturally settling cleanup failures without an unhandled throw", async () => {
+    const root = geometry();
+    const original = root.outerHTML;
+    const controller = animateSvg(root);
+    const finished = controller.finished;
+    const animation = allAnimations(root)[0]!;
+    vi.spyOn(animation, "cancel").mockImplementationOnce(() => {
+      throw new Error("private async cancel detail");
+    });
+
+    animation.completeNaturally();
+
+    await expect(finished).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgAnimationError",
+        code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+        message: "The SVG animation did not complete.",
+      }),
+    );
+    expect(controller.state).toBe("failed");
+    expect(root.outerHTML).toBe(original);
+    expect(allAnimations(root)).toEqual([animation]);
+  });
 });

@@ -99,6 +99,22 @@ const RESOURCE_PRESENTATION_ATTRIBUTES = new Set([
   "mask",
   "stroke",
 ]);
+const ARIA_ID_REFERENCE_ATTRIBUTES = new Set([
+  "aria-activedescendant",
+  "aria-controls",
+  "aria-describedby",
+  "aria-details",
+  "aria-errormessage",
+  "aria-flowto",
+  "aria-labelledby",
+  "aria-owns",
+]);
+const REFERENCE_SELECTOR_ATTRIBUTES = new Set([
+  "id",
+  "href",
+  "xlink:href",
+  ...ARIA_ID_REFERENCE_ATTRIBUTES,
+]);
 
 export type SvgSource = string | URL | Blob | File | SVGSVGElement;
 
@@ -195,16 +211,30 @@ function assertWithinLimit(byteLength: number, maxBytes: number): void {
   }
 }
 
+function validateMaxBytes(maxBytes: number): void {
+  if (
+    !Number.isFinite(maxBytes) ||
+    !Number.isInteger(maxBytes) ||
+    maxBytes < 0
+  ) {
+    throw new RangeError("maxBytes must be a finite non-negative integer.");
+  }
+}
+
 function isSvgElement(value: unknown): value is SVGSVGElement {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "localName" in value &&
-    value.localName === "svg" &&
-    "namespaceURI" in value &&
-    value.namespaceURI === SVG_NAMESPACE &&
-    "cloneNode" in value
-  );
+  try {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      (value as Element).nodeType === 1 &&
+      (value as Element).localName === "svg" &&
+      (value as Element).namespaceURI === SVG_NAMESPACE &&
+      typeof (value as Node).cloneNode === "function" &&
+      typeof (value as Element).querySelectorAll === "function"
+    );
+  } catch {
+    return false;
+  }
 }
 
 function isBlob(value: unknown): value is Blob {
@@ -349,9 +379,22 @@ async function loadSource(
   signal: AbortSignal | undefined,
 ): Promise<SVGSVGElement> {
   if (isSvgElement(source)) {
-    const markup = serializeSvg(source);
+    let markup: string;
+    try {
+      markup = serializeSvg(source);
+    } catch {
+      throw preparationError("UNSUPPORTED_SOURCE");
+    }
     assertWithinLimit(new TextEncoder().encode(markup).byteLength, maxBytes);
-    return source.cloneNode(true) as SVGSVGElement;
+    try {
+      const clone = source.cloneNode(true);
+      if (clone === source || !isSvgElement(clone)) {
+        throw preparationError("UNSUPPORTED_SOURCE");
+      }
+      return clone;
+    } catch {
+      throw preparationError("UNSUPPORTED_SOURCE");
+    }
   }
 
   let markup: string;
@@ -825,19 +868,136 @@ function rewriteHrefReference(
   return value;
 }
 
+function decodeCssEscapes(value: string): string {
+  let output = "";
+  let cursor = 0;
+  while (cursor < value.length) {
+    if (value[cursor] === "\\") {
+      const escape = parseCssEscape(value, cursor);
+      if (escape) {
+        output += escape.decoded;
+        cursor = escape.end;
+        continue;
+      }
+    }
+    output += value[cursor];
+    cursor += 1;
+  }
+  return output;
+}
+
+function escapeCssString(value: string, quote: string): string {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll(quote, `\\${quote}`)
+    .replaceAll("\n", "\\a ")
+    .replaceAll("\r", "\\d ")
+    .replaceAll("\f", "\\c ");
+}
+
+function rewriteReferenceSelectorValue(
+  attributeName: string,
+  operator: string,
+  rawValue: string,
+  ids: ReadonlyMap<string, string>,
+): string | undefined {
+  const value = decodeCssEscapes(rawValue);
+  if (attributeName === "id") return ids.get(value);
+  if (attributeName === "href" || attributeName === "xlink:href") {
+    if (!value.startsWith("#")) return undefined;
+    const rewritten = ids.get(value.slice(1));
+    return rewritten ? `#${rewritten}` : undefined;
+  }
+  if (!ARIA_ID_REFERENCE_ATTRIBUTES.has(attributeName)) return undefined;
+
+  const references = operator === "~=" ? [value] : value.split(/\s+/);
+  let changed = false;
+  const rewritten = references.map((reference) => {
+    const mapped = ids.get(reference);
+    if (mapped) changed = true;
+    return mapped ?? reference;
+  });
+  return changed ? rewritten.join(" ") : undefined;
+}
+
+function rewriteAttributeSelector(
+  selector: string,
+  ids: ReadonlyMap<string, string>,
+): string {
+  const match = selector.match(
+    /^(\[\s*)([^\s~^$*=\]]+)(\s*)(~=|=)(\s*)(?:(["'])([\s\S]*?)\6|([^\s\]]+))(\s*\])$/,
+  );
+  if (!match) return selector;
+
+  const [, prefix, rawName, beforeOperator, operator, afterOperator, quote] =
+    match;
+  const rawValue = quote ? match[7] : match[8];
+  const suffix = match[9];
+  if (
+    prefix === undefined ||
+    rawName === undefined ||
+    beforeOperator === undefined ||
+    operator === undefined ||
+    afterOperator === undefined ||
+    rawValue === undefined ||
+    suffix === undefined
+  ) {
+    return selector;
+  }
+
+  const decodedName = decodeCssEscapes(rawName).toLowerCase();
+  const attributeName =
+    decodedName === "xlink|href" ? "xlink:href" : decodedName;
+  if (!REFERENCE_SELECTOR_ATTRIBUTES.has(attributeName)) return selector;
+  const rewritten = rewriteReferenceSelectorValue(
+    attributeName,
+    operator,
+    rawValue,
+    ids,
+  );
+  if (rewritten === undefined) return selector;
+
+  const encodedValue = quote
+    ? `${quote}${escapeCssString(rewritten, quote)}${quote}`
+    : rewritten;
+  return `${prefix}${rawName}${beforeOperator}${operator}${afterOperator}${encodedValue}${suffix}`;
+}
+
+function attributeSelectorEnd(selector: string, start: number): number {
+  let cursor = start + 1;
+  while (cursor < selector.length) {
+    if (selector[cursor] === '"' || selector[cursor] === "'") {
+      cursor = consumeCssQuotedValue(selector, cursor);
+      continue;
+    }
+    if (selector[cursor] === "\\") {
+      cursor = parseCssEscape(selector, cursor)?.end ?? cursor + 1;
+      continue;
+    }
+    if (selector[cursor] === "]") return cursor + 1;
+    cursor += 1;
+  }
+  return selector.length;
+}
+
 function rewriteSelectorIds(
   selector: string,
   ids: ReadonlyMap<string, string>,
 ): string {
   let output = "";
   let cursor = 0;
-  let attributeDepth = 0;
 
   while (cursor < selector.length) {
     if (selector.startsWith("/*", cursor)) {
       const commentEnd = selector.indexOf("*/", cursor + 2);
       const end = commentEnd === -1 ? selector.length : commentEnd + 2;
       output += selector.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (selector[cursor] === "[") {
+      const end = attributeSelectorEnd(selector, cursor);
+      output += rewriteAttributeSelector(selector.slice(cursor, end), ids);
       cursor = end;
       continue;
     }
@@ -853,11 +1013,7 @@ function rewriteSelectorIds(
       cursor = end;
       continue;
     }
-    if (selector[cursor] === "[") {
-      attributeDepth += 1;
-    } else if (selector[cursor] === "]") {
-      attributeDepth = Math.max(0, attributeDepth - 1);
-    } else if (selector[cursor] === "#" && attributeDepth === 0) {
+    if (selector[cursor] === "#") {
       const parsed = parseCssIdentifier(selector, cursor + 1);
       if (parsed) {
         const rewritten = ids.get(parsed.decoded);
@@ -873,6 +1029,75 @@ function rewriteSelectorIds(
     cursor += 1;
   }
 
+  return output;
+}
+
+function rewriteSelectorFunctions(
+  prelude: string,
+  ids: ReadonlyMap<string, string>,
+): string {
+  let output = "";
+  let cursor = 0;
+  while (cursor < prelude.length) {
+    if (prelude.startsWith("/*", cursor)) {
+      const commentEnd = prelude.indexOf("*/", cursor + 2);
+      const end = commentEnd === -1 ? prelude.length : commentEnd + 2;
+      output += prelude.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+    if (prelude[cursor] === '"' || prelude[cursor] === "'") {
+      const end = consumeCssQuotedValue(prelude, cursor);
+      output += prelude.slice(cursor, end);
+      cursor = end;
+      continue;
+    }
+
+    const identifier = parseCssIdentifier(prelude, cursor);
+    if (
+      identifier?.decoded.toLowerCase() === "selector" &&
+      prelude[identifier.end] === "("
+    ) {
+      let depth = 1;
+      let end = identifier.end + 1;
+      while (end < prelude.length && depth > 0) {
+        if (prelude.startsWith("/*", end)) {
+          const commentEnd = prelude.indexOf("*/", end + 2);
+          end = commentEnd === -1 ? prelude.length : commentEnd + 2;
+          continue;
+        }
+        if (prelude[end] === '"' || prelude[end] === "'") {
+          end = consumeCssQuotedValue(prelude, end);
+          continue;
+        }
+        if (prelude[end] === "\\") {
+          end = parseCssEscape(prelude, end)?.end ?? end + 1;
+          continue;
+        }
+        if (prelude[end] === "(") depth += 1;
+        else if (prelude[end] === ")") depth -= 1;
+        end += 1;
+      }
+      if (depth === 0) {
+        output += prelude.slice(cursor, identifier.end + 1);
+        output += rewriteSelectorIds(
+          prelude.slice(identifier.end + 1, end - 1),
+          ids,
+        );
+        output += ")";
+        cursor = end;
+        continue;
+      }
+    }
+
+    if (identifier) {
+      output += prelude.slice(cursor, identifier.end);
+      cursor = identifier.end;
+    } else {
+      output += prelude[cursor];
+      cursor += 1;
+    }
+  }
   return output;
 }
 
@@ -927,10 +1152,15 @@ function rewriteStylesheetReferences(
           trimmedPrelude,
         );
 
-      output +=
-        parentAllowsRules && !trimmedPrelude.startsWith("@")
-          ? rewriteSelectorIds(prelude, ids)
-          : prelude;
+      let rewrittenPrelude = prelude;
+      if (parentAllowsRules && !trimmedPrelude.startsWith("@")) {
+        rewrittenPrelude = rewriteSelectorIds(prelude, ids);
+      } else if (parentAllowsRules && /^@scope\b/i.test(trimmedPrelude)) {
+        rewrittenPrelude = rewriteSelectorIds(prelude, ids);
+      } else if (parentAllowsRules) {
+        rewrittenPrelude = rewriteSelectorFunctions(prelude, ids);
+      }
+      output += rewrittenPrelude;
       output += character;
       cursor = index + 1;
       blockTypes.push(isGroupingAtRule ? "group" : "declaration");
@@ -974,7 +1204,7 @@ function namespaceIds(svg: SVGSVGElement): void {
         element.setAttribute(attribute.name, rewritten);
     }
 
-    for (const attributeName of ["aria-labelledby", "aria-describedby"]) {
+    for (const attributeName of ARIA_ID_REFERENCE_ATTRIBUTES) {
       const value = element.getAttribute(attributeName);
       if (!value) continue;
       element.setAttribute(
@@ -1010,6 +1240,7 @@ export async function prepareSvg(
   abortIfNeeded(options.signal);
 
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
+  validateMaxBytes(maxBytes);
   const loaded = await loadSource(source, maxBytes, options.signal);
   abortIfNeeded(options.signal);
 
@@ -1228,6 +1459,34 @@ function selectElements(
   );
 }
 
+const INHERITED_PRESENTATION_PROPERTIES = new Set([
+  "fill",
+  "fill-opacity",
+  "stroke",
+  "stroke-opacity",
+  "stroke-width",
+  "visibility",
+]);
+
+const PRESENTATION_DEFAULTS: Readonly<Record<string, string>> = {
+  display: "inline",
+  fill: "black",
+  "fill-opacity": "1",
+  opacity: "1",
+  stroke: "none",
+  "stroke-opacity": "1",
+  "stroke-width": "1",
+  visibility: "visible",
+};
+
+function localPresentationValue(element: SVGElement, property: string): string {
+  return (
+    element.style.getPropertyValue(property).trim() ||
+    element.getAttribute(property)?.trim() ||
+    ""
+  );
+}
+
 function presentationValue(element: SVGElement, property: string): string {
   if (element.isConnected) {
     try {
@@ -1240,12 +1499,23 @@ function presentationValue(element: SVGElement, property: string): string {
     }
   }
 
-  const inline = element.style.getPropertyValue(property).trim();
-  if (inline) return inline;
-  const attribute = element.getAttribute(property)?.trim();
-  if (attribute) return attribute;
+  const inherited = INHERITED_PRESENTATION_PROPERTIES.has(property);
+  let current: SVGElement | null = element;
+  while (current) {
+    const local = localPresentationValue(current, property);
+    if (local && local !== "inherit" && local !== "unset") {
+      return local === "initial"
+        ? (PRESENTATION_DEFAULTS[property] ?? "")
+        : local;
+    }
+    if (!inherited || current.localName === "svg") break;
+    current =
+      current.parentElement instanceof SVGElement
+        ? current.parentElement
+        : null;
+  }
 
-  return property === "fill" ? "black" : property === "stroke" ? "none" : "";
+  return PRESENTATION_DEFAULTS[property] ?? "";
 }
 
 function hasPaint(value: string): boolean {
@@ -1384,12 +1654,10 @@ function restoreSnapshots(snapshots: readonly AttributeSnapshot[]): void {
 }
 
 function geometryLength(element: SVGElement): number | undefined {
-  try {
-    const length = (element as SVGGeometryElement).getTotalLength();
-    return Number.isFinite(length) && length > 0 ? length : undefined;
-  } catch {
-    return undefined;
-  }
+  const getTotalLength = (element as SVGGeometryElement).getTotalLength;
+  if (typeof getTotalLength !== "function") throw animationSetupError();
+  const length = getTotalLength.call(element);
+  return Number.isFinite(length) && length > 0 ? length : undefined;
 }
 
 function animationTiming(
@@ -1602,7 +1870,13 @@ export function animateSvg(
   const resolved = resolveMotionOptions(options);
   const snapshots: AttributeSnapshot[] = [];
   const diagnostics: SvgDiagnostic[] = [];
-  const plans = buildPlans(svg, resolved, snapshots, diagnostics);
+  let plans: MotionPlan[];
+  try {
+    plans = buildPlans(svg, resolved, snapshots, diagnostics);
+  } catch {
+    restoreSnapshots(snapshots);
+    throw animationSetupError();
+  }
 
   let animations: Animation[] = [];
   let state: SvgMotionControllerState = resolved.autoplay ? "running" : "idle";
@@ -1611,24 +1885,34 @@ export function animateSvg(
 
   const restore = () => restoreSnapshots(snapshots);
 
-  const stopAnimations = () => {
+  const stopAnimations = (): boolean => {
     const owned = animations;
-    animations = [];
+    const retained: Animation[] = [];
     for (const animation of owned) {
       try {
         animation.cancel();
       } catch {
-        // Restoration and settlement must not depend on native cancellation.
+        retained.push(animation);
       }
     }
+    animations = retained;
     restore();
+    return retained.length === 0;
   };
 
-  const settle = (nextState: SvgMotionControllerState) => {
+  const settle = (
+    nextState: SvgMotionControllerState,
+  ): SvgAnimationError | undefined => {
     generation += 1;
-    stopAnimations();
+    if (!stopAnimations()) {
+      const error = animationFailedError();
+      state = "failed";
+      currentRun.reject(error);
+      return error;
+    }
     state = nextState;
     currentRun.resolve();
+    return undefined;
   };
 
   const failCurrentRun = (error: SvgAnimationError) => {
@@ -1701,9 +1985,15 @@ export function animateSvg(
 
   const beginFreshRun = (autoplay: boolean, activate?: () => void) => {
     generation += 1;
-    stopAnimations();
+    const cleanupSucceeded = stopAnimations();
     currentRun.resolve();
     currentRun = createSettledPromise();
+    if (!cleanupSucceeded) {
+      const error = animationFailedError();
+      state = "failed";
+      currentRun.reject(error);
+      throw error;
+    }
     try {
       createAnimations(autoplay);
       activate?.();
@@ -1725,6 +2015,11 @@ export function animateSvg(
     }
   };
 
+  const settleOrThrow = (nextState: SvgMotionControllerState) => {
+    const error = settle(nextState);
+    if (error) throw error;
+  };
+
   const controller: SvgMotionController = {
     get state() {
       return state;
@@ -1735,7 +2030,7 @@ export function animateSvg(
     diagnostics,
     play() {
       if (state === "destroyed") return;
-      if (animations.length === 0) beginFreshRun(true);
+      if (state === "failed" || animations.length === 0) beginFreshRun(true);
       else
         runActiveOperation(() => {
           for (const animation of animations) animation.play();
@@ -1744,12 +2039,14 @@ export function animateSvg(
     },
     pause() {
       if (state === "destroyed" || animations.length === 0) return;
-      for (const animation of animations) animation.pause();
+      runActiveOperation(() => {
+        for (const animation of animations) animation.pause();
+      });
       state = "paused";
     },
     reverse() {
       if (state === "destroyed") return;
-      if (animations.length === 0) {
+      if (state === "failed" || animations.length === 0) {
         beginFreshRun(false, () => {
           for (const animation of animations) animation.reverse();
         });
@@ -1772,20 +2069,23 @@ export function animateSvg(
     },
     finish() {
       if (state === "destroyed" || animations.length === 0) return;
-      for (const [index, animation] of animations.entries()) {
-        const plan = plans[index];
-        if (plan?.timing.iterations === Infinity) {
-          animation.currentTime =
-            Number(plan.timing.delay ?? 0) + Number(plan.timing.duration ?? 0);
-        } else {
-          animation.finish();
+      runActiveOperation(() => {
+        for (const [index, animation] of animations.entries()) {
+          const plan = plans[index];
+          if (plan?.timing.iterations === Infinity) {
+            animation.currentTime =
+              Number(plan.timing.delay ?? 0) +
+              Number(plan.timing.duration ?? 0);
+          } else {
+            animation.finish();
+          }
         }
-      }
-      settle("finished");
+      });
+      settleOrThrow("finished");
     },
     cancel() {
       if (state === "destroyed") return;
-      settle("cancelled");
+      settleOrThrow("cancelled");
     },
     seek(progress: number) {
       if (state === "destroyed") return;
@@ -1801,13 +2101,15 @@ export function animateSvg(
           return delay + duration * (iterations === Infinity ? 1 : iterations);
         }),
       );
-      for (const animation of animations) {
-        animation.currentTime = timelineDuration * progress;
-      }
+      runActiveOperation(() => {
+        for (const animation of animations) {
+          animation.currentTime = timelineDuration * progress;
+        }
+      });
     },
     destroy() {
       if (state === "destroyed") return;
-      settle("destroyed");
+      settleOrThrow("destroyed");
     },
   };
 
@@ -1844,8 +2146,8 @@ export async function mountSvgMotion(
     diagnostics,
     destroy() {
       if (destroyed) return;
-      destroyed = true;
       controller.destroy();
+      destroyed = true;
       prepared.svg.remove();
     },
   };

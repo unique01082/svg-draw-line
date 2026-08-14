@@ -75,6 +75,103 @@ describe("prepareSvg sources", () => {
 });
 
 describe("prepareSvg failures", () => {
+  it.each([NaN, Infinity, -Infinity, -1, 1.5])(
+    "rejects invalid maxBytes %s before reading any source",
+    async (maxBytes) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const parseMock = vi.spyOn(DOMParser.prototype, "parseFromString");
+      const blob = new Blob([SVG]);
+      const blobReadMock = vi.spyOn(blob, "arrayBuffer");
+
+      for (const source of [SVG, blob, "https://example.test/icon.svg"]) {
+        await expect(prepareSvg(source, { maxBytes })).rejects.toEqual(
+          expect.objectContaining({
+            name: "RangeError",
+            message: "maxBytes must be a finite non-negative integer.",
+          }),
+        );
+      }
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(parseMock).not.toHaveBeenCalled();
+      expect(blobReadMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("accepts zero maxBytes and enforces a zero-byte ceiling", async () => {
+    await expect(prepareSvg(SVG, { maxBytes: 0 })).rejects.toSatisfy(
+      (error: unknown) => {
+        expectPreparationError(error, "SOURCE_TOO_LARGE");
+        return true;
+      },
+    );
+  });
+
+  it.each([
+    {
+      localName: "svg",
+      namespaceURI: "http://www.w3.org/2000/svg",
+      cloneNode: true,
+    },
+    {
+      localName: "svg",
+      namespaceURI: "http://www.w3.org/2000/svg",
+      cloneNode() {
+        throw new Error("<script>hostile clone detail</script>");
+      },
+    },
+  ])("wraps spoofed SVG-like sources as unsupported", async (source) => {
+    await expect(prepareSvg(source as never)).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+  });
+
+  it("wraps real-node serialization and clone failures without hostile detail", async () => {
+    document.body.innerHTML = SVG;
+    const source = document.querySelector("svg") as SVGSVGElement;
+
+    vi.spyOn(
+      XMLSerializer.prototype,
+      "serializeToString",
+    ).mockImplementationOnce(() => {
+      throw new Error("private serializer detail");
+    });
+    await expect(prepareSvg(source)).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+
+    vi.spyOn(source, "cloneNode").mockImplementationOnce(() => {
+      throw new Error("private clone detail");
+    });
+    await expect(prepareSvg(source)).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+
+    const original = source.outerHTML;
+    vi.spyOn(source, "cloneNode").mockReturnValueOnce(source);
+    await expect(prepareSvg(source)).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+    expect(source.outerHTML).toBe(original);
+  });
+
   it.each([
     ["malformed XML", "<svg><path></svg>"],
     ["a non-SVG root", "<div>not svg</div>"],

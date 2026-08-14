@@ -172,6 +172,41 @@ describe("prepareSvg sanitization", () => {
     expect(path?.getAttribute("style")).toContain(`url(#${prefix}fx)`);
   });
 
+  it("rewrites every ARIA IDREF and IDREF-list while preserving external IDs", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <path id="shape" />
+        <text id="label">Label</text>
+        <g id="details" />
+        <g aria-activedescendant="shape" aria-controls="shape"
+          aria-describedby="label external" aria-details="details"
+          aria-errormessage="details" aria-flowto="shape external"
+          aria-labelledby="label external" aria-owns="shape details external" />
+      `),
+      { trust: "trusted" },
+    );
+    const ids = Object.fromEntries(
+      [...prepared.svg.querySelectorAll("[id]")].map((element) => [
+        element.id.replace(/^svg-motion-\d+-/, ""),
+        element.id,
+      ]),
+    );
+    const group = prepared.svg.querySelector("g[aria-controls]")!;
+
+    expect(group.getAttribute("aria-activedescendant")).toBe(ids.shape);
+    expect(group.getAttribute("aria-controls")).toBe(ids.shape);
+    expect(group.getAttribute("aria-describedby")).toBe(
+      `${ids.label} external`,
+    );
+    expect(group.getAttribute("aria-details")).toBe(ids.details);
+    expect(group.getAttribute("aria-errormessage")).toBe(ids.details);
+    expect(group.getAttribute("aria-flowto")).toBe(`${ids.shape} external`);
+    expect(group.getAttribute("aria-labelledby")).toBe(`${ids.label} external`);
+    expect(group.getAttribute("aria-owns")).toBe(
+      `${ids.shape} ${ids.details} external`,
+    );
+  });
+
   it("preserves hex colors when an ID has the same hash text", async () => {
     const prepared = await prepareSvg(
       wrap(`
@@ -286,6 +321,103 @@ describe("prepareSvg sanitization", () => {
     expect(stylesheet).not.toMatch(/#shape\b/);
     expect(prepared.svg.querySelector("use")?.getAttribute("href")).toBe(
       `#${prefix}shape`,
+    );
+  });
+
+  it("rewrites trusted reference selectors, @scope, and selector() conditions", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <style>
+          [id="shape"], [href='#shape'], [xlink\\:href="#shape"],
+          [xlink|href='#shape'],
+          [aria-controls="shape"], [aria-labelledby~='label'],
+          [aria-owns="shape external"] { fill: #fff }
+          @scope (#shape) to ([id='label']) {
+            [aria-describedby~="label"] { stroke: #fff }
+          }
+          @supports selector(#shape > [href="#shape"]) {
+            #shape { color: #fff }
+          }
+          [data-ref="#shape"] { flood-color: #fff }
+        </style>
+        <path id="shape" />
+        <text id="label">Label</text>
+        <path id="fff" />
+      `),
+      { trust: "trusted" },
+    );
+    const shapeId = prepared.svg.querySelector("path")!.id;
+    const labelId = prepared.svg.querySelector("text")!.id;
+    const stylesheet = prepared.svg.querySelector("style")!.textContent!;
+
+    expect(stylesheet).toContain(`[id="${shapeId}"]`);
+    expect(stylesheet).toContain(`[href='#${shapeId}']`);
+    expect(stylesheet).toContain(`[xlink\\:href="#${shapeId}"]`);
+    expect(stylesheet).toContain(`[xlink|href='#${shapeId}']`);
+    expect(stylesheet).toContain(`[aria-controls="${shapeId}"]`);
+    expect(stylesheet).toContain(`[aria-labelledby~='${labelId}']`);
+    expect(stylesheet).toContain(`[aria-owns="${shapeId} external"]`);
+    expect(stylesheet).toContain(`@scope (#${shapeId})`);
+    expect(stylesheet).toContain(`[id='${labelId}']`);
+    expect(stylesheet).toContain(
+      `selector(#${shapeId} > [href="#${shapeId}"])`,
+    );
+    expect(stylesheet).toContain('[data-ref="#shape"]');
+    expect(stylesheet.match(/#fff/g)).toHaveLength(4);
+  });
+
+  it("sanitizes namespace confusion and DOM-clobbering-shaped input without mutation", async () => {
+    const source = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "svg",
+    );
+    source.innerHTML = `
+      <script id="constructor">globalThis.hostileMarker = true</script>
+      <foreignObject id="ownerDocument">
+        <div xmlns="http://www.w3.org/1999/xhtml" onload="hostile()">HTML</div>
+      </foreignObject>
+      <g id="__proto__" name="querySelectorAll" onload="hostile()">
+        <path id="attributes" name="constructor" onclick="hostile()" />
+      </g>
+      <a id="toString" name="ownerDocument" href="javascript:hostile()">
+        <path id="prototype" />
+      </a>
+      <html:script xmlns:html="http://www.w3.org/1999/xhtml" onerror="hostile()" />
+      <evil:path xmlns:evil="urn:attacker" id="querySelector" onload="hostile()" />
+    `;
+    const original = source.outerHTML;
+
+    const prepared = await prepareSvg(source);
+
+    expect(source.outerHTML).toBe(original);
+    expect(prepared.svg).not.toBe(source);
+    expect(
+      prepared.svg.querySelector(
+        "script, foreignObject, [href^='javascript:']",
+      ),
+    ).toBeNull();
+    expect(
+      [...prepared.svg.querySelectorAll("*")].every(
+        (element) =>
+          element.namespaceURI === "http://www.w3.org/2000/svg" &&
+          [...element.attributes].every(
+            (attribute) => !attribute.localName.toLowerCase().startsWith("on"),
+          ),
+      ),
+    ).toBe(true);
+    expect(typeof prepared.svg.querySelectorAll).toBe("function");
+    expect(prepared.svg.ownerDocument).toBeInstanceOf(Document);
+    expect(prepared.diagnostics.length).toBeGreaterThan(0);
+    expect(
+      prepared.diagnostics.every(
+        (diagnostic) =>
+          Object.keys(diagnostic).sort().join(",") === "code,count" &&
+          typeof diagnostic.code === "string" &&
+          typeof diagnostic.count === "number",
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(prepared.diagnostics)).not.toMatch(
+      /hostile|constructor|ownerDocument/,
     );
   });
 

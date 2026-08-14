@@ -11,7 +11,6 @@ import {
 import {
   allAnimations,
   installWaapi,
-  setLength,
   uninstallWaapi,
 } from "./waapi-test-support";
 
@@ -35,18 +34,14 @@ it("prepares, appends without replacement, animates, and destroys only its SVG",
   const instance = await mountSvgMotion(
     container,
     '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#f00" d="M0 0h10" /></svg>',
-    { autoplay: false, trust: "trusted" },
+    { autoplay: false, preset: "fade", trust: "trusted" },
   );
-  const path = instance.svg.querySelector("path")!;
-  setLength(path, 10);
 
   expect(container.children).toHaveLength(2);
   expect(container.firstElementChild).toBe(sibling);
   expect(container.lastElementChild).toBe(instance.svg);
   expect(instance.controller.state).toBe("idle");
-  expect(instance.diagnostics).toEqual([
-    { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
-  ]);
+  expect(instance.diagnostics).toEqual([]);
   expect(allAnimations(instance.svg)).toHaveLength(1);
 
   instance.destroy();
@@ -87,4 +82,31 @@ it("rolls back the appended SVG when animation setup fails", async () => {
     }),
   );
   expect(container.innerHTML).toBe("<span>keep</span>");
+});
+
+it("allows mounted destroy to retry a typed native cleanup failure", async () => {
+  const container = document.createElement("div");
+  const instance = await mountSvgMotion(
+    container,
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h10" /></svg>',
+    { preset: "fade" },
+  );
+  const animation = allAnimations(instance.svg)[0]!;
+  vi.spyOn(animation, "cancel").mockImplementationOnce(() => {
+    throw new Error("private mounted cancel detail");
+  });
+
+  expect(() => instance.destroy()).toThrow(
+    expect.objectContaining({
+      name: "SvgAnimationError",
+      code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+      message: "The SVG animation did not complete.",
+    }),
+  );
+  expect(instance.controller.state).toBe("failed");
+  expect(container.contains(instance.svg)).toBe(true);
+
+  expect(() => instance.destroy()).not.toThrow();
+  expect(instance.controller.state).toBe("destroyed");
+  expect(container.contains(instance.svg)).toBe(false);
 });
