@@ -1,12 +1,15 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import { defineConfig } from "vitest/config";
 
 const rootDirectory = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
+  test: {
+    exclude: ["**/node_modules/**", ".worktrees/**", "test/browser/**"],
+  },
   plugins: [
     dts({
       compilerOptions: { declarationMap: false },

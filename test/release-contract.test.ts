@@ -241,4 +241,10 @@ describe("release contract", () => {
       true,
     );
   });
+
+  it("does not discover tests inside project-local worktrees", async () => {
+    const viteConfig = await readFile(new URL("vite.config.ts", ROOT), "utf8");
+
+    expect(viteConfig).toMatch(/exclude:\s*\[[^\]]*\.worktrees\/\*\*[^\]]*\]/s);
+  });
 });
