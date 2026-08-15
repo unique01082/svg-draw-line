@@ -66,6 +66,32 @@ test("remounts every preset and applies controller transport actions", async ({
     await expect(page.locator("[data-motion-status]")).toHaveText("idle");
   }
 
+  await page.getByRole("button", { name: "Play" }).click();
+  await expect(page.locator("[data-motion-status]")).toHaveText("running");
+  await expect
+    .poll(async () => {
+      return page
+        .locator("[data-stage] svg")
+        .evaluate((svg) =>
+          svg
+            .getAnimations({ subtree: true })
+            .every((animation) => animation.playState === "running"),
+        );
+    })
+    .toBe(true);
+  await page.getByRole("button", { name: "Pause" }).click();
+  await expect(page.locator("[data-motion-status]")).toHaveText("paused");
+  await expect
+    .poll(async () => {
+      return page
+        .locator("[data-stage] svg")
+        .evaluate((svg) =>
+          svg
+            .getAnimations({ subtree: true })
+            .every((animation) => animation.playState === "paused"),
+        );
+    })
+    .toBe(true);
   await page.getByLabel("Progress").fill("50");
   await expect
     .poll(async () => {
@@ -93,6 +119,21 @@ test("remounts every preset and applies controller transport actions", async ({
     .toBe(true);
   await page.getByRole("button", { name: "Restart" }).click();
   await expect(page.locator("[data-motion-status]")).toHaveText("running");
+  await expect
+    .poll(async () => {
+      return page
+        .locator("[data-stage] svg")
+        .evaluate((svg) =>
+          svg
+            .getAnimations({ subtree: true })
+            .some(
+              (animation) =>
+                Number(animation.currentTime) < 250 &&
+                animation.playbackRate > 0,
+            ),
+        );
+    })
+    .toBe(true);
   await page.getByRole("button", { name: "Finish" }).click();
   await expect(page.locator("[data-motion-status]")).toHaveText("finished");
   await page.getByRole("button", { name: "Cancel" }).click();
@@ -164,17 +205,57 @@ test("loads URL and File sources", async ({ page }) => {
 
 test("uses a custom accessible name after editing markup", async ({ page }) => {
   await waitForReady(page);
+  const beforeMarkup = await readySequence(page);
   await page
     .getByLabel("SVG markup")
     .fill(
       '<svg xmlns="http://www.w3.org/2000/svg"><title>Custom</title><path d="M0 0H10"/></svg>',
     );
+  await expect(page.getByRole("img", { name: "Geometry atlas" })).toBeVisible();
+  await expect(page.locator("[data-stage] svg title")).toHaveText(
+    "Geometry atlas",
+  );
+  await waitForReady(page, beforeMarkup);
   await expect(
     page.getByRole("img", { name: "Custom SVG markup" }),
   ).toBeVisible();
+  await expect(page.locator("[data-stage] svg title")).toHaveText("Custom");
   await expect(page.getByRole("img", { name: "Geometry atlas" })).toHaveCount(
     0,
   );
+});
+
+test("disables transport until an option remount is ready", async ({
+  page,
+}) => {
+  let requestCount = 0;
+  let releaseOptionRemount: (() => void) | undefined;
+  await page.route("**/option-remount.svg", async (route) => {
+    requestCount += 1;
+    if (requestCount === 2) {
+      await new Promise<void>((resolve) => {
+        releaseOptionRemount = resolve;
+      });
+    }
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg"><title>Option remount</title><path d="M0 0H10"/></svg>',
+    });
+  });
+  await waitForReady(page);
+  await page.getByLabel("URL source").check();
+  await page.getByLabel("SVG URL").fill("/option-remount.svg");
+  await page.getByRole("button", { name: "Load URL" }).click();
+  await waitForReady(page);
+  const beforeEasing = await readySequence(page);
+  await page.getByLabel("Easing").fill("linear");
+  await expect.poll(() => requestCount).toBe(2);
+  await expect(page.getByLabel("Progress")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Play" })).toBeDisabled();
+  releaseOptionRemount?.();
+  await waitForReady(page, beforeEasing);
+  await expect(page.getByLabel("Progress")).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Play" })).toBeEnabled();
 });
 
 test("is keyboard labelled and mobile-safe", async ({ page }) => {

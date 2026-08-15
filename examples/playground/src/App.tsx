@@ -53,13 +53,17 @@ export function App() {
   const [progress, setProgress] = useState(0);
   const [sourceRevision, setSourceRevision] = useState(0);
   const [readySequence, setReadySequence] = useState(0);
+  const [controllerReady, setControllerReady] = useState(false);
   const [status, setStatus] = useState<SvgMotionStatus>("loading");
   const [diagnostics, setDiagnostics] = useState<readonly SvgDiagnostic[]>([]);
   const [error, setError] = useState<unknown>(null);
-  const transportDisabled =
-    status === "loading" ||
-    status === "error" ||
-    motionRef.current?.controller === null;
+  const transportDisabled = !controllerReady;
+
+  const beginRemount = () => {
+    setControllerReady(false);
+    setError(null);
+    setStatus("loading");
+  };
 
   const clearMarkupTimeout = () => {
     if (markupTimeoutRef.current !== null) {
@@ -84,13 +88,13 @@ export function App() {
       setDiagnostics(controller.diagnostics);
     } catch (nextError) {
       setError(nextError);
+      setControllerReady(false);
       setStatus("error");
     }
   };
 
   const applySource = (nextSource: SvgSource, title = activeTitle) => {
-    setError(null);
-    setStatus("loading");
+    beginRemount();
     setActiveTitle(title);
     setSource(nextSource);
     setSourceRevision((current) => current + 1);
@@ -123,6 +127,7 @@ export function App() {
       applySource(new URL(sourceUrl, window.location.href), "SVG from URL");
     } catch (nextError) {
       setError(nextError);
+      setControllerReady(false);
       setStatus("error");
     }
   };
@@ -134,15 +139,9 @@ export function App() {
 
   const updateMarkup = (nextMarkup: string) => {
     setSourceEditor(nextMarkup);
-    setActiveTitle("Custom SVG markup");
-    setError(null);
-    setStatus("loading");
     clearMarkupTimeout();
     markupTimeoutRef.current = window.setTimeout(() => {
-      setError(null);
-      setStatus("loading");
-      setSource(nextMarkup);
-      setSourceRevision((current) => current + 1);
+      applySource(nextMarkup, "Custom SVG markup");
       markupTimeoutRef.current = null;
     }, 250);
   };
@@ -269,9 +268,10 @@ export function App() {
                 id="preset"
                 data-testid="preset"
                 value={preset}
-                onChange={(event) =>
-                  setPreset(event.currentTarget.value as PresetName)
-                }
+                onChange={(event) => {
+                  beginRemount();
+                  setPreset(event.currentTarget.value as PresetName);
+                }}
               >
                 {PRESETS.map((name) => (
                   <option key={name} value={name}>
@@ -288,9 +288,10 @@ export function App() {
                 type="number"
                 min="0"
                 value={duration}
-                onChange={(event) =>
-                  setDuration(Number(event.currentTarget.value))
-                }
+                onChange={(event) => {
+                  beginRemount();
+                  setDuration(Number(event.currentTarget.value));
+                }}
               />
             </div>
             <div className="field-group">
@@ -299,7 +300,10 @@ export function App() {
                 id="easing"
                 data-testid="easing"
                 value={easing}
-                onChange={(event) => setEasing(event.currentTarget.value)}
+                onChange={(event) => {
+                  beginRemount();
+                  setEasing(event.currentTarget.value);
+                }}
               />
             </div>
             <div className="field-group">
@@ -308,13 +312,14 @@ export function App() {
                 id="stagger"
                 data-testid="stagger"
                 value={stagger}
-                onChange={(event) =>
+                onChange={(event) => {
+                  beginRemount();
                   setStagger(
                     event.currentTarget.value === "auto"
                       ? "auto"
                       : Number(event.currentTarget.value),
-                  )
-                }
+                  );
+                }}
               >
                 <option value="auto">Auto</option>
                 <option value="50">50 ms</option>
@@ -327,7 +332,10 @@ export function App() {
                 data-testid="autoplay"
                 type="checkbox"
                 checked={autoplay}
-                onChange={(event) => setAutoplay(event.currentTarget.checked)}
+                onChange={(event) => {
+                  beginRemount();
+                  setAutoplay(event.currentTarget.checked);
+                }}
               />
               Autoplay
             </label>
@@ -418,6 +426,7 @@ export function App() {
               svgProps={{ role: "img", "aria-label": activeTitle }}
               onReady={(handle) => {
                 setStatus(handle.controller?.state ?? "loading");
+                setControllerReady(handle.controller !== null);
                 setDiagnostics(handle.controller?.diagnostics ?? []);
                 setError(null);
                 readySequenceRef.current += 1;
@@ -427,6 +436,7 @@ export function App() {
               onCancel={() => setStatus("cancelled")}
               onError={(nextError) => {
                 setError(nextError);
+                setControllerReady(false);
                 setStatus("error");
               }}
             />
