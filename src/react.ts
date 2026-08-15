@@ -302,6 +302,16 @@ function applySvgProps(svg: SVGSVGElement, props: SvgMotionSvgProps) {
     return;
   }
 
+  const callerHidden =
+    props["aria-hidden"] === true || props["aria-hidden"] === "true";
+  if (
+    callerHidden ||
+    (props.role !== undefined && DECORATIVE_ROLES.has(props.role))
+  ) {
+    svg.setAttribute("aria-hidden", "true");
+    return;
+  }
+
   if (sourceNamed || sourceTitle) {
     if (hasText(sourceAriaLabel))
       svg.setAttribute("aria-label", sourceAriaLabel!);
@@ -428,6 +438,7 @@ function observeController(
       try {
         target.finish();
       } finally {
+        captureCurrentTerminal();
         update();
       }
     },
@@ -435,6 +446,7 @@ function observeController(
       try {
         target.cancel();
       } finally {
+        captureCurrentTerminal();
         update();
       }
     },
@@ -446,6 +458,7 @@ function observeController(
       }
     },
     destroy() {
+      captureCurrentTerminal();
       try {
         target.destroy();
       } finally {

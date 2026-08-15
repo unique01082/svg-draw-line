@@ -85,6 +85,39 @@ test("uses native geometry lengths and WAAPI for every drawable primitive", asyn
   expect(result.diagnostics).toEqual([]);
 });
 
+test("accepts every supported source type from another browser realm", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.crossRealmSources(),
+  );
+
+  expect(result).toEqual(
+    ["URL", "Blob", "File", "SVGSVGElement"].map((name) => ({
+      diagnostics: [],
+      name,
+      pathAnimations: 1,
+    })),
+  );
+});
+
+test("keeps trusted nested stylesheet selectors bound after namespacing", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.trustedNestedStylesheet(),
+  );
+
+  expect(result).toEqual({
+    colorPreserved: true,
+    fill: "rgb(255, 255, 255)",
+    namespaced: true,
+    otherFill: "rgb(255, 255, 255)",
+    staleNestedSelector: false,
+    stroke: "rgb(255, 0, 0)",
+  });
+});
+
 test("resolves detached internal stylesheet paint without connecting the caller", async ({
   page,
 }) => {
@@ -108,6 +141,223 @@ test("resolves detached internal stylesheet paint without connecting the caller"
   expect(result.state).toBe("cancelled");
   expect(result.terminalAnimationCount).toBe(0);
   expect(result.probeCount).toBe(0);
+});
+
+test("honors a descendant visibility override under a hidden ancestor", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.inheritedVisibilityOverride(),
+  );
+
+  expect(result).toEqual({
+    created: ["visible-override"],
+    diagnostics: [],
+    effective: { hidden: "hidden", visible: "visible" },
+    restored: true,
+    state: "cancelled",
+    terminalAnimationCount: 0,
+  });
+});
+
+test("does not reveal zero-area fill-only geometry", async ({ page }) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.zeroAreaFillGeometry(),
+  );
+
+  expect(result).toEqual({
+    created: ["svg"],
+    diagnostics: [{ code: "NO_DRAWABLE_GEOMETRY", count: 1 }],
+    restored: true,
+    state: "destroyed",
+    temporaryStrokes: ["", "", "", ""],
+    terminalAnimationCount: 0,
+  });
+});
+
+test("classifies rendered path fill without revealing retraced geometry", async ({
+  browserName,
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.renderedPathFillClassification(),
+  );
+
+  expect(result).toEqual({
+    created:
+      browserName === "webkit"
+        ? [
+            "large-triangle",
+            "sparse-triangle",
+            "css-to-retrace",
+            "semicircle",
+            "arc-circle",
+            "cubic",
+            "translated-cubic",
+            "bowtie",
+            "many-segments",
+            "polyline-bowtie",
+          ]
+        : [
+            "large-triangle",
+            "sparse-triangle",
+            "css-to-area",
+            "semicircle",
+            "arc-circle",
+            "cubic",
+            "translated-cubic",
+            "bowtie",
+            "many-segments",
+            "polyline-bowtie",
+          ],
+    cssPathSupported: browserName !== "webkit",
+    diagnostics: [],
+    restoredAfterDestroy: true,
+    temporaryStrokeTargets:
+      browserName === "webkit"
+        ? [
+            "large-triangle",
+            "sparse-triangle",
+            "css-to-retrace",
+            "semicircle",
+            "arc-circle",
+            "cubic",
+            "translated-cubic",
+            "bowtie",
+            "many-segments",
+            "polyline-bowtie",
+          ]
+        : [
+            "large-triangle",
+            "sparse-triangle",
+            "css-to-area",
+            "semicircle",
+            "arc-circle",
+            "cubic",
+            "translated-cubic",
+            "bowtie",
+            "many-segments",
+            "polyline-bowtie",
+          ],
+    terminalAnimationCount: 0,
+  });
+});
+
+test("classifies thin fill that is visibly enlarged by a transform", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.thinTransformedFillClassification(),
+  );
+
+  expect(result.paintedPixels).toBeGreaterThan(0);
+  expect(result).toMatchObject({
+    created: ["thin-curve"],
+    restored: true,
+  });
+});
+
+test("does not collapse a shallow lens under a nonuniform viewBox", async ({
+  browserName,
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.shallowLensClassification(),
+  );
+
+  if (browserName !== "firefox")
+    expect(result.paintedPixels).toBeGreaterThan(0);
+  expect(result.created).toEqual(["shallow-lens"]);
+});
+
+test("bounds work for large repeated polylines", async ({ page }) => {
+  const empty = await page.evaluate(() =>
+    window.svgMotionHarness.largeRepeatedPolylineClassification("evenodd"),
+  );
+  const visible = await page.evaluate(() =>
+    window.svgMotionHarness.largeRepeatedPolylineClassification("nonzero"),
+  );
+
+  expect(empty).toMatchObject({
+    created: ["svg"],
+    diagnostics: [{ code: "NO_DRAWABLE_GEOMETRY", count: 1 }],
+  });
+  expect(empty.elapsed).toBeLessThan(1000);
+  expect(visible).toMatchObject({
+    created: ["polyline"],
+    diagnostics: [],
+  });
+  expect(visible.elapsed).toBeLessThan(1000);
+});
+
+test("bounds work for equivalent curved even-odd contours", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.largeRepeatedCurvedPathClassification(),
+  );
+
+  expect(result).toMatchObject({
+    created: ["svg"],
+    diagnostics: [{ code: "NO_DRAWABLE_GEOMETRY", count: 1 }],
+  });
+  expect(result.elapsed).toBeLessThan(1000);
+});
+
+test("bounds work for differently subdivided circular contours", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.largeSubdividedArcClassification(),
+  );
+
+  expect(result).toMatchObject({
+    created: ["svg"],
+    diagnostics: [{ code: "NO_DRAWABLE_GEOMETRY", count: 1 }],
+  });
+  expect(result.elapsed).toBeLessThan(1000);
+});
+
+test("classifies stylesheet-overridden paths without connecting the caller", async ({
+  browserName,
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.detachedCssPathClassification(),
+  );
+
+  expect(result).toEqual({
+    callerLiveConnected: false,
+    created: browserName === "webkit" ? ["css-to-retrace"] : ["css-to-area"],
+    cssPathSupported: browserName !== "webkit",
+    restoredAfterDestroy: true,
+    terminalAnimationCount: 0,
+  });
+});
+
+test("honors a document stylesheet d override", async ({
+  browserName,
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.externalCssPathOverride(),
+  );
+
+  expect(result).toEqual(
+    browserName === "webkit"
+      ? {
+          created: ["external-d"],
+          cssPathSupported: false,
+          diagnostics: [],
+          temporaryStroke: "rgb(255, 0, 0)",
+        }
+      : {
+          created: ["svg"],
+          cssPathSupported: true,
+          diagnostics: [{ code: "NO_DRAWABLE_GEOMETRY", count: 1 }],
+          temporaryStroke: "",
+        },
+  );
 });
 
 test("detached style resolution cannot load or execute hostile probe content", async ({

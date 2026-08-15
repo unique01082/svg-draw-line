@@ -23,6 +23,7 @@ const FORBIDDEN_TAGS = [
 ];
 
 const SAFE_STYLE_PROPERTIES = new Set([
+  "d",
   "alignment-baseline",
   "baseline-shift",
   "clip-path",
@@ -74,6 +75,8 @@ const SAFE_STYLE_PROPERTIES = new Set([
   "text-anchor",
   "text-decoration",
   "text-rendering",
+  "transform",
+  "transform-box",
   "transform-origin",
   "unicode-bidi",
   "vector-effect",
@@ -222,16 +225,27 @@ function validateMaxBytes(maxBytes: number): void {
   }
 }
 
-function isSvgElement(value: unknown): value is SVGSVGElement {
+function isSvgNamespaceElement(value: unknown): value is SVGElement {
   try {
     return (
       typeof value === "object" &&
       value !== null &&
       (value as Element).nodeType === 1 &&
-      (value as Element).localName === "svg" &&
       (value as Element).namespaceURI === SVG_NAMESPACE &&
-      typeof (value as Node).cloneNode === "function" &&
-      typeof (value as Element).querySelectorAll === "function"
+      typeof (value as Element).localName === "string"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isSvgElement(value: unknown): value is SVGSVGElement {
+  try {
+    return (
+      isSvgNamespaceElement(value) &&
+      value.localName === "svg" &&
+      typeof value.cloneNode === "function" &&
+      typeof value.querySelectorAll === "function"
     );
   } catch {
     return false;
@@ -239,14 +253,30 @@ function isSvgElement(value: unknown): value is SVGSVGElement {
 }
 
 function isBlob(value: unknown): value is Blob {
-  return typeof Blob !== "undefined" && value instanceof Blob;
+  if (typeof Blob === "undefined") return false;
+  try {
+    Blob.prototype.slice.call(value as Blob, 0, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isUrl(value: unknown): value is URL {
+  if (typeof URL === "undefined") return false;
+  try {
+    URL.prototype.toString.call(value as URL);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function resolveUrl(source: string | URL): URL {
-  if (source instanceof URL) return source;
-
   try {
-    return new URL(source, document.baseURI);
+    const value =
+      typeof source === "string" ? source : URL.prototype.toString.call(source);
+    return new URL(value, document.baseURI);
   } catch {
     throw preparationError("FETCH_FAILED");
   }
@@ -347,12 +377,18 @@ async function readBlobSource(
   maxBytes: number,
   signal: AbortSignal | undefined,
 ): Promise<string> {
-  assertWithinLimit(source.size, maxBytes);
-  abortIfNeeded(signal);
-  const bytes = await source.arrayBuffer();
-  abortIfNeeded(signal);
-  assertWithinLimit(bytes.byteLength, maxBytes);
-  return new TextDecoder().decode(bytes);
+  try {
+    assertWithinLimit(source.size, maxBytes);
+    abortIfNeeded(signal);
+    const bytes = await source.arrayBuffer();
+    abortIfNeeded(signal);
+    assertWithinLimit(bytes.byteLength, maxBytes);
+    return new TextDecoder().decode(bytes);
+  } catch (error) {
+    if (error instanceof SvgPreparationError) throw error;
+    abortIfNeeded(signal);
+    throw preparationError("UNSUPPORTED_SOURCE");
+  }
 }
 
 function parseSvg(markup: string): SVGSVGElement {
@@ -406,7 +442,7 @@ async function loadSource(
     } else {
       markup = await readFetchedSource(source, maxBytes, signal);
     }
-  } else if (source instanceof URL) {
+  } else if (isUrl(source)) {
     markup = await readFetchedSource(source, maxBytes, signal);
   } else if (isBlob(source)) {
     markup = await readBlobSource(source, maxBytes, signal);
@@ -712,6 +748,7 @@ function sanitizeStyle(element: Element): number {
   for (let index = 0; index < declaration.length; index += 1) {
     const property = declaration.item(index).toLowerCase();
     const value = declaration.getPropertyValue(property).trim();
+    const priority = declaration.getPropertyPriority(property);
 
     if (
       !SAFE_STYLE_PROPERTIES.has(property) ||
@@ -722,7 +759,9 @@ function sanitizeStyle(element: Element): number {
       continue;
     }
 
-    safeDeclarations.push(`${property}: ${value}`);
+    safeDeclarations.push(
+      `${property}: ${value}${priority ? ` !${priority}` : ""}`,
+    );
   }
 
   if (safeDeclarations.length === 0) {
@@ -1102,6 +1141,68 @@ function rewriteSelectorFunctions(
   return output;
 }
 
+function lastTopLevelSemicolon(value: string): number {
+  let last = -1;
+  let parentheses = 0;
+  let brackets = 0;
+  let quote: '"' | "'" | undefined;
+  let inComment = false;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    const next = value[index + 1];
+    if (inComment) {
+      if (character === "*" && next === "/") {
+        inComment = false;
+        index += 1;
+      }
+      continue;
+    }
+    if (!quote && character === "/" && next === "*") {
+      inComment = true;
+      index += 1;
+      continue;
+    }
+    if (quote) {
+      if (character === "\\") index += 1;
+      else if (character === quote) quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === "(") {
+      parentheses += 1;
+    } else if (character === ")") {
+      parentheses = Math.max(0, parentheses - 1);
+    } else if (character === "[") {
+      brackets += 1;
+    } else if (character === "]") {
+      brackets = Math.max(0, brackets - 1);
+    } else if (character === ";" && parentheses === 0 && brackets === 0) {
+      last = index;
+    }
+  }
+  return last;
+}
+
+function looksLikeNestedRule(prelude: string): boolean {
+  const trimmed = prelude.trimStart();
+  if (!trimmed || trimmed.startsWith("--")) return false;
+  if (trimmed.startsWith("@")) return true;
+  if ("&#.[:>+~*|".includes(trimmed[0] ?? "")) return true;
+  if (/^[\w-]+\s*:\s/.test(trimmed)) return false;
+  return true;
+}
+
+function rewriteRulePrelude(
+  prelude: string,
+  ids: ReadonlyMap<string, string>,
+): string {
+  const trimmed = prelude.trimStart();
+  return !trimmed.startsWith("@") || /^@scope\b/i.test(trimmed)
+    ? rewriteSelectorIds(prelude, ids)
+    : rewriteSelectorFunctions(prelude, ids);
+}
+
 function rewriteStylesheetReferences(
   stylesheet: string,
   ids: ReadonlyMap<string, string>,
@@ -1144,23 +1245,25 @@ function rewriteStylesheetReferences(
 
     if (character === "{") {
       const prelude = withUrls.slice(cursor, index);
-      const trimmedPrelude = prelude.trimStart();
       const parentAllowsRules =
         blockTypes.length === 0 || blockTypes.at(-1) === "group";
-      const isGroupingAtRule =
-        parentAllowsRules &&
-        /^@(?:container|document|layer|media|scope|supports|-webkit-keyframes|keyframes)\b/i.test(
-          trimmedPrelude,
-        );
-
-      let rewrittenPrelude = prelude;
-      if (parentAllowsRules && !trimmedPrelude.startsWith("@")) {
-        rewrittenPrelude = rewriteSelectorIds(prelude, ids);
-      } else if (parentAllowsRules && /^@scope\b/i.test(trimmedPrelude)) {
-        rewrittenPrelude = rewriteSelectorIds(prelude, ids);
-      } else if (parentAllowsRules) {
-        rewrittenPrelude = rewriteSelectorFunctions(prelude, ids);
+      let rulePrelude = prelude;
+      let prefix = "";
+      if (!parentAllowsRules) {
+        const boundary = lastTopLevelSemicolon(prelude) + 1;
+        prefix = prelude.slice(0, boundary);
+        rulePrelude = prelude.slice(boundary);
       }
+      const isRule = parentAllowsRules || looksLikeNestedRule(rulePrelude);
+      const trimmedRule = rulePrelude.trimStart();
+      const rewrittenPrelude = isRule
+        ? prefix + rewriteRulePrelude(rulePrelude, ids)
+        : prelude;
+      const isGroupingAtRule =
+        isRule &&
+        /^@(?:container|document|layer|media|scope|supports|-webkit-keyframes|keyframes)\b/i.test(
+          trimmedRule,
+        );
       output += rewrittenPrelude;
       output += character;
       cursor = index + 1;
@@ -1173,6 +1276,28 @@ function rewriteStylesheetReferences(
   }
 
   return output + withUrls.slice(cursor);
+}
+
+function rewriteSmilTimingReferences(
+  value: string,
+  ids: ReadonlyMap<string, string>,
+): string {
+  const references = [...ids.entries()].sort(
+    ([left], [right]) => right.length - left.length,
+  );
+  return value
+    .split(";")
+    .map((timing) => {
+      const leading = timing.match(/^\s*/)?.[0] ?? "";
+      const token = timing.slice(leading.length);
+      for (const [id, rewritten] of references) {
+        if (token.startsWith(`${id}.`)) {
+          return `${leading}${rewritten}${token.slice(id.length)}`;
+        }
+      }
+      return timing;
+    })
+    .join(";");
 }
 
 function namespaceIds(svg: SVGSVGElement): void {
@@ -1196,7 +1321,14 @@ function namespaceIds(svg: SVGSVGElement): void {
     }
 
     for (const attribute of [...element.attributes]) {
-      const withRewrittenUrls = rewriteLocalUrlReferences(attribute.value, ids);
+      const withRewrittenTiming =
+        attribute.localName === "begin" || attribute.localName === "end"
+          ? rewriteSmilTimingReferences(attribute.value, ids)
+          : attribute.value;
+      const withRewrittenUrls = rewriteLocalUrlReferences(
+        withRewrittenTiming,
+        ids,
+      );
       const rewritten =
         attribute.localName.toLowerCase() === "href"
           ? rewriteHrefReference(withRewrittenUrls, ids)
@@ -1378,13 +1510,21 @@ const NON_RENDERED_ELEMENTS = new Set([
   "title",
   "metadata",
   "style",
-  "clipPath",
+  "view",
+  "script",
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "set",
+  "mpath",
+  "discard",
+  "clippath",
   "mask",
   "marker",
   "pattern",
   "symbol",
-  "linearGradient",
-  "radialGradient",
+  "lineargradient",
+  "radialgradient",
   "filter",
 ]);
 
@@ -1457,12 +1597,13 @@ function selectElements(
   selector: string | undefined,
 ): SVGElement[] {
   return [...svg.querySelectorAll(selector ?? "*")].filter(
-    (element): element is SVGElement => element instanceof SVGElement,
+    (element): element is SVGElement => isSvgNamespaceElement(element),
   );
 }
 
 const INHERITED_PRESENTATION_PROPERTIES = new Set([
   "fill",
+  "fill-rule",
   "fill-opacity",
   "stroke",
   "stroke-opacity",
@@ -1473,6 +1614,7 @@ const INHERITED_PRESENTATION_PROPERTIES = new Set([
 const PRESENTATION_DEFAULTS: Readonly<Record<string, string>> = {
   display: "inline",
   fill: "black",
+  "fill-rule": "nonzero",
   "fill-opacity": "1",
   opacity: "1",
   stroke: "none",
@@ -1482,8 +1624,10 @@ const PRESENTATION_DEFAULTS: Readonly<Record<string, string>> = {
 };
 
 const MEASURED_PRESENTATION_PROPERTIES = [
+  "d",
   "display",
   "fill",
+  "fill-rule",
   "fill-opacity",
   "opacity",
   "stroke",
@@ -1491,6 +1635,11 @@ const MEASURED_PRESENTATION_PROPERTIES = [
   "stroke-width",
   "visibility",
 ] as const;
+const PRESENTATION_BOUNDS_X = "--svg-motion-bounds-x";
+const PRESENTATION_BOUNDS_Y = "--svg-motion-bounds-y";
+const PRESENTATION_BOUNDS_WIDTH = "--svg-motion-bounds-width";
+const PRESENTATION_BOUNDS_HEIGHT = "--svg-motion-bounds-height";
+const PRESENTATION_PATH_HAS_FILL = "--svg-motion-path-has-fill";
 const PROBE_RESOURCE_ELEMENTS = new Set([
   "audio",
   "discard",
@@ -1634,9 +1783,14 @@ function sanitizeProbeClone(svg: SVGSVGElement): void {
 }
 
 function detachedPresentation(svg: SVGSVGElement): PresentationMap | undefined {
+  const needsNativePathMeasurement = [
+    ...svg.querySelectorAll("path,polyline,polygon"),
+  ].some(
+    (geometry) => typeof Reflect.get(geometry, "isPointInFill") === "function",
+  );
   if (
     isLiveDocumentConnection(svg) ||
-    svg.querySelector("style") === null ||
+    (svg.querySelector("style") === null && !needsNativePathMeasurement) ||
     typeof document === "undefined" ||
     document.body === null
   ) {
@@ -1655,7 +1809,7 @@ function detachedPresentation(svg: SVGSVGElement): PresentationMap | undefined {
     host = document.createElement("div");
     host.dataset.svgMotionStyleProbe = "";
     host.style.cssText =
-      "all:initial!important;display:none!important;color:black!important";
+      "all:initial!important;position:fixed!important;left:-10000px!important;top:-10000px!important;width:300px!important;height:150px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;contain:strict!important;color:black!important";
     const shadow = host.attachShadow({ mode: "closed" });
     shadow.append(connectedClone);
     document.body.append(host);
@@ -1672,15 +1826,31 @@ function detachedPresentation(svg: SVGSVGElement): PresentationMap | undefined {
         continue;
       }
       const computed = getComputedStyle(measured);
-      presentation.set(
-        original as SVGElement,
-        new Map(
-          MEASURED_PRESENTATION_PROPERTIES.map((property) => [
-            property,
-            computed.getPropertyValue(property).trim(),
-          ]),
-        ),
+      const values = new Map<string, string>(
+        MEASURED_PRESENTATION_PROPERTIES.map((property) => [
+          property,
+          computed.getPropertyValue(property).trim(),
+        ]),
       );
+      const getBBox = Reflect.get(measured, "getBBox");
+      if (typeof getBBox === "function") {
+        try {
+          const bounds = Reflect.apply(getBBox, measured, []) as DOMRect;
+          values.set(PRESENTATION_BOUNDS_X, String(bounds.x));
+          values.set(PRESENTATION_BOUNDS_Y, String(bounds.y));
+          values.set(PRESENTATION_BOUNDS_WIDTH, String(bounds.width));
+          values.set(PRESENTATION_BOUNDS_HEIGHT, String(bounds.height));
+        } catch {
+          // Presentation values remain useful when this node has no geometry.
+        }
+      }
+      if (["path", "polygon", "polyline"].includes(measured.localName)) {
+        values.set(
+          PRESENTATION_PATH_HAS_FILL,
+          renderedPathHasFillArea(measured as SVGElement) ? "true" : "false",
+        );
+      }
+      presentation.set(original as SVGElement, values);
     }
     return presentation;
   } catch {
@@ -1692,7 +1862,9 @@ function detachedPresentation(svg: SVGSVGElement): PresentationMap | undefined {
 
 function localPresentationValue(element: SVGElement, property: string): string {
   return (
-    element.style.getPropertyValue(property).trim() ||
+    (element.hasAttribute("style")
+      ? element.style.getPropertyValue(property).trim()
+      : "") ||
     element.getAttribute(property)?.trim() ||
     ""
   );
@@ -1727,10 +1899,9 @@ function presentationValue(
         : local;
     }
     if (!inherited || current.localName === "svg") break;
-    current =
-      current.parentElement instanceof SVGElement
-        ? current.parentElement
-        : null;
+    current = isSvgNamespaceElement(current.parentElement)
+      ? current.parentElement
+      : null;
   }
 
   return PRESENTATION_DEFAULTS[property] ?? "";
@@ -1759,22 +1930,20 @@ function presentationNumber(
   return value.endsWith("%") ? number / 100 : number;
 }
 
-function pointsHaveFillArea(element: SVGElement): boolean {
-  const coordinates = (element.getAttribute("points") ?? "")
-    .match(/[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi)
-    ?.map(Number);
-  if (!coordinates || coordinates.length < 6) return false;
+type GeometryPoint = readonly [number, number];
 
-  const points: Array<readonly [number, number]> = [];
-  for (let index = 0; index + 1 < coordinates.length; index += 2) {
-    const x = coordinates[index];
-    const y = coordinates[index + 1];
-    if (x !== undefined && y !== undefined) points.push([x, y]);
-  }
+function pointsEncloseArea(points: readonly GeometryPoint[]): boolean {
   if (points.length < 3) return false;
-
   const origin = points[0];
   if (!origin) return false;
+  const scale = Math.max(
+    1,
+    ...points.flatMap(([x, y]) => [
+      Math.abs(x - origin[0]),
+      Math.abs(y - origin[1]),
+    ]),
+  );
+  const tolerance = scale * scale * 1e-12;
   for (let firstIndex = 1; firstIndex < points.length - 1; firstIndex += 1) {
     const first = points[firstIndex];
     if (!first) continue;
@@ -1788,18 +1957,1145 @@ function pointsHaveFillArea(element: SVGElement): boolean {
       const crossProduct =
         (first[0] - origin[0]) * (second[1] - origin[1]) -
         (first[1] - origin[1]) * (second[0] - origin[0]);
-      if (Math.abs(crossProduct) > Number.EPSILON) return true;
+      if (Math.abs(crossProduct) > tolerance) return true;
     }
   }
   return false;
 }
 
-function fillApplies(element: SVGElement): boolean {
-  if (element.localName === "line") return false;
-  if (element.localName === "polyline" || element.localName === "polygon") {
-    return pointsHaveFillArea(element);
+const PATH_PARAMETER_COUNT: Readonly<Record<string, number>> = {
+  a: 7,
+  c: 6,
+  h: 1,
+  l: 2,
+  m: 2,
+  q: 4,
+  s: 4,
+  t: 2,
+  v: 1,
+};
+
+type ArcSegment = Readonly<{
+  end: GeometryPoint;
+  largeArc: number;
+  radiusX: number;
+  radiusY: number;
+  rotation: number;
+  start: GeometryPoint;
+  sweep: number;
+}>;
+
+function sameGeometryPoint(first: GeometryPoint, second: GeometryPoint) {
+  return first[0] === second[0] && first[1] === second[1];
+}
+
+function reverseArcIndex(
+  arcs: readonly ArcSegment[],
+  candidate: ArcSegment,
+): number {
+  return arcs.findIndex(
+    (arc) =>
+      sameGeometryPoint(arc.start, candidate.end) &&
+      sameGeometryPoint(arc.end, candidate.start) &&
+      arc.radiusX === candidate.radiusX &&
+      arc.radiusY === candidate.radiusY &&
+      arc.rotation === candidate.rotation &&
+      arc.largeArc === candidate.largeArc &&
+      arc.sweep !== candidate.sweep,
+  );
+}
+
+function pathDataHasPotentialFill(pathData: string): boolean {
+  const tokens = pathData.match(
+    /[AaCcHhLlMmQqSsTtVvZz]|[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi,
+  );
+  if (!tokens) return false;
+
+  let cursor = 0;
+  let command = "";
+  let currentX = 0;
+  let currentY = 0;
+  let startX = 0;
+  let startY = 0;
+  let points: GeometryPoint[] = [];
+  let unmatchedArcs: ArcSegment[] = [];
+  const finishSubpath = () =>
+    unmatchedArcs.length > 0 || pointsEncloseArea(points);
+  const resetSubpath = () => {
+    points = [];
+    unmatchedArcs = [];
+  };
+  const coordinate = (value: number, current: number, relative: boolean) =>
+    relative ? current + value : value;
+
+  while (cursor < tokens.length) {
+    const token = tokens[cursor]!;
+    if (/^[a-z]$/i.test(token)) {
+      command = token;
+      cursor += 1;
+      const lower = command.toLowerCase();
+      if (lower === "m") {
+        if (finishSubpath()) return true;
+        resetSubpath();
+      } else if (lower === "z") {
+        if (finishSubpath()) return true;
+        currentX = startX;
+        currentY = startY;
+        resetSubpath();
+        command = "";
+        continue;
+      }
+    }
+
+    const lower = command.toLowerCase();
+    const parameterCount = PATH_PARAMETER_COUNT[lower];
+    if (!parameterCount || cursor + parameterCount > tokens.length) break;
+    const values = tokens.slice(cursor, cursor + parameterCount).map(Number);
+    if (values.some((value) => !Number.isFinite(value))) break;
+    cursor += parameterCount;
+    const relative = command === lower;
+    const point = (x: number, y: number): GeometryPoint => [
+      coordinate(x, currentX, relative),
+      coordinate(y, currentY, relative),
+    ];
+    let endpoint: GeometryPoint;
+
+    switch (lower) {
+      case "m":
+      case "l":
+      case "t":
+        endpoint = point(values[0]!, values[1]!);
+        break;
+      case "h":
+        endpoint = [coordinate(values[0]!, currentX, relative), currentY];
+        break;
+      case "v":
+        endpoint = [currentX, coordinate(values[0]!, currentY, relative)];
+        break;
+      case "c":
+        points.push(
+          point(values[0]!, values[1]!),
+          point(values[2]!, values[3]!),
+        );
+        endpoint = point(values[4]!, values[5]!);
+        break;
+      case "s":
+      case "q":
+        points.push(point(values[0]!, values[1]!));
+        endpoint = point(values[2]!, values[3]!);
+        break;
+      case "a": {
+        endpoint = point(values[5]!, values[6]!);
+        if (
+          Math.abs(values[0]!) > 0 &&
+          Math.abs(values[1]!) > 0 &&
+          (endpoint[0] !== currentX || endpoint[1] !== currentY)
+        ) {
+          const arc: ArcSegment = {
+            end: endpoint,
+            largeArc: values[3]!,
+            radiusX: Math.abs(values[0]!),
+            radiusY: Math.abs(values[1]!),
+            rotation: values[2]!,
+            start: [currentX, currentY],
+            sweep: values[4]!,
+          };
+          const reverseIndex = reverseArcIndex(unmatchedArcs, arc);
+          if (reverseIndex === -1) unmatchedArcs.push(arc);
+          else unmatchedArcs.splice(reverseIndex, 1);
+        }
+        break;
+      }
+      default:
+        return finishSubpath();
+    }
+
+    currentX = endpoint[0];
+    currentY = endpoint[1];
+    points.push(endpoint);
+    if (lower === "m") {
+      startX = currentX;
+      startY = currentY;
+      command = relative ? "l" : "L";
+    }
+  }
+
+  return finishSubpath();
+}
+
+type GeometryBounds = Readonly<{
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+}>;
+
+function geometryBounds(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): GeometryBounds | undefined {
+  const measured = presentation?.get(element);
+  if (measured) {
+    const x = Number.parseFloat(measured.get(PRESENTATION_BOUNDS_X) ?? "");
+    const y = Number.parseFloat(measured.get(PRESENTATION_BOUNDS_Y) ?? "");
+    const width = Number.parseFloat(
+      measured.get(PRESENTATION_BOUNDS_WIDTH) ?? "",
+    );
+    const height = Number.parseFloat(
+      measured.get(PRESENTATION_BOUNDS_HEIGHT) ?? "",
+    );
+    if ([x, y, width, height].every(Number.isFinite)) {
+      return { height, width, x, y };
+    }
+  }
+
+  try {
+    const getBBox = Reflect.get(element, "getBBox");
+    if (typeof getBBox !== "function") return undefined;
+    const { height, width, x, y } = Reflect.apply(
+      getBBox,
+      element,
+      [],
+    ) as DOMRect;
+    return [x, y, width, height].every(Number.isFinite)
+      ? { height, width, x, y }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function positiveGeometryBounds(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): boolean | undefined {
+  const bounds = geometryBounds(element, presentation);
+  return bounds ? bounds.width > 0 && bounds.height > 0 : undefined;
+}
+
+function positiveAttribute(element: SVGElement, name: string): boolean {
+  const value = Number.parseFloat(element.getAttribute(name) ?? "");
+  return Number.isFinite(value) && value > 0;
+}
+
+const ATTRIBUTE_D_PRESENTATION_CACHE = new WeakMap<
+  Document,
+  Map<string, string>
+>();
+
+function isolatedAttributePathPresentation(
+  element: SVGElement,
+  attribute: string,
+): string | undefined {
+  if (!attribute) return undefined;
+  const ownerDocument = element.ownerDocument;
+  const probeDocument =
+    ownerDocument.defaultView !== null && ownerDocument.body
+      ? ownerDocument
+      : typeof document !== "undefined"
+        ? document
+        : undefined;
+  const view = probeDocument?.defaultView;
+  if (!probeDocument?.body || !view) return undefined;
+
+  const cached =
+    ATTRIBUTE_D_PRESENTATION_CACHE.get(probeDocument)?.get(attribute);
+  if (cached !== undefined) return cached;
+
+  let host: HTMLDivElement | undefined;
+  try {
+    host = probeDocument.createElement("div");
+    host.hidden = true;
+    const shadow = host.attachShadow({ mode: "closed" });
+    const svg = probeDocument.createElementNS(SVG_NAMESPACE, "svg");
+    const path = probeDocument.createElementNS(SVG_NAMESPACE, "path");
+    path.setAttribute("d", attribute);
+    svg.append(path);
+    shadow.append(svg);
+    probeDocument.body.append(host);
+    const presented = view.getComputedStyle(path).getPropertyValue("d").trim();
+    if (!presented) return undefined;
+    let documentCache = ATTRIBUTE_D_PRESENTATION_CACHE.get(probeDocument);
+    if (!documentCache) {
+      documentCache = new Map();
+      ATTRIBUTE_D_PRESENTATION_CACHE.set(probeDocument, documentCache);
+    }
+    documentCache.set(attribute, presented);
+    return presented;
+  } catch {
+    return undefined;
+  } finally {
+    host?.remove();
+  }
+}
+
+function pathDataCandidates(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): readonly string[] {
+  if (element.localName !== "path") {
+    const coordinates = (element.getAttribute("points") ?? "")
+      .match(/[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi)
+      ?.map(Number);
+    if (!coordinates || coordinates.length < 4) return [""];
+    const points: string[] = [];
+    for (let index = 0; index + 1 < coordinates.length; index += 2) {
+      points.push(`${coordinates[index]} ${coordinates[index + 1]}`);
+    }
+    return [
+      `${points.map((point, index) => `${index === 0 ? "M" : "L"} ${point}`).join(" ")}${element.localName === "polygon" ? " Z" : ""}`,
+    ];
+  }
+
+  const presented = presentationValue(element, "d", presentation).trim();
+  const presentedCandidates: string[] = [];
+  if (/^path\s*\(/i.test(presented)) {
+    const match = presented.match(/^path\s*\(\s*(["'])([\s\S]*)\1\s*\)$/i);
+    if (match?.[2] !== undefined)
+      presentedCandidates.push(decodeCssEscapes(match[2]));
+  }
+  const attribute = element.getAttribute("d") ?? "";
+  if (presented.toLowerCase() === "none") return [""];
+  const isolatedPresentation = isolatedAttributePathPresentation(
+    element,
+    attribute,
+  );
+  const rawAttributeIsEffective =
+    presented === attribute ||
+    (isolatedPresentation !== undefined && presented === isolatedPresentation);
+  return rawAttributeIsEffective
+    ? [attribute, ...presentedCandidates.filter((data) => data !== attribute)]
+    : [
+        ...presentedCandidates,
+        ...(!presentedCandidates.includes(attribute) ? [attribute] : []),
+      ];
+}
+
+type NativePathSegment = Readonly<{
+  data: string;
+  key: string;
+  length?: number;
+  reverseKey: string;
+  samples?: readonly NativeBoundarySample[];
+}>;
+
+type NativeBoundarySample = Readonly<{
+  point: GeometryPoint;
+  scale: number;
+  tangent: GeometryPoint;
+}>;
+
+function geometryNumber(value: number): string {
+  return String(Object.is(value, -0) ? 0 : value);
+}
+
+function geometryPointKey(point: GeometryPoint): string {
+  return `${geometryNumber(point[0])},${geometryNumber(point[1])}`;
+}
+
+const PATH_SAMPLE_FRACTIONS = [0.2, 0.5, 0.8] as const;
+
+function lineBoundarySamples(
+  start: GeometryPoint,
+  end: GeometryPoint,
+): readonly NativeBoundarySample[] {
+  const tangent: GeometryPoint = [end[0] - start[0], end[1] - start[1]];
+  const scale = Math.hypot(tangent[0], tangent[1]);
+  return PATH_SAMPLE_FRACTIONS.map((fraction) => ({
+    point: [start[0] + tangent[0] * fraction, start[1] + tangent[1] * fraction],
+    scale,
+    tangent,
+  }));
+}
+
+function quadraticBoundarySamples(
+  start: GeometryPoint,
+  control: GeometryPoint,
+  end: GeometryPoint,
+): readonly NativeBoundarySample[] {
+  const scale =
+    Math.hypot(control[0] - start[0], control[1] - start[1]) +
+    Math.hypot(end[0] - control[0], end[1] - control[1]);
+  return PATH_SAMPLE_FRACTIONS.map((fraction) => {
+    const inverse = 1 - fraction;
+    return {
+      point: [
+        inverse ** 2 * start[0] +
+          2 * inverse * fraction * control[0] +
+          fraction ** 2 * end[0],
+        inverse ** 2 * start[1] +
+          2 * inverse * fraction * control[1] +
+          fraction ** 2 * end[1],
+      ],
+      scale,
+      tangent: [
+        2 *
+          (inverse * (control[0] - start[0]) +
+            fraction * (end[0] - control[0])),
+        2 *
+          (inverse * (control[1] - start[1]) +
+            fraction * (end[1] - control[1])),
+      ],
+    };
+  });
+}
+
+function cubicBoundarySamples(
+  start: GeometryPoint,
+  first: GeometryPoint,
+  second: GeometryPoint,
+  end: GeometryPoint,
+): readonly NativeBoundarySample[] {
+  const scale =
+    Math.hypot(first[0] - start[0], first[1] - start[1]) +
+    Math.hypot(second[0] - first[0], second[1] - first[1]) +
+    Math.hypot(end[0] - second[0], end[1] - second[1]);
+  return PATH_SAMPLE_FRACTIONS.map((fraction) => {
+    const inverse = 1 - fraction;
+    return {
+      point: [
+        inverse ** 3 * start[0] +
+          3 * inverse ** 2 * fraction * first[0] +
+          3 * inverse * fraction ** 2 * second[0] +
+          fraction ** 3 * end[0],
+        inverse ** 3 * start[1] +
+          3 * inverse ** 2 * fraction * first[1] +
+          3 * inverse * fraction ** 2 * second[1] +
+          fraction ** 3 * end[1],
+      ],
+      scale,
+      tangent: [
+        3 * inverse ** 2 * (first[0] - start[0]) +
+          6 * inverse * fraction * (second[0] - first[0]) +
+          3 * fraction ** 2 * (end[0] - second[0]),
+        3 * inverse ** 2 * (first[1] - start[1]) +
+          6 * inverse * fraction * (second[1] - first[1]) +
+          3 * fraction ** 2 * (end[1] - second[1]),
+      ],
+    };
+  });
+}
+
+function controlsTraceMonotoneLine(
+  start: GeometryPoint,
+  controls: readonly GeometryPoint[],
+  end: GeometryPoint,
+): boolean {
+  const directionX = end[0] - start[0];
+  const directionY = end[1] - start[1];
+  const squaredLength = directionX ** 2 + directionY ** 2;
+  if (!Number.isFinite(squaredLength) || squaredLength <= 0) return false;
+  const parameterTolerance = Number.EPSILON * 128;
+  let previousParameter = 0;
+  for (const control of controls) {
+    const cross =
+      (control[0] - start[0]) * directionY -
+      (control[1] - start[1]) * directionX;
+    if (cross !== 0) return false;
+    const parameter =
+      ((control[0] - start[0]) * directionX +
+        (control[1] - start[1]) * directionY) /
+      squaredLength;
+    if (
+      parameter < previousParameter - parameterTolerance ||
+      parameter > 1 + parameterTolerance
+    ) {
+      return false;
+    }
+    previousParameter = parameter;
   }
   return true;
+}
+
+function pathGeometrySegments(
+  pathData: string,
+): readonly NativePathSegment[] | undefined {
+  const tokens = pathData.match(
+    /[AaCcHhLlMmQqSsTtVvZz]|[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi,
+  );
+  if (!tokens) return undefined;
+
+  const segments: NativePathSegment[] = [];
+  let command = "";
+  let cursor = 0;
+  let current: GeometryPoint = [0, 0];
+  let subpathStart: GeometryPoint = [0, 0];
+  let previousCommand = "";
+  let previousCubicControl: GeometryPoint | undefined;
+  let previousQuadraticControl: GeometryPoint | undefined;
+
+  const absolute = (x: number, y: number, relative: boolean): GeometryPoint => [
+    relative ? current[0] + x : x,
+    relative ? current[1] + y : y,
+  ];
+  const addLine = (start: GeometryPoint, end: GeometryPoint) => {
+    if (sameGeometryPoint(start, end)) return;
+    const startKey = geometryPointKey(start);
+    const endKey = geometryPointKey(end);
+    segments.push({
+      data: `M ${startKey.replace(",", " ")} L ${endKey.replace(",", " ")}`,
+      key: `L:${startKey}>${endKey}`,
+      length: Math.hypot(end[0] - start[0], end[1] - start[1]),
+      reverseKey: `L:${endKey}>${startKey}`,
+      samples: lineBoundarySamples(start, end),
+    });
+  };
+
+  while (cursor < tokens.length) {
+    const token = tokens[cursor]!;
+    if (/^[a-z]$/i.test(token)) {
+      command = token;
+      cursor += 1;
+      if (command.toLowerCase() === "z") {
+        addLine(current, subpathStart);
+        current = subpathStart;
+        previousCommand = "z";
+        previousCubicControl = undefined;
+        previousQuadraticControl = undefined;
+        command = "";
+        continue;
+      }
+    }
+
+    const lower = command.toLowerCase();
+    const parameterCount = PATH_PARAMETER_COUNT[lower];
+    if (!parameterCount || cursor + parameterCount > tokens.length) {
+      return undefined;
+    }
+    const values = tokens.slice(cursor, cursor + parameterCount).map(Number);
+    if (values.some((value) => !Number.isFinite(value))) return undefined;
+    cursor += parameterCount;
+    const relative = command === lower;
+
+    if (lower === "m") {
+      current = absolute(values[0]!, values[1]!, relative);
+      subpathStart = current;
+      previousCommand = "m";
+      previousCubicControl = undefined;
+      previousQuadraticControl = undefined;
+      command = command === lower ? "l" : "L";
+      continue;
+    }
+
+    const start = current;
+    let end: GeometryPoint;
+    if (lower === "h") {
+      end = [relative ? current[0] + values[0]! : values[0]!, current[1]];
+      addLine(start, end);
+      previousCubicControl = undefined;
+      previousQuadraticControl = undefined;
+    } else if (lower === "v") {
+      end = [current[0], relative ? current[1] + values[0]! : values[0]!];
+      addLine(start, end);
+      previousCubicControl = undefined;
+      previousQuadraticControl = undefined;
+    } else if (lower === "l") {
+      end = absolute(values[0]!, values[1]!, relative);
+      addLine(start, end);
+      previousCubicControl = undefined;
+      previousQuadraticControl = undefined;
+    } else if (lower === "c" || lower === "s") {
+      const firstControl =
+        lower === "s"
+          ? previousCommand === "c" || previousCommand === "s"
+            ? ([
+                current[0] * 2 - (previousCubicControl?.[0] ?? current[0]),
+                current[1] * 2 - (previousCubicControl?.[1] ?? current[1]),
+              ] satisfies GeometryPoint)
+            : current
+          : absolute(values[0]!, values[1]!, relative);
+      const secondControl =
+        lower === "s"
+          ? absolute(values[0]!, values[1]!, relative)
+          : absolute(values[2]!, values[3]!, relative);
+      end =
+        lower === "s"
+          ? absolute(values[2]!, values[3]!, relative)
+          : absolute(values[4]!, values[5]!, relative);
+      const startKey = geometryPointKey(start);
+      const firstKey = geometryPointKey(firstControl);
+      const secondKey = geometryPointKey(secondControl);
+      const endKey = geometryPointKey(end);
+      if (
+        controlsTraceMonotoneLine(start, [firstControl, secondControl], end)
+      ) {
+        addLine(start, end);
+      } else {
+        segments.push({
+          data: `M ${startKey.replace(",", " ")} C ${firstKey.replace(",", " ")} ${secondKey.replace(",", " ")} ${endKey.replace(",", " ")}`,
+          key: `C:${startKey}|${firstKey}|${secondKey}|${endKey}`,
+          reverseKey: `C:${endKey}|${secondKey}|${firstKey}|${startKey}`,
+          samples: cubicBoundarySamples(
+            start,
+            firstControl,
+            secondControl,
+            end,
+          ),
+        });
+      }
+      previousCubicControl = secondControl;
+      previousQuadraticControl = undefined;
+    } else if (lower === "q" || lower === "t") {
+      const control =
+        lower === "t"
+          ? previousCommand === "q" || previousCommand === "t"
+            ? ([
+                current[0] * 2 - (previousQuadraticControl?.[0] ?? current[0]),
+                current[1] * 2 - (previousQuadraticControl?.[1] ?? current[1]),
+              ] satisfies GeometryPoint)
+            : current
+          : absolute(values[0]!, values[1]!, relative);
+      end =
+        lower === "t"
+          ? absolute(values[0]!, values[1]!, relative)
+          : absolute(values[2]!, values[3]!, relative);
+      const startKey = geometryPointKey(start);
+      const controlKey = geometryPointKey(control);
+      const endKey = geometryPointKey(end);
+      if (controlsTraceMonotoneLine(start, [control], end)) {
+        addLine(start, end);
+      } else {
+        segments.push({
+          data: `M ${startKey.replace(",", " ")} Q ${controlKey.replace(",", " ")} ${endKey.replace(",", " ")}`,
+          key: `Q:${startKey}|${controlKey}|${endKey}`,
+          reverseKey: `Q:${endKey}|${controlKey}|${startKey}`,
+          samples: quadraticBoundarySamples(start, control, end),
+        });
+      }
+      previousCubicControl = undefined;
+      previousQuadraticControl = control;
+    } else if (lower === "a") {
+      end = absolute(values[5]!, values[6]!, relative);
+      const radiusX = Math.abs(values[0]!);
+      const radiusY = Math.abs(values[1]!);
+      if (radiusX === 0 || radiusY === 0) {
+        addLine(start, end);
+      } else if (!sameGeometryPoint(start, end)) {
+        const rotation = values[2]!;
+        const largeArc = values[3]! === 0 ? 0 : 1;
+        const sweep = values[4]! === 0 ? 0 : 1;
+        const startKey = geometryPointKey(start);
+        const endKey = geometryPointKey(end);
+        const geometry = `${geometryNumber(radiusX)},${geometryNumber(radiusY)},${geometryNumber(rotation)},${largeArc}`;
+        segments.push({
+          data: `M ${startKey.replace(",", " ")} A ${geometryNumber(radiusX)} ${geometryNumber(radiusY)} ${geometryNumber(rotation)} ${largeArc} ${sweep} ${endKey.replace(",", " ")}`,
+          key: `A:${startKey}|${geometry},${sweep}|${endKey}`,
+          reverseKey: `A:${endKey}|${geometry},${sweep === 0 ? 1 : 0}|${startKey}`,
+        });
+      }
+      previousCubicControl = undefined;
+      previousQuadraticControl = undefined;
+    } else {
+      return undefined;
+    }
+    current = end;
+    previousCommand = lower;
+  }
+
+  return segments;
+}
+
+function hasUnmatchedPathSegments(
+  segments: readonly NativePathSegment[],
+  fillRule: string,
+) {
+  if (fillRule === "evenodd") {
+    const oddSegments = new Set<string>();
+    for (const segment of segments) {
+      const key =
+        segment.key < segment.reverseKey ? segment.key : segment.reverseKey;
+      if (oddSegments.has(key)) oddSegments.delete(key);
+      else oddSegments.add(key);
+    }
+    return oddSegments.size > 0;
+  }
+
+  const unmatched = new Map<string, number>();
+  for (const segment of segments) {
+    const reverseCount = unmatched.get(segment.reverseKey) ?? 0;
+    if (reverseCount > 0) {
+      if (reverseCount === 1) unmatched.delete(segment.reverseKey);
+      else unmatched.set(segment.reverseKey, reverseCount - 1);
+    } else {
+      unmatched.set(segment.key, (unmatched.get(segment.key) ?? 0) + 1);
+    }
+  }
+  return unmatched.size > 0;
+}
+
+type CircularArcInput = Readonly<{
+  end: GeometryPoint;
+  largeArc: number;
+  radius: number;
+  start: GeometryPoint;
+  sweep: number;
+}>;
+
+function exactCircularContour(
+  arcs: readonly CircularArcInput[],
+): Readonly<{ key: string; winding: number }> | undefined {
+  if (arcs.length < 2 || !sameGeometryPoint(arcs[0]!.start, arcs.at(-1)!.end)) {
+    return undefined;
+  }
+  const points = [arcs[0]!.start, ...arcs.map(({ end }) => end)];
+  const first = points[0]!;
+  const second = points.find((point) => !sameGeometryPoint(point, first));
+  if (!second) return undefined;
+  const third = points.find(
+    (point) =>
+      (second[0] - first[0]) * (point[1] - first[1]) -
+        (second[1] - first[1]) * (point[0] - first[0]) !==
+      0,
+  );
+  let center: GeometryPoint;
+  if (third) {
+    const divisor =
+      2 *
+      (first[0] * (second[1] - third[1]) +
+        second[0] * (third[1] - first[1]) +
+        third[0] * (first[1] - second[1]));
+    if (!Number.isFinite(divisor) || divisor === 0) return undefined;
+    const firstSquared = first[0] ** 2 + first[1] ** 2;
+    const secondSquared = second[0] ** 2 + second[1] ** 2;
+    const thirdSquared = third[0] ** 2 + third[1] ** 2;
+    center = [
+      (firstSquared * (second[1] - third[1]) +
+        secondSquared * (third[1] - first[1]) +
+        thirdSquared * (first[1] - second[1])) /
+        divisor,
+      (firstSquared * (third[0] - second[0]) +
+        secondSquared * (first[0] - third[0]) +
+        thirdSquared * (second[0] - first[0])) /
+        divisor,
+    ];
+  } else {
+    center = [(first[0] + second[0]) / 2, (first[1] + second[1]) / 2];
+  }
+  center = [
+    Object.is(center[0], -0) ? 0 : center[0],
+    Object.is(center[1], -0) ? 0 : center[1],
+  ];
+  const radiusSquared =
+    (first[0] - center[0]) ** 2 + (first[1] - center[1]) ** 2;
+  if (!Number.isFinite(radiusSquared) || radiusSquared <= 0) return undefined;
+  if (
+    points.some(
+      ([x, y]) => (x - center[0]) ** 2 + (y - center[1]) ** 2 !== radiusSquared,
+    ) ||
+    arcs.some(({ radius }) => radius ** 2 !== radiusSquared)
+  ) {
+    return undefined;
+  }
+
+  let angleSum = 0;
+  for (const arc of arcs) {
+    const startVector: GeometryPoint = [
+      arc.start[0] - center[0],
+      arc.start[1] - center[1],
+    ];
+    const endVector: GeometryPoint = [
+      arc.end[0] - center[0],
+      arc.end[1] - center[1],
+    ];
+    let angle = Math.atan2(
+      startVector[0] * endVector[1] - startVector[1] * endVector[0],
+      startVector[0] * endVector[0] + startVector[1] * endVector[1],
+    );
+    if (arc.sweep === 1 && angle < 0) angle += Math.PI * 2;
+    if (arc.sweep === 0 && angle > 0) angle -= Math.PI * 2;
+    if (
+      Math.abs(angle) !== Math.PI &&
+      Math.abs(angle) > Math.PI !== (arc.largeArc === 1)
+    ) {
+      return undefined;
+    }
+    angleSum += angle;
+  }
+  const winding = Math.round(angleSum / (Math.PI * 2));
+  const tolerance =
+    Math.PI * 2 * Number.EPSILON * 128 * Math.max(1, arcs.length);
+  if (winding === 0 || Math.abs(angleSum - winding * Math.PI * 2) > tolerance) {
+    return undefined;
+  }
+  return {
+    key: `circle:${geometryPointKey(center)}:${geometryNumber(Math.sqrt(radiusSquared))}`,
+    winding,
+  };
+}
+
+function circularArcPathHasFill(
+  pathData: string,
+  fillRule: string,
+): boolean | undefined {
+  const tokens = pathData.match(
+    /[AaMmZz]|[-+]?(?:\d*\.\d+|\d+\.?)(?:e[-+]?\d+)?/gi,
+  );
+  if (!tokens) return undefined;
+
+  const contours: Array<Readonly<{ key: string; winding: number }>> = [];
+  let command = "";
+  let cursor = 0;
+  let current: GeometryPoint = [0, 0];
+  let start: GeometryPoint | undefined;
+  let contourArcs: CircularArcInput[] = [];
+  const finishContour = (): boolean => {
+    if (!start) return true;
+    const contour = exactCircularContour(contourArcs);
+    if (!contour) return false;
+    contours.push(contour);
+    start = undefined;
+    contourArcs = [];
+    return true;
+  };
+
+  while (cursor < tokens.length) {
+    const token = tokens[cursor]!;
+    if (/^[a-z]$/i.test(token)) {
+      command = token;
+      cursor += 1;
+      if (command.toLowerCase() === "z") {
+        if (!finishContour()) return undefined;
+        command = "";
+        continue;
+      }
+    }
+
+    const lower = command.toLowerCase();
+    if (lower === "m") {
+      if (cursor + 2 > tokens.length || !finishContour()) return undefined;
+      const x = Number(tokens[cursor]);
+      const y = Number(tokens[cursor + 1]);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
+      current = command === lower ? [current[0] + x, current[1] + y] : [x, y];
+      start = current;
+      cursor += 2;
+      command = "";
+      continue;
+    }
+    if (lower !== "a" || cursor + 7 > tokens.length || !start) {
+      return undefined;
+    }
+
+    const values = tokens.slice(cursor, cursor + 7).map(Number);
+    if (values.some((value) => !Number.isFinite(value))) return undefined;
+    cursor += 7;
+    const radiusX = Math.abs(values[0]!);
+    const radiusY = Math.abs(values[1]!);
+    const largeArc = values[3]! === 0 ? 0 : values[3]! === 1 ? 1 : -1;
+    const sweep = values[4]! === 0 ? 0 : values[4]! === 1 ? 1 : -1;
+    if (radiusX <= 0 || radiusX !== radiusY || largeArc < 0 || sweep < 0) {
+      return undefined;
+    }
+    const end: GeometryPoint =
+      command === lower
+        ? [current[0] + values[5]!, current[1] + values[6]!]
+        : [values[5]!, values[6]!];
+    contourArcs.push({
+      end,
+      largeArc,
+      radius: radiusX,
+      start: current,
+      sweep,
+    });
+    current = end;
+  }
+  if (!finishContour() || contours.length === 0) return undefined;
+
+  const windingByCircle = new Map<string, number>();
+  for (const contour of contours) {
+    const winding =
+      fillRule === "evenodd" ? Math.abs(contour.winding) % 2 : contour.winding;
+    windingByCircle.set(
+      contour.key,
+      fillRule === "evenodd"
+        ? (windingByCircle.get(contour.key) ?? 0) ^ winding
+        : (windingByCircle.get(contour.key) ?? 0) + winding,
+    );
+  }
+  return [...windingByCircle.values()].some((winding) => winding !== 0);
+}
+
+function cumulativePathSegmentLengths(
+  element: SVGElement,
+  segments: readonly NativePathSegment[],
+  totalLength: number,
+): readonly number[] | undefined {
+  try {
+    const probe = element.ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+    const getTotalLength = Reflect.get(probe, "getTotalLength");
+    if (typeof getTotalLength !== "function") return undefined;
+    const lengths: number[] = [];
+    let cumulative = 0;
+    for (const segment of segments) {
+      let length = segment.length;
+      if (length === undefined) {
+        probe.setAttribute("d", segment.data);
+        length = Number(Reflect.apply(getTotalLength, probe, []));
+      }
+      if (!Number.isFinite(length) || length < 0) return undefined;
+      if (length > 0) {
+        cumulative += length;
+        lengths.push(cumulative);
+      }
+    }
+    const tolerance = Math.max(1e-4, totalLength * 1e-4);
+    if (Math.abs(cumulative - totalLength) > tolerance) return undefined;
+    return lengths;
+  } catch {
+    return undefined;
+  }
+}
+
+function boundarySampleHasFill(
+  element: SVGElement,
+  Point: typeof DOMPoint,
+  sample: NativeBoundarySample,
+): boolean {
+  const [x, y] = sample.point;
+  const [tangentX, tangentY] = sample.tangent;
+  const tangentLength = Math.hypot(tangentX, tangentY);
+  if (!Number.isFinite(tangentLength) || tangentLength <= 0) return false;
+  const normalX = -tangentY / tangentLength;
+  const normalY = tangentX / tangentLength;
+  const coordinatePrecision =
+    Math.max(Math.abs(x), Math.abs(y), 1) * Number.EPSILON * 64;
+  const browserCoordinateEpsilon = Math.max(Math.abs(x), Math.abs(y), 1) * 1e-7;
+  const epsilons = new Set([
+    browserCoordinateEpsilon,
+    sample.scale * 1e-3,
+    sample.scale * 1e-5,
+    sample.scale * 1e-7,
+    sample.scale * 1e-9,
+    coordinatePrecision,
+  ]);
+  const getScreenCtm = Reflect.get(element, "getScreenCTM");
+  if (typeof getScreenCtm === "function") {
+    const matrix = Reflect.apply(getScreenCtm, element, []) as DOMMatrix | null;
+    if (matrix) {
+      const screenNormalScale = Math.hypot(
+        matrix.a * normalX + matrix.c * normalY,
+        matrix.b * normalX + matrix.d * normalY,
+      );
+      if (Number.isFinite(screenNormalScale) && screenNormalScale > 0) {
+        epsilons.add(
+          Math.max(coordinatePrecision, 1 / (256 * screenNormalScale)),
+        );
+      }
+    }
+  }
+  const isPointInFill = Reflect.get(element, "isPointInFill");
+  if (typeof isPointInFill !== "function") return false;
+  for (const epsilon of epsilons) {
+    if (!Number.isFinite(epsilon) || epsilon <= 0) continue;
+    const positive = Boolean(
+      Reflect.apply(isPointInFill, element, [
+        new Point(x + normalX * epsilon, y + normalY * epsilon),
+      ]),
+    );
+    const negative = Boolean(
+      Reflect.apply(isPointInFill, element, [
+        new Point(x - normalX * epsilon, y - normalY * epsilon),
+      ]),
+    );
+    if (positive !== negative) return true;
+  }
+  return false;
+}
+
+function renderedPathHasFillArea(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): boolean {
+  const measured = presentation?.get(element)?.get(PRESENTATION_PATH_HAS_FILL);
+  if (measured !== undefined) return measured === "true";
+  try {
+    const fillRule = presentationValue(
+      element,
+      "fill-rule",
+      presentation,
+    ).toLowerCase();
+    const getPointAtLength = Reflect.get(element, "getPointAtLength");
+    const getTotalLength = Reflect.get(element, "getTotalLength");
+    const isPointInFill = Reflect.get(element, "isPointInFill");
+    if (
+      typeof getPointAtLength !== "function" ||
+      typeof getTotalLength !== "function" ||
+      typeof isPointInFill !== "function"
+    ) {
+      const pathData =
+        element.localName === "path"
+          ? (element.getAttribute("d") ?? "")
+          : (pathDataCandidates(element, presentation)[0] ?? "");
+      const segments = pathGeometrySegments(pathData);
+      return (
+        segments !== undefined &&
+        hasUnmatchedPathSegments(segments, fillRule) &&
+        pathDataHasPotentialFill(pathData)
+      );
+    }
+
+    const Point =
+      element.ownerDocument.defaultView?.DOMPoint ?? globalThis.DOMPoint;
+    if (typeof Point !== "function") return false;
+    const sourceCandidates = pathDataCandidates(element, presentation);
+    const circularFill = circularArcPathHasFill(
+      sourceCandidates[0] ?? "",
+      fillRule,
+    );
+    if (circularFill !== undefined) return circularFill;
+    const candidates = sourceCandidates
+      .map((data) => ({ data, segments: pathGeometrySegments(data) }))
+      .filter(
+        (
+          candidate,
+        ): candidate is Readonly<{
+          data: string;
+          segments: readonly NativePathSegment[];
+        }> => candidate.segments !== undefined,
+      );
+    if (
+      candidates.length === 0 ||
+      candidates.every(
+        ({ segments }) => !hasUnmatchedPathSegments(segments, fillRule),
+      )
+    ) {
+      return false;
+    }
+
+    const selectedSegments = candidates.find(({ segments }) =>
+      hasUnmatchedPathSegments(segments, fillRule),
+    )!.segments;
+    for (const segment of selectedSegments) {
+      for (const sample of segment.samples ?? []) {
+        if (boundarySampleHasFill(element, Point, sample)) return true;
+      }
+    }
+    if (selectedSegments.every((segment) => segment.samples !== undefined)) {
+      return false;
+    }
+
+    const totalLength = Number(Reflect.apply(getTotalLength, element, []));
+    if (!Number.isFinite(totalLength) || totalLength <= 0) return false;
+    const segmentLengths = cumulativePathSegmentLengths(
+      element,
+      selectedSegments,
+      totalLength,
+    );
+    if (!segmentLengths) return false;
+
+    let segmentStart = 0;
+    for (const segmentEnd of segmentLengths) {
+      const segmentLength = segmentEnd - segmentStart;
+      if (segmentLength <= 0) continue;
+      for (const fraction of [0.2, 0.5, 0.8]) {
+        const offset = segmentStart + segmentLength * fraction;
+        const tangentWindow = Math.max(
+          segmentLength * 0.1,
+          totalLength * 1e-10,
+        );
+        const before = Reflect.apply(getPointAtLength, element, [
+          Math.max(segmentStart, offset - tangentWindow),
+        ]) as DOMPoint;
+        const after = Reflect.apply(getPointAtLength, element, [
+          Math.min(segmentEnd, offset + tangentWindow),
+        ]) as DOMPoint;
+        const boundary = Reflect.apply(getPointAtLength, element, [
+          offset,
+        ]) as DOMPoint;
+        const x = boundary.x;
+        const y = boundary.y;
+        const tangentX = after.x - before.x;
+        const tangentY = after.y - before.y;
+        const tangentLength = Math.hypot(tangentX, tangentY);
+        if (!Number.isFinite(tangentLength) || tangentLength <= 0) continue;
+        const normalX = -tangentY / tangentLength;
+        const normalY = tangentX / tangentLength;
+        const coordinatePrecision =
+          Math.max(Math.abs(x), Math.abs(y), 1) * Number.EPSILON * 64;
+        const browserCoordinateEpsilon =
+          Math.max(Math.abs(x), Math.abs(y), 1) * 1e-7;
+        const epsilons = new Set([
+          browserCoordinateEpsilon,
+          segmentLength * 1e-3,
+          segmentLength * 1e-5,
+          segmentLength * 1e-7,
+          segmentLength * 1e-9,
+          coordinatePrecision,
+        ]);
+        const getScreenCtm = Reflect.get(element, "getScreenCTM");
+        if (typeof getScreenCtm === "function") {
+          const matrix = Reflect.apply(
+            getScreenCtm,
+            element,
+            [],
+          ) as DOMMatrix | null;
+          if (matrix) {
+            const screenNormalScale = Math.hypot(
+              matrix.a * normalX + matrix.c * normalY,
+              matrix.b * normalX + matrix.d * normalY,
+            );
+            if (Number.isFinite(screenNormalScale) && screenNormalScale > 0) {
+              epsilons.add(
+                Math.max(coordinatePrecision, 1 / (256 * screenNormalScale)),
+              );
+            }
+          }
+        }
+        for (const epsilon of epsilons) {
+          if (!Number.isFinite(epsilon) || epsilon <= 0) continue;
+          const positive = Boolean(
+            Reflect.apply(isPointInFill, element, [
+              new Point(x + normalX * epsilon, y + normalY * epsilon),
+            ]),
+          );
+          const negative = Boolean(
+            Reflect.apply(isPointInFill, element, [
+              new Point(x - normalX * epsilon, y - normalY * epsilon),
+            ]),
+          );
+          if (positive !== negative) return true;
+        }
+      }
+      segmentStart = segmentEnd;
+    }
+    return false;
+  } catch {
+    // Native geometry failures fail closed rather than reveal unpainted paths.
+    return false;
+  }
+}
+
+function fillApplies(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): boolean {
+  switch (element.localName.toLowerCase()) {
+    case "line":
+      return false;
+    case "polyline":
+    case "polygon":
+      return renderedPathHasFillArea(element, presentation);
+    case "path":
+      return renderedPathHasFillArea(element, presentation);
+    case "rect":
+      return (
+        positiveGeometryBounds(element, presentation) ??
+        (positiveAttribute(element, "width") &&
+          positiveAttribute(element, "height"))
+      );
+    case "circle":
+      return (
+        positiveGeometryBounds(element, presentation) ??
+        positiveAttribute(element, "r")
+      );
+    case "ellipse":
+      return (
+        positiveGeometryBounds(element, presentation) ??
+        (positiveAttribute(element, "rx") && positiveAttribute(element, "ry"))
+      );
+    default:
+      return true;
+  }
 }
 
 function effectiveGeometryPaint(
@@ -1827,7 +3123,8 @@ function effectiveGeometryPaint(
     1,
     presentation,
   );
-  const fillVisible = fillApplies(element) && hasPaint(fill) && fillOpacity > 0;
+  const fillVisible =
+    fillApplies(element, presentation) && hasPaint(fill) && fillOpacity > 0;
   const strokeVisible =
     hasPaint(stroke) && strokeOpacity > 0 && strokeWidth > 0;
 
@@ -1840,32 +3137,30 @@ function isVisible(
   element: SVGElement,
   presentation?: PresentationMap,
 ): boolean {
+  const visibility = presentationValue(
+    element,
+    "visibility",
+    presentation,
+  ).toLowerCase();
+  if (visibility === "hidden" || visibility === "collapse") return false;
+
   for (
     let current: Element | null = element;
-    current instanceof SVGElement;
+    isSvgNamespaceElement(current);
     current = current.parentElement
   ) {
-    if (NON_RENDERED_ELEMENTS.has(current.localName)) return false;
+    if (NON_RENDERED_ELEMENTS.has(current.localName.toLowerCase()))
+      return false;
 
     const display = presentationValue(
       current,
       "display",
       presentation,
     ).toLowerCase();
-    const visibility = presentationValue(
-      current,
-      "visibility",
-      presentation,
-    ).toLowerCase();
     const opacity = Number.parseFloat(
       presentationValue(current, "opacity", presentation),
     );
-    if (
-      display === "none" ||
-      visibility === "hidden" ||
-      visibility === "collapse" ||
-      (Number.isFinite(opacity) && opacity <= 0)
-    ) {
+    if (display === "none" || (Number.isFinite(opacity) && opacity <= 0)) {
       return false;
     }
 
@@ -1904,11 +3199,42 @@ function restoreSnapshots(snapshots: readonly AttributeSnapshot[]): void {
   }
 }
 
+function setInlineStyleProperties(
+  element: SVGElement,
+  properties: Readonly<Record<string, string>>,
+): void {
+  const scratch = element.ownerDocument.createElementNS(SVG_NAMESPACE, "g");
+  const current = element.getAttribute("style");
+  if (current !== null) scratch.setAttribute("style", current);
+  for (const [property, value] of Object.entries(properties)) {
+    scratch.style.setProperty(property, value);
+  }
+  const prepared = scratch.getAttribute("style");
+  if (prepared === null) element.removeAttribute("style");
+  else element.setAttribute("style", prepared);
+}
+
 function geometryLength(element: SVGElement): number | undefined {
   const getTotalLength = (element as SVGGeometryElement).getTotalLength;
   if (typeof getTotalLength !== "function") throw animationSetupError();
   const length = getTotalLength.call(element);
-  return Number.isFinite(length) && length > 0 ? length : undefined;
+  if (Number.isFinite(length) && length > 0) return length;
+  if (Object.prototype.hasOwnProperty.call(element, "getTotalLength")) {
+    return undefined;
+  }
+  if (["path", "polygon", "polyline"].includes(element.localName)) {
+    for (const data of pathDataCandidates(element)) {
+      const segments = pathGeometrySegments(data);
+      if (!segments) continue;
+      const fallback = segments.reduce(
+        (total, segment) =>
+          total + (segment.length ?? segment.samples?.[0]?.scale ?? 0),
+        0,
+      );
+      if (Number.isFinite(fallback) && fallback > 0) return fallback;
+    }
+  }
+  return undefined;
 }
 
 function animationTiming(
@@ -2012,16 +3338,16 @@ function buildDrawPlans(
         keyframes: [startFrame, drawnFrame, finalFrame],
         timing: animationTiming(options, options.delay),
         prepare: () => {
+          const temporaryStyles: Record<string, string> = {
+            "stroke-dasharray": String(length),
+            "stroke-dashoffset": String(length),
+          };
           if (!strokeVisible) {
-            element.style.setProperty(
-              "stroke",
-              fillVisible ? fill : "currentColor",
-            );
-            element.style.setProperty("stroke-width", "1");
-            element.style.setProperty("stroke-opacity", "1");
+            temporaryStyles.stroke = fillVisible ? fill : "currentColor";
+            temporaryStyles["stroke-width"] = "1";
+            temporaryStyles["stroke-opacity"] = "1";
           }
-          element.style.setProperty("stroke-dasharray", String(length));
-          element.style.setProperty("stroke-dashoffset", String(length));
+          setInlineStyleProperties(element, temporaryStyles);
         },
       });
     } else if (
@@ -2074,8 +3400,9 @@ function buildPlans(
     ];
   }
   if (options.preset === "stagger") {
+    const presentation = detachedPresentation(svg);
     const plans = selectElements(svg, options.selector)
-      .filter((element) => isVisibleLeaf(element))
+      .filter((element) => isVisibleLeaf(element, presentation))
       .map((target) => ({
         target,
         keyframes: [{ opacity: 0 }, { opacity: 1 }],

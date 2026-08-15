@@ -28,7 +28,7 @@ import {
 import { SVG_ANIMATION_ERROR_CODES, SvgAnimationError } from "../src/index";
 
 const SVG_SOURCE =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path fill="#f00" d="M0 0h10" /></svg>';
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path fill="#f00" d="M0 0h10v10" /></svg>';
 
 let roots: Root[] = [];
 
@@ -403,7 +403,7 @@ describe("SvgMotion", () => {
         createElement(SvgMotion, {
           ref,
           source:
-            '<svg xmlns="http://www.w3.org/2000/svg" data-source="old"><path fill="#f00" d="M0 0h10" /></svg>',
+            '<svg xmlns="http://www.w3.org/2000/svg" data-source="old"><path fill="#f00" d="M0 0h10v10" /></svg>',
           trust: "trusted",
           onError: (error) => errors.push(error),
           onReady: (handle) => ready.push(handle),
@@ -421,7 +421,7 @@ describe("SvgMotion", () => {
             createElement(SvgMotion, {
               ref,
               source:
-                '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+                '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10v10" /></svg>',
               trust: "trusted",
               onError: (error) => errors.push(error),
               onReady: (handle) => ready.push(handle),
@@ -500,7 +500,7 @@ describe("SvgMotion", () => {
         createElement(SvgMotion, {
           ref,
           source:
-            '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+            '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10v10" /></svg>',
           trust: "trusted",
           onReady: ready,
         }),
@@ -562,7 +562,7 @@ describe("SvgMotion", () => {
           createElement(SvgMotion, {
             ref,
             source:
-              '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+              '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10v10" /></svg>',
             trust: "trusted",
             onError: (error) => errors.push(error),
             onReady: (handle) => ready.push(handle),
@@ -598,7 +598,7 @@ describe("SvgMotion", () => {
         await act(async () => {
           resolveObsolete(
             new Response(
-              '<svg xmlns="http://www.w3.org/2000/svg" data-source="obsolete"><path fill="#f00" d="M0 0h10" /></svg>',
+              '<svg xmlns="http://www.w3.org/2000/svg" data-source="obsolete"><path fill="#f00" d="M0 0h10v10" /></svg>',
               {
                 headers: { "content-type": "image/svg+xml" },
                 status: 200,
@@ -1354,6 +1354,38 @@ describe("useSvgMotion", () => {
     expect(current?.status).toBe("running");
     expect(events).toEqual(["cancel"]);
   });
+
+  it.each([
+    ["finish", "cancel", "finish"],
+    ["finish", "destroy", "finish"],
+    ["cancel", "finish", "cancel"],
+    ["cancel", "destroy", "cancel"],
+  ] as const)(
+    "preserves the first %s callback when %s follows in the same tick",
+    async (first, second, expected) => {
+      const events: string[] = [];
+      await render(
+        createElement(Harness, {
+          options: {
+            source: SVG_SOURCE,
+            trust: "trusted",
+            onFinish: () => events.push("finish"),
+            onCancel: () => events.push("cancel"),
+          },
+        }),
+      );
+      const controller = current!.controller!;
+      const settledRun = controller.finished;
+
+      await act(async () => {
+        controller[first]();
+        controller[second]();
+        await settledRun.catch(() => undefined);
+      });
+
+      expect(events).toEqual([expected]);
+    },
+  );
 });
 
 describe("SVG accessibility lifecycle", () => {
@@ -1433,6 +1465,22 @@ describe("SVG accessibility lifecycle", () => {
           '<svg xmlns="http://www.w3.org/2000/svg" role="img"><text>Chart</text></svg>',
         trust: "trusted",
         svgProps: { role: "presentation" },
+      }),
+    );
+
+    expect(ref.current?.svg?.getAttribute("role")).toBe("presentation");
+    expect(ref.current?.svg?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("lets a caller presentation role override a named source", async () => {
+    const ref = createRef<SvgMotionHandle>();
+    await render(
+      createElement(SvgMotion, {
+        ref,
+        source:
+          '<svg xmlns="http://www.w3.org/2000/svg"><title>Named source</title><text>Chart</text></svg>',
+        trust: "trusted",
+        svgProps: { role: "presentation", "aria-hidden": true },
       }),
     );
 

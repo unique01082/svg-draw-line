@@ -55,6 +55,40 @@ describe("prepareSvg sources", () => {
     expect(prepared.svg.querySelector("path")).not.toBeNull();
   });
 
+  it("wraps Blob read failures without exposing host details", async () => {
+    class BrokenBlob extends Blob {
+      override async arrayBuffer(): Promise<ArrayBuffer> {
+        throw new Error("<script>private file path</script>");
+      }
+    }
+
+    await expect(prepareSvg(new BrokenBlob([SVG]))).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+  });
+
+  it("wraps hostile Blob metadata access without exposing details", async () => {
+    const source = new Blob([SVG]);
+    Object.defineProperty(source, "size", {
+      configurable: true,
+      get() {
+        throw new Error("<script>private metadata</script>");
+      },
+    });
+
+    await expect(prepareSvg(source)).rejects.toEqual(
+      expect.objectContaining({
+        name: "SvgPreparationError",
+        code: "UNSUPPORTED_SOURCE",
+        message: "The SVG source type is not supported.",
+      }),
+    );
+  });
+
   it("clones an SVGSVGElement source without mutating it", async () => {
     document.body.innerHTML = SVG;
     const source = document.querySelector("svg") as SVGSVGElement;

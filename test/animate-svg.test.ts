@@ -26,7 +26,7 @@ function svg(markup: string): SVGSVGElement {
   return document.querySelector("svg") as SVGSVGElement;
 }
 
-function geometry(markup = '<path fill="#f00" d="M0 0h10" />') {
+function geometry(markup = '<path fill="#f00" d="M0 0h10v10" />') {
   const root = svg(markup);
   for (const element of root.querySelectorAll(
     "path,line,polyline,polygon,circle,ellipse,rect",
@@ -60,7 +60,7 @@ function addStyles(css: string) {
 describe("animateSvg presets and options", () => {
   it("draws every supported geometry with defaults and fades fallback leaves", () => {
     const root = geometry(`
-      <path fill="#f00" data-length="10" d="M0 0h10" />
+      <path fill="#f00" data-length="10" d="M0 0h10v10" />
       <line style="stroke: #0f0" data-length="20" x1="0" y1="0" x2="10" y2="0" />
       <polyline fill="#00f" data-length="30" points="0,0 10,0 10,10" />
       <polygon fill="#ff0" data-length="40" points="0,0 10,0 10,10" />
@@ -113,9 +113,9 @@ describe("animateSvg presets and options", () => {
 
   it("supports selector, reverse order, numeric stagger, and custom timing", () => {
     const root = geometry(`
-      <path class="pick" data-name="first" d="M0 0h10" />
-      <path data-name="ignored" d="M0 0h10" />
-      <path class="pick" data-name="last" d="M0 0h10" />
+      <path class="pick" data-name="first" d="M0 0h10v10" />
+      <path data-name="ignored" d="M0 0h10v10" />
+      <path class="pick" data-name="last" d="M0 0h10v10" />
     `);
 
     const controller = animateSvg(root, {
@@ -150,7 +150,7 @@ describe("animateSvg presets and options", () => {
     const root = geometry(
       Array.from(
         { length: 7 },
-        (_, index) => `<path data-index="${index}" d="M0 0h10" />`,
+        (_, index) => `<path data-index="${index}" d="M0 0h10v10" />`,
       ).join(""),
     );
 
@@ -168,7 +168,7 @@ describe("animateSvg presets and options", () => {
       .css-hidden { fill: none; stroke: none }
     `);
     const root = geometry(`
-      <path id="drawn" class="css-drawn" fill="none" stroke="#f00" d="M0 0h10" />
+      <path id="drawn" class="css-drawn" fill="none" stroke="#f00" d="M0 0h10v10" />
       <path id="hidden" class="css-hidden" fill="#f00" stroke="#00f" d="M0 0h10" />
     `);
     const drawn = root.querySelector<SVGElement>("#drawn")!;
@@ -305,6 +305,8 @@ describe("animateSvg presets and options", () => {
       <polyline id="area" style="fill: #f00; stroke: none" points="0,0 10,0 10,10" />
       <polyline id="self-intersecting" style="fill: #f00; stroke: none" points="0,0 10,10 0,10 10,0" />
       <polyline id="line" style="fill: #f00; stroke: none" points="0,0 10,0" />
+      <polyline id="retrace" style="fill: #f00; stroke: none" points="0,0 10,0 0,0 0,10 0,0" />
+      <polygon id="retrace-polygon" style="fill: #f00; stroke: none" points="0,0 10,0 0,0 0,10 0,0" />
     `);
 
     animateSvg(root, { stagger: 0 });
@@ -314,6 +316,8 @@ describe("animateSvg presets and options", () => {
       animationsFor(root.querySelector("#self-intersecting")!),
     ).toHaveLength(1);
     expect(animationsFor(root.querySelector("#line")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#retrace")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#retrace-polygon")!)).toEqual([]);
     expect(allAnimations(root)).toHaveLength(2);
   });
 
@@ -332,6 +336,51 @@ describe("animateSvg presets and options", () => {
     expect(animationsFor(root.querySelector("#opacity-hidden")!)).toEqual([]);
     expect(animationsFor(root)).toHaveLength(1);
     expect(allAnimations(root)).toHaveLength(1);
+  });
+
+  it("does not reveal zero-area fill-only geometry with a temporary stroke", () => {
+    const root = geometry(`
+      <path id="horizontal" fill="#f00" stroke="none" d="M0 0h10" />
+      <path id="diagonal" fill="#f00" stroke="none" d="M0 0L10 10" />
+      <rect id="flat-rect" fill="#f00" stroke="none" width="10" height="0" />
+      <circle id="point-circle" fill="#f00" stroke="none" r="0" />
+      <ellipse id="flat-ellipse" fill="#f00" stroke="none" rx="10" ry="0" />
+    `);
+    const original = root.outerHTML;
+
+    const controller = animateSvg(root);
+
+    expect(controller.diagnostics).toEqual([
+      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+    ]);
+    for (const element of root.querySelectorAll("path,rect,circle,ellipse")) {
+      expect(animationsFor(element)).toEqual([]);
+      expect((element as SVGElement).style.stroke).toBe("");
+    }
+    expect(animationsFor(root)).toHaveLength(1);
+    controller.destroy();
+    expect(root.outerHTML).toBe(original);
+  });
+
+  it("draws open curved fill areas but ignores disjoint straight subpaths", () => {
+    const root = geometry(`
+      <path id="cubic" fill="#f00" stroke="none" d="M0 0C0 10 10 10 10 0" />
+      <path id="arc" fill="#0f0" stroke="none" d="M20 0A10 10 0 0 0 40 0" />
+      <path id="bowtie" fill="#ff0" stroke="none" d="M0 0L10 10L0 10L10 0Z" />
+      <path id="disjoint-lines" fill="#00f" stroke="none" d="M50 0H60M50 0V10" />
+      <path id="line-retrace" fill="#00f" stroke="none" d="M0 0H10H0V10V0" />
+      <path id="arc-retrace" fill="#00f" stroke="none" d="M20 0A10 10 0 0 1 40 0A10 10 0 0 0 20 0" />
+    `);
+
+    animateSvg(root, { stagger: 0 });
+
+    expect(animationsFor(root.querySelector("#cubic")!)).toHaveLength(1);
+    expect(animationsFor(root.querySelector("#arc")!)).toHaveLength(1);
+    expect(animationsFor(root.querySelector("#bowtie")!)).toHaveLength(1);
+    expect(animationsFor(root.querySelector("#disjoint-lines")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#line-retrace")!)).toEqual([]);
+    expect(animationsFor(root.querySelector("#arc-retrace")!)).toEqual([]);
+    expect(allAnimations(root)).toHaveLength(3);
   });
 
   it.each<{
@@ -377,11 +426,19 @@ describe("animateSvg presets and options", () => {
     expect(animationsFor(root)[0]?.timing.iterations).toBe(Infinity);
   });
 
-  it("staggers visible leaf elements in document order while excluding defs", () => {
+  it("staggers visual leaves in document order and excludes non-rendered nodes", () => {
     const root = svg(`
       <defs><path id="definition" /></defs>
       <title id="title">Title</title>
       <desc id="description">Description</desc>
+      <view id="view" viewBox="0 0 10 10" />
+      <script id="script" />
+      <animate id="animate" attributeName="opacity" />
+      <animateMotion id="animate-motion" />
+      <animateTransform id="animate-transform" attributeName="transform" />
+      <set id="set" attributeName="opacity" />
+      <mpath id="motion-path" />
+      <discard id="discard" />
       <mask id="mask"><rect id="masked" /></mask>
       <g><path id="one" /><text id="two">Two</text></g>
       <image id="hidden" style="opacity: 0.0" />
@@ -393,6 +450,18 @@ describe("animateSvg presets and options", () => {
     expect(animationsFor(root.querySelector("defs path")!)).toEqual([]);
     expect(animationsFor(root.querySelector("#title")!)).toEqual([]);
     expect(animationsFor(root.querySelector("#description")!)).toEqual([]);
+    expect(
+      [
+        "#view",
+        "#script",
+        "#animate",
+        "#animate-motion",
+        "#animate-transform",
+        "#set",
+        "#motion-path",
+        "#discard",
+      ].flatMap((selector) => animationsFor(root.querySelector(selector)!)),
+    ).toEqual([]);
     expect(animationsFor(root.querySelector("#masked")!)).toEqual([]);
     expect(animationsFor(root.querySelector("g")!)).toEqual([]);
     expect(animationsFor(root.querySelector("#hidden")!)).toEqual([]);
@@ -488,7 +557,7 @@ describe("SvgMotionController", () => {
     original: string;
   } {
     const root = geometry(
-      '<path style="opacity: .8" stroke-dasharray="3" fill="#f00" d="M0 0h10" />',
+      '<path style="opacity: .8" stroke-dasharray="3" fill="#f00" d="M0 0h10v10" />',
     );
     const original = root.outerHTML;
     return {
@@ -543,7 +612,7 @@ describe("SvgMotionController", () => {
 
   it("settles and cleans up after all native animations finish naturally", async () => {
     const root = geometry(`
-      <path fill="#f00" d="M0 0h10" />
+      <path fill="#f00" d="M0 0h10v10" />
       <path stroke="#0f0" d="M0 0h10" />
     `);
     const original = root.outerHTML;
@@ -630,7 +699,7 @@ describe("SvgMotionController", () => {
   it.each(["missing", "throwing"] as const)(
     "wraps %s getTotalLength as a safe setup failure",
     (failure) => {
-      const root = svg('<path fill="#f00" d="M0 0h10" />');
+      const root = svg('<path fill="#f00" d="M0 0h10v10" />');
       const path = root.querySelector("path")!;
       const original = root.outerHTML;
       if (failure === "throwing") {
@@ -820,8 +889,8 @@ describe("SvgMotionController", () => {
     "owns and cancels every partially created animation when %s access throws",
     (failurePoint) => {
       const root = geometry(`
-        <path fill="#f00" d="M0 0h10" />
-        <path fill="#0f0" d="M0 0h10" />
+        <path fill="#f00" d="M0 0h10v10" />
+        <path fill="#0f0" d="M0 0h10v10" />
       `);
       const original = root.outerHTML;
       const created: Array<{ cancel: ReturnType<typeof vi.fn> }> = [];
@@ -863,8 +932,8 @@ describe("SvgMotionController", () => {
 
   it("retains initial setup cleanup for a later animate retry", () => {
     const root = geometry(`
-      <path fill="#f00" d="M0 0h10" />
-      <path fill="#0f0" d="M0 0h10" />
+      <path fill="#f00" d="M0 0h10v10" />
+      <path fill="#0f0" d="M0 0h10v10" />
     `);
     const original = root.outerHTML;
     const nativeAnimate = vi
@@ -924,8 +993,8 @@ describe("SvgMotionController", () => {
 
   it("retains partial fresh-run ownership until controller cleanup can retry", async () => {
     const root = geometry(`
-      <path fill="#f00" d="M0 0h10" />
-      <path fill="#0f0" d="M0 0h10" />
+      <path fill="#f00" d="M0 0h10v10" />
+      <path fill="#0f0" d="M0 0h10v10" />
     `);
     const original = root.outerHTML;
     const controller = animateSvg(root, { autoplay: false, stagger: 0 });
@@ -1066,8 +1135,8 @@ describe("SvgMotionController", () => {
     "fails an active multi-animation run transactionally when native %s throws",
     async (control) => {
       const root = geometry(`
-        <path id="first" fill="#f00" d="M0 0h10" />
-        <path id="second" fill="#0f0" d="M0 0h10" />
+        <path id="first" fill="#f00" d="M0 0h10v10" />
+        <path id="second" fill="#0f0" d="M0 0h10v10" />
       `);
       const original = root.outerHTML;
       const controller = animateSvg(root, { stagger: 0 });
@@ -1158,8 +1227,8 @@ describe("SvgMotionController", () => {
     "reports native %s cleanup failure and retains failed ownership for retry",
     async (control) => {
       const root = geometry(`
-        <path id="first" fill="#f00" d="M0 0h10" />
-        <path id="second" fill="#0f0" d="M0 0h10" />
+        <path id="first" fill="#f00" d="M0 0h10v10" />
+        <path id="second" fill="#0f0" d="M0 0h10v10" />
       `);
       const original = root.outerHTML;
       const controller = animateSvg(root, { stagger: 0 });

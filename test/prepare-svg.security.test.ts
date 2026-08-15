@@ -59,6 +59,22 @@ describe("prepareSvg sanitization", () => {
     );
   });
 
+  it("preserves safe transforms and declaration priority", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <rect width="10" height="10"
+          style="fill: red !important; transform: translate(2px, 3px); transform-box: fill-box; transform-origin: center" />
+      `),
+    );
+    const rect = prepared.svg.querySelector<SVGRectElement>("rect")!;
+
+    expect(rect.style.getPropertyValue("transform")).toBe(
+      "translate(2px, 3px)",
+    );
+    expect(rect.style.getPropertyValue("transform-box")).toBe("fill-box");
+    expect(rect.style.getPropertyPriority("fill")).toBe("important");
+  });
+
   it("removes external stylesheets and resource references", async () => {
     const prepared = await prepareSvg(
       wrap(`
@@ -338,6 +354,14 @@ describe("prepareSvg sanitization", () => {
           @supports selector(#shape > [href="#shape"]) {
             #shape { color: #fff }
           }
+          .group {
+            color: #fff;
+            --tokens: { swatch: #shape; };
+            &amp; #shape { outline-color: #fff }
+            @media (min-width: 1px) {
+              &amp; [href="#shape"] { caret-color: #fff }
+            }
+          }
           [data-ref="#shape"] { flood-color: #fff }
         </style>
         <path id="shape" />
@@ -362,8 +386,35 @@ describe("prepareSvg sanitization", () => {
     expect(stylesheet).toContain(
       `selector(#${shapeId} > [href="#${shapeId}"])`,
     );
+    expect(stylesheet).toContain(`& #${shapeId}`);
+    expect(stylesheet).toContain(`& [href="#${shapeId}"]`);
+    expect(stylesheet).toMatch(/\.group\s*{\s*color: #fff;/);
+    expect(stylesheet).toContain("swatch: #shape");
     expect(stylesheet).toContain('[data-ref="#shape"]');
-    expect(stylesheet.match(/#fff/g)).toHaveLength(4);
+    expect(stylesheet.match(/#fff/g)).toHaveLength(7);
+  });
+
+  it("rewrites trusted SMIL timing references after namespacing IDs", async () => {
+    const prepared = await prepareSvg(
+      wrap(`
+        <rect id="shape">
+          <animate id="motion" attributeName="x"
+            begin="shape.click; motion.end+1s; 2s"
+            end="shape.mouseout; indefinite" />
+        </rect>
+      `),
+      { trust: "trusted" },
+    );
+    const shapeId = prepared.svg.querySelector("rect")!.id;
+    const animation = prepared.svg.querySelector("animate")!;
+    const motionId = animation.id;
+
+    expect(animation.getAttribute("begin")).toBe(
+      `${shapeId}.click; ${motionId}.end+1s; 2s`,
+    );
+    expect(animation.getAttribute("end")).toBe(
+      `${shapeId}.mouseout; indefinite`,
+    );
   });
 
   it("serializes rewritten unquoted reference selectors as valid escaped CSS", async () => {
