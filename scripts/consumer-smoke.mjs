@@ -75,7 +75,17 @@ async function installConsumer(name, tarball, { nodeRuntime = true } = {}) {
 
   run(
     "pnpm",
-    ["install", "--offline", "--ignore-scripts", "--frozen-lockfile=false"],
+    [
+      "install",
+      "--lockfile-only",
+      "--ignore-scripts",
+      "--frozen-lockfile=false",
+    ],
+    target,
+  );
+  run(
+    "pnpm",
+    ["install", "--offline", "--ignore-scripts", "--frozen-lockfile"],
     target,
   );
   run("pnpm", ["exec", "tsc", "--noEmit"], target);

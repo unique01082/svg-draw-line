@@ -247,4 +247,16 @@ describe("release contract", () => {
 
     expect(viteConfig).toMatch(/exclude:\s*\[[^\]]*\.worktrees\/\*\*[^\]]*\]/s);
   });
+
+  it("resolves temporary consumer lockfiles before enforcing offline install", async () => {
+    const consumerSmoke = await readFile(
+      new URL("scripts/consumer-smoke.mjs", ROOT),
+      "utf8",
+    );
+    const lockfileResolution = consumerSmoke.indexOf('"--lockfile-only"');
+    const offlineInstall = consumerSmoke.indexOf('"--offline"');
+
+    expect(lockfileResolution).toBeGreaterThan(-1);
+    expect(offlineInstall).toBeGreaterThan(lockfileResolution);
+  });
 });
