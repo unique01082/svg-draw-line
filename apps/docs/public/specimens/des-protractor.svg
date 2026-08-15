@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>des-protractor</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-630.000000, -400.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-625.000000, -395.000000)">
+            <g id="des-protractor" transform="translate(638.000000, 402.000000)">
+                <path d="M13.915,18.3867 L13.896,18.3767 L2,43.9997 L2,51.9997 L16.975,19.9117 L16.957,19.9037 C15.792,19.6987 14.745,19.1587 13.915,18.3867" id="Fill-739" fill="#E9EFFA">
+
+</path>
+                <path d="M22.1035,18.377 L22.0835,18.387 C21.2545,19.16 20.2075,19.699 19.0425,19.903 L19.0255,19.912 L33.9995,52 L33.9995,44 L22.1035,18.377 Z" id="Fill-740" fill="#E9EFFA">
+
+</path>
+                <path d="M18,30 L18,38" id="Stroke-741" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M29.3564,34 L36.0004,34" id="Stroke-742" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M10.4004,34 L25.6004,34" id="Stroke-743" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,34 L6.643,34" id="Stroke-744" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-745" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="16.9746 19.9121 1.9996 52.0001 1.9996 44.0001 13.8966 18.3771">
+
+</polyline>
+                <polyline id="Stroke-746" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="19.0254 19.9121 34.0004 52.0001 34.0004 44.0001 22.1034 18.3771">
+
+</polyline>
+                <path d="M24,14 C24,17.313 21.313,20 18,20 C14.687,20 12,17.313 12,14 C12,10.687 14.687,8 18,8 C21.313,8 24,10.687 24,14 Z" id="Stroke-747" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M18,1.13686838e-13 L18,8" id="Stroke-748" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

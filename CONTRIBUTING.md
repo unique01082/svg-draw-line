@@ -47,7 +47,7 @@ Create a future snapshot with `pnpm docs:scaffold -- 0.2 0.2.0`; the command
 refuses to overwrite an existing line. Keep the route manifest, API reflection,
 canonical URLs and nginx `latest` redirect synchronized.
 
-The 30 Public Domain specimen SVGs are local documentation assets. Do not alter their
+The 50 Public Domain specimen SVGs are local documentation assets. Do not alter their
 paths, fills or viewboxes. Any collection update must also update checksums,
 provenance and `THIRD_PARTY_NOTICES.md` while keeping those assets outside the npm
 package allowlist.

@@ -1,11 +1,11 @@
 # Third-party notices
 
-## Education Duotone Line Icons
+## Pixellove Bordered Vectors
 
-The documentation site includes all 30 original multi-color SVG artworks from the **Education Duotone Line Icons** collection by **Jack Liu**.
+The documentation site includes all 50 original multi-color SVG artworks from the **Pixellove Bordered Vectors** collection by **Pixellove**.
 
-- Source: <https://www.svgrepo.com/collection/education-duotone-line-icons/>
-- Creator: <https://dribbble.com/strayguy>
+- Source: <https://www.svgrepo.com/collection/pixellove-bordered-vectors/>
+- Creator: <https://www.svgrepo.com/author/pixellove/>
 - License: Public Domain / CC0
 - Acquired: 2026-08-15
 - Files: `apps/docs/public/specimens/*.svg`

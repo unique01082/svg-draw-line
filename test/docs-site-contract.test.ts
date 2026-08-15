@@ -70,7 +70,7 @@ describe("documentation site delivery contract", () => {
     }
   });
 
-  it("stores exactly 30 safe, checksummed, local Public Domain SVG specimens", () => {
+  it("stores exactly 50 safe, checksummed, local Public Domain SVG specimens", () => {
     const manifest = readJson<{
       collectionId: string;
       collectionName: string;
@@ -86,16 +86,16 @@ describe("documentation site delivery contract", () => {
       }>;
     }>(resolve(docsRoot, "src/specimens/manifest.json"));
 
-    expect(manifest.collectionId).toBe("education-duotone-line-icons");
-    expect(manifest.collectionName).toBe("Education Duotone Line Icons");
-    expect(manifest.creator).toBe("Jack Liu");
+    expect(manifest.collectionId).toBe("pixellove-bordered-vectors");
+    expect(manifest.collectionName).toBe("Pixellove Bordered Vectors");
+    expect(manifest.creator).toBe("Pixellove");
     expect(manifest.license).toBe("Public Domain (CC0)");
     expect(manifest.sourceUrl).toBe(
-      "https://www.svgrepo.com/collection/education-duotone-line-icons/",
+      "https://www.svgrepo.com/collection/pixellove-bordered-vectors/",
     );
     expect(manifest.acquisitionDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(manifest.specimens).toHaveLength(30);
-    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(30);
+    expect(manifest.specimens).toHaveLength(50);
+    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(50);
     expect(manifest.specimens.every(({ originalName }) => originalName)).toBe(
       true,
     );
@@ -106,7 +106,7 @@ describe("documentation site delivery contract", () => {
         "utf8",
       );
       expect(svg.match(/<svg\b/g)).toHaveLength(1);
-      expect(svg).toMatch(/viewBox="0 0 1024 1024"/);
+      expect(svg).toMatch(/viewBox="[^"]+"/);
       expect(svg).not.toMatch(
         /<script|<foreignObject|\son\w+=|javascript:|<image|<use|(?:href|src)=["'](?:https?:|\/\/)/i,
       );
@@ -117,7 +117,7 @@ describe("documentation site delivery contract", () => {
 
     expect(
       readFileSync(resolve(root, "THIRD_PARTY_NOTICES.md"), "utf8"),
-    ).toContain("Education Duotone Line Icons");
+    ).toContain("Pixellove Bordered Vectors");
   });
 
   it("ships static delivery assets without changing the npm allowlist", () => {

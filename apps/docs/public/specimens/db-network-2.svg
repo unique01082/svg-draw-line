@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>db-network-2</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-90.000000, -400.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-85.000000, -395.000000)">
+            <g id="db-network-2" transform="translate(90.000000, 402.000000)">
+                <polygon id="Fill-798" fill="#87D6CD" points="0 48 20 48 20 44 0 44">
+
+</polygon>
+                <polygon id="Fill-799" fill="#87D6CD" points="32 48 52 48 52 44 32 44">
+
+</polygon>
+                <path d="M26,34 C25.317,34 24.653,33.984 24,33.961 L24,42 L28,42 L28,33.961 C27.347,33.984 26.683,34 26,34" id="Fill-800" fill="#87D6CD">
+
+</path>
+                <polygon id="Fill-801" fill="#7BBDEC" points="20 50 32 50 32 42 20 42">
+
+</polygon>
+                <path d="M26,26 C16.743,26 10,23.822 10,21 L10,29 C10,31.822 16.743,34 26,34 C35.257,34 42,31.822 42,29 L42,21 C42,23.822 35.257,26 26,26" id="Fill-802" fill="#67C1B6">
+
+</path>
+                <path d="M26,18 C16.743,18 10,15.822 10,13 L10,21 C10,23.822 16.743,26 26,26 C35.257,26 42,23.822 42,21 L42,13 C42,15.822 35.257,18 26,18" id="Fill-803" fill="#67C1B6">
+
+</path>
+                <path d="M26,10 C16.743,10 10,7.822 10,5 L10,13 C10,15.822 16.743,18 26,18 C35.257,18 42,15.822 42,13 L42,5 C42,7.822 35.257,10 26,10" id="Fill-804" fill="#67C1B6">
+
+</path>
+                <path d="M42,5 C42,7.822 35.259,10 26,10 C16.743,10 10,7.822 10,5 C10,2.178 16.742,0 25.999,0 C35.258,0 42,2.178 42,5" id="Fill-805" fill="#87D6CD">
+
+</path>
+                <path d="M24,42 L24,34" id="Stroke-806" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M28,42 L28,34" id="Stroke-807" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M32,44 L52,44" id="Stroke-808" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M32,48 L52,48" id="Stroke-809" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M20,44 L0,44" id="Stroke-810" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,48 L20,48" id="Stroke-811" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polygon id="Stroke-812" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="20 50 32 50 32 42 20 42">
+
+</polygon>
+                <path d="M42,5 C42,7.822 35.259,10 26,10 C16.743,10 10,7.822 10,5 C10,2.178 16.742,0 25.999,0 C35.258,0 42,2.178 42,5 Z" id="Stroke-813" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M42,5 L42,13 C42,15.822 35.259,18 26,18 C16.743,18 10,15.822 10,13 L10,5" id="Stroke-814" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M42,21 L42,29 C42,31.822 35.257,34 26,34 C16.743,34 10,31.822 10,29 L10,21" id="Stroke-815" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M42,13 L42,21 C42,23.823 35.259,26 26,26 C16.743,26 10,23.823 10,21 L10,13" id="Stroke-816" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

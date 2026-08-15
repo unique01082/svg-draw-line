@@ -41,7 +41,7 @@ export function PlaygroundPage() {
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSpecimen = specimenBySlug(
-    searchParams.get("icon") ?? "bachelor-hat",
+    searchParams.get("icon") ?? "des-wand-2",
   );
   const initialPreset = presets.includes(searchParams.get("preset") as Preset)
     ? (searchParams.get("preset") as Preset)
@@ -160,7 +160,7 @@ export function PlaygroundPage() {
         </p>
       </header>
       <div className="playground-grid">
-        <aside className="specimen-rail" aria-label="Education specimens">
+        <aside className="specimen-rail" aria-label="Pixellove specimens">
           <header>
             <span>SPECIMEN LIBRARY</span>
             <strong>{specimens.length}</strong>

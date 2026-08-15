@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>cld-cloud-phone</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-540.000000, -200.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-535.000000, -195.000000)">
+            <g id="cld-cloud-phone" transform="translate(540.000000, 200.000000)">
+                <path d="M48.1006,11.6768 C48.1806,11.1658 48.2226,10.6438 48.2226,10.1118 C48.2226,4.5268 43.6956,-0.0002 38.1116,-0.0002 C33.5336,-0.0002 29.6666,3.0408 28.4206,7.2138 C27.4556,6.3238 26.1666,5.7778 24.7496,5.7778 C21.7576,5.7778 19.3326,8.2028 19.3326,11.1948 C19.3326,11.5118 19.3616,11.8228 19.4136,12.1238 C17.6736,12.8598 16.2816,14.2558 15.5546,15.9998 L18.9996,15.9998 C20.6576,15.9998 21.9996,17.3428 21.9996,18.9998 L21.9996,23.9998 L21.9996,25.9958 C22.0746,25.9988 22.1476,25.9998 22.2226,25.9998 L46.7776,25.9998 C50.7666,25.9998 53.9996,22.7668 53.9996,18.7778 C53.9996,15.2398 51.4566,12.2968 48.1006,11.6768" id="Fill-600" fill="#87D6CD">
+
+</path>
+                <polygon id="Fill-601" fill="#99A5B7" points="0 46 22 46 22 24 0 24">
+
+</polygon>
+                <path d="M19,16 L3,16 C1.343,16 0,17.343 0,19 L0,24 L22,24 L22,19 C22,17.343 20.657,16 19,16" id="Fill-602" fill="#E9EFFA">
+
+</path>
+                <path d="M0,46 L0,51 C0,52.657 1.343,54 3,54 L19,54 C20.657,54 22,52.657 22,51 L22,46 L0,46 Z" id="Fill-603" fill="#E9EFFA">
+
+</path>
+                <path d="M22,25.9971 C22.073,25.9991 22.147,26.0001 22.223,26.0001 L46.777,26.0001 C50.767,26.0001 54,22.7671 54,18.7771 C54,15.2401 51.457,12.2981 48.101,11.6771 C48.181,11.1661 48.223,10.6431 48.223,10.1111 C48.223,4.5261 43.695,0.0001 38.111,0.0001 C33.534,0.0001 29.667,3.0411 28.421,7.2141 C27.456,6.3231 26.167,5.7771 24.75,5.7771 C21.758,5.7771 19.333,8.2021 19.333,11.1941 C19.333,11.5121 19.361,11.8221 19.413,12.1241 C17.674,12.8591 16.282,14.2561 15.554,16.0001" id="Stroke-604" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M16,20 L10,20" id="Stroke-605" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M6,20 L6,20" id="Path" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M10,50 L12,50" id="Stroke-607" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,24 L22,19 C22,17.343 20.657,16 19,16 L3,16 C1.343,16 0,17.343 0,19 L0,24" id="Stroke-608" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,46.001 L0,51 C0,52.657 1.343,54 3,54 L19,54 C20.657,54 22,52.657 22,51 L22,46.001" id="Stroke-609" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,46 L0,46" id="Stroke-610" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,24 L0,24" id="Stroke-611" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,46.001 L22,24" id="Stroke-612" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,24 L0,46.001" id="Stroke-613" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

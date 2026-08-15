@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>con-warning</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-720.000000, -300.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-715.000000, -295.000000)">
+            <g id="con-warning" transform="translate(718.000000, 302.000000)">
+                <path d="M50,46 C53.313,46 56,43.313 56,40 C56,38.751 55.358,37.299 55.358,37.299 L32.878,2.51 L32.88,2.509 C31.791,0.99 30.011,1.13686838e-13 28,1.13686838e-13 C25.989,1.13686838e-13 24.209,0.99 23.12,2.509 L23.122,2.51 L0.642,37.299 C0.642,37.299 0,38.751 0,40 C0,43.313 2.687,46 6,46 L50,46 Z" id="Fill-390" fill="#F3E777">
+
+</path>
+                <path d="M26,36 C26,34.896 26.896,34 28,34 C29.104,34 30,34.896 30,36 C30,37.104 29.104,38 28,38 C26.896,38 26,37.104 26,36" id="Fill-391" fill="#F16963">
+
+</path>
+                <path d="M32,16 C32,13.791 30.209,12 28,12 C25.791,12 24,13.791 24,16 L26,28 C26,29.104 26.896,30 28,30 C29.104,30 30,29.104 30,28 L32,16 Z" id="Fill-392" fill="#F16963">
+
+</path>
+                <path d="M26,36 C26,34.896 26.896,34 28,34 C29.104,34 30,34.896 30,36 C30,37.104 29.104,38 28,38 C26.896,38 26,37.104 26,36 Z" id="Stroke-393" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M32,16 C32,13.791 30.209,12 28,12 C25.791,12 24,13.791 24,16 L26,28 C26,29.104 26.896,30 28,30 C29.104,30 30,29.104 30,28 L32,16 Z" id="Stroke-394" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M50,46 C53.313,46 56,43.313 56,40 C56,38.751 55.358,37.299 55.358,37.299 L32.878,2.51 L32.88,2.509 C31.791,0.99 30.011,1.13686838e-13 28,1.13686838e-13 C25.989,1.13686838e-13 24.209,0.99 23.12,2.509 L23.122,2.51 L0.642,37.299 C0.642,37.299 0,38.751 0,40 C0,43.313 2.687,46 6,46 L50,46 Z" id="Stroke-395" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

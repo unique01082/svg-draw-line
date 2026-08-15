@@ -87,9 +87,9 @@ test("renders and animates every licensed specimen", async ({
   browserName,
 }) => {
   test.skip(browserName !== "chromium");
-  await page.goto("/playground?icon=bachelor-hat&preset=draw");
+  await page.goto("/playground?icon=des-wand-2&preset=draw");
   await waitForReady(page);
-  await expect(page.locator(".specimen-list > button")).toHaveCount(30);
+  await expect(page.locator(".specimen-list > button")).toHaveCount(50);
   for (const button of await page.locator(".specimen-list > button").all()) {
     await button.click();
     await waitForReady(page);
@@ -107,7 +107,7 @@ test("renders and animates every licensed specimen", async ({
 test("playground continuously replays motion without manual transport", async ({
   page,
 }) => {
-  await page.goto("/playground?icon=bachelor-hat&preset=draw");
+  await page.goto("/playground?icon=des-wand-2&preset=draw");
   await waitForReady(page);
   await expect(page.getByLabel("Autoplay")).toBeChecked();
   await page.getByLabel("Duration (ms)").fill("180");
@@ -157,12 +157,11 @@ test("home page renders every visual specimen as live motion", async ({
 test("shares icon and preset and exposes native controller actions", async ({
   page,
 }) => {
-  await page.goto("/playground?icon=computer&preset=scale");
+  await page.goto("/playground?icon=com-laptop-code&preset=scale");
   await waitForReady(page);
-  await expect(page.getByRole("button", { name: /Computer/ })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(
+    page.getByRole("button", { name: /Com Laptop Code/ }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Preset")).toHaveValue("scale");
   await page.getByLabel("Duration (ms)").fill("10000");
   await waitForReady(page);
@@ -220,7 +219,7 @@ test("shares icon and preset and exposes native controller actions", async ({
         ),
     )
     .toBe(true);
-  await expect(page).toHaveURL(/icon=computer.*preset=scale/);
+  await expect(page).toHaveURL(/icon=com-laptop-code.*preset=scale/);
 });
 
 test("accepts markup, URL and File sources and disables controls on error", async ({

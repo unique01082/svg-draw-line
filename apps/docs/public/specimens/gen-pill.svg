@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>gen-pill</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-90.000000, 0.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-85.000000, 5.000000)">
+            <g id="gen-pill" transform="translate(92.000000, 2.000000)">
+                <path d="M3.8077,27.8076 C-1.2693,32.8846 -1.2693,41.1156 3.8077,46.1926 C8.8847,51.2696 17.1157,51.2696 22.1927,46.1926 L34.1927,34.1926 L15.8077,15.8076 L3.8077,27.8076 Z" id="Fill-290" fill="#F79FBC">
+
+</path>
+                <path d="M46.1924,3.8076 C41.1154,-1.2694 32.8844,-1.2694 27.8074,3.8076 L15.8074,15.8076 L34.1924,34.1926 L46.1924,22.1926 C51.2694,17.1156 51.2694,8.8846 46.1924,3.8076" id="Fill-291" fill="#F1F0E2">
+
+</path>
+                <path d="M34.1924,34.1924 L46.1924,22.1924 C51.2694,17.1154 51.2694,8.8844 46.1924,3.8074 C41.1154,-1.2696 32.8844,-1.2696 27.8074,3.8074 L15.8074,15.8074" id="Stroke-292" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M34.1924,34.1924 L15.8074,15.8074" id="Stroke-293" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M43.3643,6.6357 C39.8493,3.1207 34.1503,3.1207 30.6353,6.6357" id="Stroke-294" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M15.8077,15.8076 L3.8077,27.8076 C-1.2693,32.8846 -1.2693,41.1156 3.8077,46.1926 C8.8847,51.2696 17.1157,51.2696 22.1927,46.1926 L34.1927,34.1926" id="Stroke-295" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

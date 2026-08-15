@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>con-protractor</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-630.000000, -300.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-625.000000, -295.000000)">
+            <g id="con-protractor" transform="translate(628.000000, 298.000000)">
+                <path d="M39.54,39.5391 C33.592,45.4861 23.946,45.4861 18,39.5391 L39.54,18.0001 C45.486,23.9461 45.486,33.5921 39.54,39.5391 M46.616,10.9691 L49.359,8.2271 L41.133,0.0001 L0,41.1331 L8.227,49.3581 L10.969,46.6171 C20.813,56.4621 36.772,56.4611 46.616,46.6171 C56.461,36.7731 56.461,20.8131 46.616,10.9691" id="Fill-463" fill="#D3D873">
+
+</path>
+                <path d="M46.6162,10.9688 C56.4612,20.8138 56.4612,36.7738 46.6162,46.6168 C36.7722,56.4608 20.8132,56.4618 10.9692,46.6168" id="Stroke-464" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M18,39.5391 C23.946,45.4861 33.592,45.4861 39.54,39.5391 C45.486,33.5921 45.486,23.9461 39.54,18.0001" id="Stroke-465" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-466" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="46.6162 10.9688 49.3592 8.2268 41.1332 -0.0002 0.0002 41.1328 8.2262 49.3588 10.9692 46.6168">
+
+</polyline>
+                <path d="M18,39.5391 L39.54,18.0001" id="Stroke-467" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M37.0186,4.1133 L39.7616,6.8553" id="Stroke-468" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M32.9062,8.2266 L37.0182,12.3396" id="Stroke-469" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M28.792,12.3398 L31.535,15.0818" id="Stroke-470" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M24.6797,16.4531 L28.7917,20.5651" id="Stroke-471" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M20.5654,20.5654 L23.3084,23.3084" id="Stroke-472" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M16.4531,24.6797 L20.5651,28.7927" id="Stroke-473" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M12.3398,28.793 L15.0818,31.535" id="Stroke-474" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M8.2266,32.9063 L12.3396,37.0183" id="Stroke-475" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M4.1143,37.0186 L6.8553,39.7616" id="Stroke-476" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

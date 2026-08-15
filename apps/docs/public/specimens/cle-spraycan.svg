@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>cle-spraycan</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-720.000000, -100.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-715.000000, -95.000000)">
+            <g id="cle-spraycan" transform="translate(728.000000, 100.000000)">
+                <path d="M3,54 L25,54 C26.657,54 28,52.657 28,51 L28,20 L0,20 L0,51 C0,52.657 1.343,54 3,54" id="Fill-295" fill="#F16963">
+
+</path>
+                <polygon id="Fill-296" fill="#E9EFFA" points="18 12 10 12 0 20 28 20">
+
+</polygon>
+                <polygon id="Fill-297" fill="#E9EFFA" points="10 12 18 12 18 4 10 4">
+
+</polygon>
+                <polygon id="Fill-298" fill="#F1F0E2" points="16 46 28 46 28 26 16 26">
+
+</polygon>
+                <polyline id="Stroke-299" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="0 20 10 12 18 12 28 20">
+
+</polyline>
+                <polyline id="Stroke-300" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="10 12 10 4 18 4 18 12">
+
+</polyline>
+                <polyline id="Stroke-301" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="28 46 16 46 16 26 28 26">
+
+</polyline>
+                <path d="M3,54 L25,54 C26.657,54 28,52.657 28,51 L28,20 L0,20 L0,51 C0,52.657 1.343,54 3,54 Z" id="Stroke-302" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,8 L24.5,8" id="Stroke-303" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M28.5527,8 L33.4737,8" id="Stroke-304" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.895,4.053">
+
+</path>
+                <path d="M35.5,8 L38,8" id="Stroke-305" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,5 L24.354,4.159" id="Stroke-306" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M27.7773,2.9365 L31.9333,1.4525" id="Stroke-307" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.596,3.635">
+
+</path>
+                <path d="M33.6455,0.8408 L35.9995,-0.0002" id="Stroke-308" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M22,11 L24.354,11.841" id="Stroke-309" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M27.7773,13.0635 L31.9333,14.5475" id="Stroke-310" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.596,3.635">
+
+</path>
+                <path d="M33.6455,15.1592 L35.9995,16.0002" id="Stroke-311" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

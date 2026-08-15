@@ -10,23 +10,23 @@ export function HomePage() {
       "Animate any SVG with a safe, framework-agnostic TypeScript library.",
     canonicalPath: "/",
   });
-  const hero = specimenBySlug("bachelor-hat");
+  const hero = specimenBySlug("des-wand-2");
   const capabilities = [
     {
-      specimen: specimenBySlug("reagent-bottle"),
+      specimen: specimenBySlug("cld-cloud-network-folder"),
       preset: "draw" as const,
       title: "Prepare",
       description:
         "Validate, sanitize and namespace before a source reaches the page.",
     },
     {
-      specimen: specimenBySlug("notebook"),
+      specimen: specimenBySlug("com-laptop-code"),
       preset: "stagger" as const,
       title: "Compose",
       description: "Five presets cover line work, leaves and compositions.",
     },
     {
-      specimen: specimenBySlug("globe"),
+      specimen: specimenBySlug("gen-heart-rate"),
       preset: "pulse" as const,
       title: "Control",
       description:
@@ -77,7 +77,7 @@ export function HomePage() {
         </div>
         <div className="hero-instrument">
           <header>
-            <span>SPECIMEN / BACHELOR HAT</span>
+            <span>SPECIMEN / DES WAND 2</span>
             <strong>DRAW</strong>
           </header>
           <MotionPreview

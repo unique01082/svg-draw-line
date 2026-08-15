@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>gen-heart-rate</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-180.000000, 0.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-175.000000, 5.000000)">
+            <g id="gen-heart-rate" transform="translate(180.000000, 6.000000)">
+                <path d="M26.0001,5.9995 L28.1011,4.1005 C33.5671,-1.3665 42.4331,-1.3665 47.8991,4.1005 C53.3671,9.5685 53.3661,18.4325 47.8991,23.8985 L26.0001,45.9995 L4.1011,23.8985 C-1.3659,18.4325 -1.3669,9.5685 4.1011,4.1005 C9.5671,-1.3665 18.4331,-1.3665 23.8991,4.1005 L26.0001,5.9995 Z" id="Fill-249" fill="#F16963">
+
+</path>
+                <path d="M26.0001,5.9995 L28.1011,4.1005 C33.5671,-1.3665 42.4331,-1.3665 47.8991,4.1005 C53.3671,9.5685 53.3661,18.4325 47.8991,23.8985 L26.0001,45.9995 L4.1011,23.8985 C-1.3659,18.4325 -1.3669,9.5685 4.1011,4.1005 C9.5671,-1.3665 18.4331,-1.3665 23.8991,4.1005 L26.0001,5.9995 Z" id="Stroke-250" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-251" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="16.0001 23.9995 23.0001 23.9995 26.0001 11.9995 31.0001 33.9995 35.0001 19.9995 37.0001 23.9995 52.0001 23.9995">
+
+</polyline>
+            </g>
+        </g>
+    </g>
+</svg>

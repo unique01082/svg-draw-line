@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>des-wand-2</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-810.000000, -400.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-805.000000, -395.000000)">
+            <g id="des-wand-2" transform="translate(810.000000, 402.000000)">
+                <polygon id="Fill-565" fill="#718097" points="0 48 4 52 34 22 30 18">
+
+</polygon>
+                <polygon id="Fill-566" fill="#E9EFFA" points="38 10 30 18 34 22 42 14">
+
+</polygon>
+                <polyline id="Stroke-567" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="30 18 38 10 42 14 34 22">
+
+</polyline>
+                <polygon id="Stroke-568" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="30 18 0 48 4 52 34 22">
+
+</polygon>
+                <path d="M38,4 L38,0" id="Stroke-569" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M48,14 L52,14" id="Stroke-570" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M28,14 L24,14" id="Stroke-571" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,24 L38,28" id="Stroke-572" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M33,5.3398 L31,1.8748" id="Stroke-573" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M46.6602,9 L50.1252,7" id="Stroke-574" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M43,22.6602 L45,26.1252" id="Stroke-575" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M29.3398,9 L25.8748,7" id="Stroke-576" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M43,5.3398 L45,1.8748" id="Stroke-577" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M46.6602,19 L50.1252,21" id="Stroke-578" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

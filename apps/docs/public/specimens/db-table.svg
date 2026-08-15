@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>db-table</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-180.000000, -400.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-175.000000, -395.000000)">
+            <g id="db-table" transform="translate(182.000000, 404.000000)">
+                <path d="M0,45 C0,46.656 1.343,48 3,48 L12,48 L12,36 L0,36 L0,45 Z" id="Fill-630" fill="#E9EFFA">
+
+</path>
+                <polygon id="Fill-631" fill="#E9EFFA" points="0 36 12 36 12 24 0 24">
+
+</polygon>
+                <polygon id="Fill-632" fill="#E9EFFA" points="12 48 24 48 24 36 12 36">
+
+</polygon>
+                <polygon id="Fill-633" fill="#E9EFFA" points="24 48 36 48 36 36 24 36">
+
+</polygon>
+                <polygon id="Fill-634" fill="#E9EFFA" points="12 36 24 36 24 24 12 24">
+
+</polygon>
+                <polygon id="Fill-635" fill="#E9EFFA" points="24 36 36 36 36 24 24 24">
+
+</polygon>
+                <polygon id="Fill-636" fill="#E9EFFA" points="36 36 48 36 48 24 36 24">
+
+</polygon>
+                <polygon id="Fill-637" fill="#E9EFFA" points="0 24 12 24 12 12 0 12">
+
+</polygon>
+                <polygon id="Fill-638" fill="#E9EFFA" points="12 24 24 24 24 12 12 12">
+
+</polygon>
+                <polygon id="Fill-639" fill="#E9EFFA" points="24 24 36 24 36 12 24 12">
+
+</polygon>
+                <polygon id="Fill-640" fill="#E9EFFA" points="36 24 48 24 48 12 36 12">
+
+</polygon>
+                <path d="M45,0 L3,0 C1.343,0 0,1.344 0,3 L0,12 L48,12 L48,3 C48,1.344 46.657,0 45,0" id="Fill-641" fill="#CC9EC9">
+
+</path>
+                <path d="M36,36 L36,48 L45,48 C46.657,48 48,46.656 48,45 L48,36 L36,36 Z" id="Fill-642" fill="#E9EFFA">
+
+</path>
+                <path d="M0,24 L48,24" id="Stroke-643" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,36 L48,36" id="Stroke-644" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M24,12 L24,48" id="Stroke-645" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M36,12 L36,48" id="Stroke-646" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M12,12 L12,48" id="Stroke-647" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,12.002 L0,45 C0,46.657 1.343,48 3,48 L45,48 C46.657,48 48,46.657 48,45 L48,12.002" id="Stroke-648" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,12 L48,12" id="Stroke-649" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M48,12.002 L48,3 C48,1.343 46.657,0 45,0 L3,0 C1.343,0 0,1.343 0,3 L0,12.002" id="Stroke-650" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

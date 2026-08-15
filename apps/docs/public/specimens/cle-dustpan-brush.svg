@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>cle-dustpan-brush</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-450.000000, -100.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-445.000000, -95.000000)">
+            <g id="cle-dustpan-brush" transform="translate(448.000000, 102.000000)">
+                <path d="M2,50 C0.896,50 0,49.104 0,48 L0,41 C0,33.25 8.25,29.649 12.344,27.193 L14.058,26.165 C15.263,25.442 16,24.141 16,22.735 L16,6 C16,3.791 17.791,2 20,2 C22.209,2 24,3.791 24,6 L24,22.735 C24,24.141 24.737,25.442 25.942,26.165 L27.656,27.193 C31.75,29.649 40,33.125 40,41 L40,48 C40,49.104 39.104,50 38,50 L2,50 Z" id="Fill-645" fill="#D3D873">
+
+</path>
+                <path d="M48,0 L49,0 C50.657,0 52,1.343 52,3 L52,47 C52,48.657 50.657,50 49,50 L48,50 L48,0 Z" id="Fill-646" fill="#D3D873">
+
+</path>
+                <polygon id="Fill-647" fill="#F1F0E2" points="38 26 48 26 48 22 38 22">
+
+</polygon>
+                <polygon id="Fill-648" fill="#F1F0E2" points="38 22 48 22 48 18 38 18">
+
+</polygon>
+                <polygon id="Fill-649" fill="#F1F0E2" points="38 18 48 18 48 14 38 14">
+
+</polygon>
+                <polygon id="Fill-650" fill="#F1F0E2" points="38 14 48 14 48 10 38 10">
+
+</polygon>
+                <polygon id="Fill-651" fill="#F1F0E2" points="38 10 48 10 48 6 38 6">
+
+</polygon>
+                <polygon id="Fill-652" fill="#F1F0E2" points="38 6 48 6 48 2 38 2">
+
+</polygon>
+                <path d="M2,50 C0.896,50 0,49.104 0,48 L0,41 C0,33.25 8.25,29.649 12.344,27.193 L14.058,26.165 C15.263,25.442 16,24.141 16,22.735 L16,6 C16,3.791 17.791,2 20,2 C22.209,2 24,3.791 24,6 L24,22.735 C24,24.141 24.737,25.442 25.942,26.165 L27.656,27.193 C31.75,29.649 40,33.125 40,41 L40,48 C40,49.104 39.104,50 38,50 L2,50 Z" id="Stroke-653" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M6,37 C6,37 10.375,31 20,31 C29.625,31 34,37 34,37" id="Stroke-654" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,6 L48,6" id="Stroke-655" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,10 L48,10" id="Stroke-656" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,14 L48,14" id="Stroke-657" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,18 L48,18" id="Stroke-658" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M38,22 L48,22" id="Stroke-659" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-660" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="48 2 38 2 38 26 48 26">
+
+</polyline>
+                <path d="M48,0 L49,0 C50.657,0 52,1.343 52,3 L52,47 C52,48.657 50.657,50 49,50 L48,50 L48,0 Z" id="Stroke-661" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

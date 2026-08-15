@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>clo-briefs</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-360.000000, -200.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-355.000000, -195.000000)">
+            <g id="clo-briefs" transform="translate(360.000000, 210.000000)">
+                <path d="M0,6 L0,20.178 C10.036,21.379 17.241,28.53 20,38 L34,38 C36.896,28.778 44.14,21.858 54,20.678 L54,6 L0,6 Z" id="Fill-1" fill="#CC9EC9">
+
+</path>
+                <polygon id="Fill-3" fill="#B27BBC" points="0 6 54 6 54 0 0 0">
+
+</polygon>
+                <path d="M0,6 L54,6" id="Stroke-5" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M0,20.1782 L0,0.0002 L54,0.0002 L54,20.6782 C44.14,21.8582 36.896,28.7782 34,38.0002 L20,38.0002 C17.241,28.5302 10.036,21.3792 0,20.1782 Z" id="Stroke-6" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M20,6 C20,14.547 17.298,21.036 12.706,25.983" id="Stroke-7" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M41.5381,26.1831 C36.8041,21.2451 34.0001,14.7011 34.0001,6.0001" id="Stroke-8" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

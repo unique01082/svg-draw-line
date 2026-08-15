@@ -4,91 +4,117 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const sourceUrl =
-  "https://www.svgrepo.com/collection/education-duotone-line-icons/";
-const mirrorBase = "https://www.svgviewer.dev/s";
+  "https://www.svgrepo.com/collection/pixellove-bordered-vectors/";
+const downloadBase = "https://www.svgrepo.com/show";
 const expected = [
-  [386922, "jug", "Jug", "Jug"],
-  [386923, "box", "Box", "Box"],
-  [386924, "shopping-cart", "Shopping Cart", "Shopping Cart"],
-  [386925, "alarm-clock", "Alarm Clock", "Alarm Clock"],
-  [386926, "pig", "Pig", "Pig"],
-  [386927, "folder", "Folder", "Folder"],
-  [386928, "avatar", "Avatar", "Avatar"],
-  [386929, "lighting", "Lighting", "Lighting"],
-  [386930, "camera-1", "Camera I", "Camera"],
-  [386931, "notebook", "Notebook", "Notebook"],
-  [386932, "house", "House", "House"],
-  [386933, "office-1", "Office I", "Office"],
-  [386934, "office-2", "Office II", "Office"],
-  [386935, "car", "Car", "Car"],
-  [386936, "bachelor-hat", "Bachelor Hat", "Bachelor Hat"],
-  [386937, "computer", "Computer", "Computer"],
-  [386938, "writing-bowl", "Writing Bowl", "Writing Bowl"],
-  [386939, "file-board", "File Board", "File Board"],
-  [386940, "camera-2", "Camera II", "Camera"],
-  [386941, "u-disk", "U Disk", "U Disk"],
-  [386942, "bowl", "Bowl", "Bowl"],
-  [386943, "clothing", "Clothing", "Clothing"],
-  [386944, "globe", "Globe", "Globe"],
-  [386945, "book", "Book", "Book"],
-  [386946, "office-3", "Office III", "Office"],
-  [386947, "documentation-1", "Documentation I", "Documentation"],
-  [386948, "documentation-2", "Documentation II", "Documentation"],
-  [386949, "reagent-bottle", "Reagent Bottle", "Reagent Bottle"],
-  [386950, "trophies", "Trophies", "Trophies"],
-  [386951, "tv", "TV", "Tv"],
+  [506896, "cld-cloud-network-folder", "Cld Cloud Network Folder"],
+  [506897, "cha-translate-2", "Cha Translate 2"],
+  [506898, "cld-cloud-computer-network", "Cld Cloud Computer Network"],
+  [506899, "cld-cloud-phone", "Cld Cloud Phone"],
+  [506900, "cha-rect-swear", "Cha Rect Swear"],
+  [506901, "cld-cloud-wifi", "Cld Cloud Wifi"],
+  [506902, "cle-soap-bar", "Cle Soap Bar"],
+  [506903, "cle-peg", "Cle Peg"],
+  [506904, "cle-spraycan", "Cle Spraycan"],
+  [506905, "cld-server", "Cld Server"],
+  [506906, "cle-dustpan-brush", "Cle Dustpan Brush"],
+  [506907, "clo-bowler", "Clo Bowler"],
+  [506908, "cle-wash-basin", "Cle Wash Basin"],
+  [506909, "clo-t-hanger", "Clo T Hanger"],
+  [506910, "clo-converse", "Clo Converse"],
+  [506911, "clo-polo", "Clo Polo"],
+  [506912, "clo-briefs", "Clo Briefs"],
+  [506913, "com-keyboard", "Com Keyboard"],
+  [506914, "con-circular-saw", "Con Circular Saw"],
+  [506915, "com-mouse-wireless-mac", "Com Mouse Wireless Mac"],
+  [506916, "com-mac-old", "Com Mac Old"],
+  [506917, "com-usb-stock", "Com Usb Stock"],
+  [506918, "com-laptop-code", "Com Laptop Code"],
+  [506919, "con-drill", "Con Drill"],
+  [506920, "con-ruler-pencil", "Con Ruler Pencil"],
+  [506921, "con-warning", "Con Warning"],
+  [506922, "db-copy", "Db Copy"],
+  [506923, "db-network-2", "Db Network 2"],
+  [506924, "con-protractor", "Con Protractor"],
+  [506925, "db-row-height", "Db Row Height"],
+  [506926, "db-table", "Db Table"],
+  [506927, "des-pour", "Des Pour"],
+  [506928, "des-palette", "Des Palette"],
+  [506929, "db-tables-swap", "Db Tables Swap"],
+  [506930, "des-ink-well", "Des Ink Well"],
+  [506931, "des-protractor", "Des Protractor"],
+  [506932, "gen-flag-6", "Gen Flag 6"],
+  [506933, "gen-heart-rate", "Gen Heart Rate"],
+  [506934, "gen-jewel", "Gen Jewel"],
+  [506935, "des-wand-2", "Des Wand 2"],
+  [506936, "gen-lifebelt", "Gen Lifebelt"],
+  [506937, "gen-pill", "Gen Pill"],
+  [506938, "cel-rings-love", "Cel Rings Love"],
+  [506939, "cel-balloons", "Cel Balloons"],
+  [506940, "cel-reindeer", "Cel Reindeer"],
+  [506941, "cel-cake-wedding", "Cel Cake Wedding"],
+  [506942, "cel-snow-globe", "Cel Snow Globe"],
+  [506943, "cha-bubbles-two", "Cha Bubbles Two"],
+  [506944, "cha-cloud", "Cha Cloud"],
+  [506945, "cha-bubble-female", "Cha Bubble Female"],
 ];
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assetsRoot = resolve(appRoot, "public/specimens");
 const manifestPath = resolve(appRoot, "src/specimens/manifest.json");
 
-function decodeHtml(value) {
-  return value
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#x27;", "'")
-    .replaceAll("&amp;", "&");
+function delay(milliseconds) {
+  return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 }
 
-async function fetchOriginal(viewerId, slug) {
-  const response = await fetch(`${mirrorBase}/${viewerId}/${slug}`);
-  if (!response.ok) {
-    throw new Error(
-      `Unable to acquire specimen ${viewerId}: ${response.status}`,
-    );
+async function fetchOriginal(sourceId, slug) {
+  const url = `${downloadBase}/${sourceId}/${slug}.svg`;
+  let response;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    response = await fetch(url, {
+      headers: {
+        Accept: "image/svg+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; svg-motion-docs/0.1; +https://svg-motion.baole.space)",
+      },
+    });
+    if (response.ok) break;
+    if (response.status !== 429 || attempt === 3) {
+      throw new Error(
+        `Unable to acquire specimen ${sourceId}: ${response.status}`,
+      );
+    }
+    await delay(500 * 2 ** attempt);
   }
-  const html = await response.text();
-  const encoded = html.match(
-    /&lt;!-- License: PD\.[\s\S]*?&lt;svg\b[\s\S]*?&lt;\/svg&gt;/,
-  )?.[0];
-  if (!encoded) throw new Error(`Missing original SVG for ${viewerId}.`);
-  const svg = decodeHtml(encoded).trim().concat("\n");
+
+  const svg = (await response.text()).trim().concat("\n");
   if (
     (svg.match(/<svg\b/g)?.length ?? 0) !== 1 ||
-    !/viewBox="0 0 1024 1024"/.test(svg) ||
-    /<script|<foreignObject|\son\w+=|javascript:|<image|<use|href=/i.test(svg)
+    !/<svg\b[^>]*\bviewBox="[^"]+"/i.test(svg) ||
+    /<script|<foreignObject|\son\w+=|javascript:|<image|<use|(?:href|src)=["'](?:https?:|\/\/)/i.test(
+      svg,
+    )
   ) {
-    throw new Error(`Unsafe or invalid SVG generated for ${slug}.`);
+    throw new Error(`Unsafe or invalid SVG acquired for ${slug}.`);
   }
   return svg;
 }
 
 await mkdir(assetsRoot, { recursive: true });
 const specimens = [];
-for (const [viewerId, slug, label, originalName] of expected) {
-  const svg = await fetchOriginal(viewerId, slug);
+for (const [sourceId, slug, originalName] of expected) {
+  const svg = await fetchOriginal(sourceId, slug);
   const file = `${slug}.svg`;
   await writeFile(resolve(assetsRoot, file), svg);
   specimens.push({
     slug,
-    label,
+    label: originalName,
     originalName,
     file,
-    sourceId: viewerId,
+    sourceId,
     sha256: createHash("sha256").update(svg).digest("hex"),
   });
+  await delay(100);
 }
 
 const expectedFiles = new Set(specimens.map(({ file }) => file));
@@ -102,12 +128,11 @@ await writeFile(
   manifestPath,
   `${JSON.stringify(
     {
-      collectionId: "education-duotone-line-icons",
-      collectionName: "Education Duotone Line Icons",
-      creator: "Jack Liu",
-      creatorUrl: "https://dribbble.com/strayguy",
+      collectionId: "pixellove-bordered-vectors",
+      collectionName: "Pixellove Bordered Vectors",
+      creator: "Pixellove",
+      creatorUrl: "https://www.svgrepo.com/author/pixellove/",
       sourceUrl,
-      acquisitionMirror: "https://www.svgviewer.dev/",
       acquisitionDate: "2026-08-15",
       license: "Public Domain (CC0)",
       specimens,

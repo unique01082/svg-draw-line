@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>gen-jewel</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-270.000000, 0.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-265.000000, 5.000000)">
+            <g id="gen-jewel" transform="translate(270.000000, 4.000000)">
+                <polygon id="Fill-168" fill="#67C1B6" points="0.0001 14 14.0001 14 14.0001 0">
+
+</polygon>
+                <polygon id="Fill-169" fill="#67C1B6" points="27.0001 0 14.0001 14 40.0001 14">
+
+</polygon>
+                <polygon id="Fill-170" fill="#67C1B6" points="40.0001 0 40.0001 14 54.0001 14">
+
+</polygon>
+                <polygon id="Fill-171" fill="#87D6CD" points="14.0001 14 40.0001 14 27.0001 50">
+
+</polygon>
+                <polygon id="Fill-172" fill="#87D6CD" points="14.0001 0 27.0001 0 14.0001 14">
+
+</polygon>
+                <polygon id="Fill-173" fill="#87D6CD" points="40.0001 0 40.0001 14 27.0001 0">
+
+</polygon>
+                <polygon id="Fill-174" fill="#87D6CD" points="27.0001 50 54.0001 14 40.0001 14">
+
+</polygon>
+                <polygon id="Fill-175" fill="#87D6CD" points="0.0001 14 27.0001 50 14.0001 14">
+
+</polygon>
+                <path d="M0.0001,14 L54.0001,14" id="Stroke-176" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-177" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="14.0001 0 14.0001 14 27.0001 50 40.0001 14 40.0001 0">
+
+</polyline>
+                <polyline id="Stroke-178" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="14.0001 14 27.0001 0 40.0001 14">
+
+</polyline>
+                <polygon id="Stroke-179" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="0.0001 14 14.0001 0 40.0001 0 54.0001 14 27.0001 50">
+
+</polygon>
+            </g>
+        </g>
+    </g>
+</svg>

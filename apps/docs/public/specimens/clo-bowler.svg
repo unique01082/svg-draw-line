@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>clo-bowler</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-270.000000, -200.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-265.000000, -195.000000)">
+            <g id="clo-bowler" transform="translate(270.000000, 202.000000)">
+                <path d="M26,0 C16.059,0 8,8.059 8,18 L8,32 L44,32 L44,18 C44,8.059 35.941,0 26,0" id="Fill-316" fill="#99A5B7">
+
+</path>
+                <path d="M24,44 C24,47.313 21.313,50 18,50 C14.687,50 12,47.313 12,44 C12,40.687 14.687,38 18,38 C21.313,38 24,40.687 24,44" id="Fill-317" fill="#B6E0F2">
+
+</path>
+                <path d="M40,44 C40,47.313 37.313,50 34,50 C30.687,50 28,47.313 28,44 C28,40.687 30.687,38 34,38 C37.313,38 40,40.687 40,44" id="Fill-318" fill="#90A4AE">
+
+</path>
+                <path d="M0,24 C0,28.418 3.582,32 8,32 L44,32 C48.418,32 52,28.418 52,24" id="Stroke-319" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M8,32 L8,18 C8,8.059 16.059,0 26,0 C35.941,0 44,8.059 44,18 L44,32" id="Stroke-320" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M24,44 C24,47.313 21.313,50 18,50 C14.687,50 12,47.313 12,44 C12,40.687 14.687,38 18,38 C21.313,38 24,40.687 24,44 Z" id="Stroke-321" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M40,44 C40,47.313 37.313,50 34,50 C30.687,50 28,47.313 28,44 C28,40.687 30.687,38 34,38 C37.313,38 40,40.687 40,44" id="Fill-322" fill="#B6E0F2">
+
+</path>
+                <path d="M40,44 C40,47.313 37.313,50 34,50 C30.687,50 28,47.313 28,44 C28,40.687 30.687,38 34,38 C37.313,38 40,40.687 40,44 Z" id="Stroke-323" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M24,44 L28,44" id="Stroke-324" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M12,44 L8,44" id="Stroke-325" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M40,44 L44,44" id="Stroke-326" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

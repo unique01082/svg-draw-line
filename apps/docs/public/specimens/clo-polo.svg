@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>clo-polo</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(0.000000, -200.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(5.000000, -195.000000)">
+            <g id="clo-polo" transform="translate(0.000000, 202.000000)">
+                <polygon id="Fill-616" fill="#E9EFFA" points="20 0 17 3 22 10 26 6">
+
+</polygon>
+                <polygon id="Fill-617" fill="#E9EFFA" points="32 0 26 6 30 10 35 3">
+
+</polygon>
+                <polygon id="Fill-618" fill="#67C1B6" points="20 0 26 6 32 0">
+
+</polygon>
+                <path d="M45.7227,8.5845 C44.6007,6.9005 42.9947,5.5975 41.1167,4.8465 L34.9997,3.0005 L29.9997,10.0005 L25.9997,6.0005 L21.9997,10.0005 L16.9997,3.0005 L10.8837,4.8465 C9.0057,5.5975 7.3997,6.9005 6.2777,8.5845 L-0.0003,18.0005 L8.9997,24.0005 L11.9997,20.0005 L11.9997,50.0005 L39.9997,50.0005 L39.9997,20.0005 L42.9997,24.0005 L51.9997,18.0005 L45.7227,8.5845 Z" id="Fill-619" fill="#87D6CD">
+
+</path>
+                <path d="M17,3 L10.884,4.847 C9.005,5.598 7.399,6.901 6.277,8.584 L0,18 L9,24 L12,20 L12,50 L40,50 L40,20 L43,24 L52,18 L45.723,8.584 C44.601,6.901 42.995,5.598 41.116,4.847 L35,3" id="Stroke-620" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M26,18 L26,6" id="Stroke-621" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polygon id="Stroke-622" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="26 6 22 10 17 3 20 0 32 0 35 3 30 10">
+
+</polygon>
+                <path d="M26,6 L20,0" id="Stroke-623" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M32,0 L26,6" id="Stroke-624" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M36,16 L32,16" id="Stroke-625" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>cha-bubbles-two</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(0.000000, -100.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(5.000000, -95.000000)">
+            <g id="cha-bubbles-two" transform="translate(2.000000, 104.000000)">
+                <path d="M47.0469,24 L30.3019,24 L33.0749,18 L37.8009,18 C38.9669,18 40.0239,17.302 40.4969,16.218 L45.7419,4.218 C46.6099,2.234 45.1819,0 43.0469,0 L8.1989,0 C7.0329,0 5.9769,0.698 5.5029,1.782 L0.2579,13.782 C-0.6091,15.766 0.8179,18 2.9529,18 L29.0739,18 L29.0749,18 L26.3019,24 L12.1989,24 C11.0329,24 9.9769,24.698 9.5029,25.782 L4.2579,37.782 C3.3909,39.766 4.8179,42 6.9529,42 L13.9999,42 L9.9999,50 L21.9999,42 L41.8009,42 C42.9669,42 44.0239,41.302 44.4969,40.218 L49.7419,28.218 C50.6099,26.234 49.1819,24 47.0469,24" id="Fill-434" fill="#E9EFFA">
+
+</path>
+                <path d="M30,16 L25.378,26" id="Stroke-435" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M34,16 L29.378,26" id="Stroke-436" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M29.0742,18 L2.9542,18 C0.8182,18 -0.6098,15.766 0.2582,13.782 L5.5032,1.782 C5.9762,0.698 7.0332,0 8.1982,0 L43.0462,0 C45.1812,0 46.6092,2.234 45.7422,4.218 L40.4972,16.218 C40.0232,17.302 38.9672,18 37.8022,18 L33.0752,18" id="Stroke-437" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M30.3018,24 L47.0458,24 C49.1818,24 50.6098,26.234 49.7418,28.218 L44.4968,40.218 C44.0238,41.302 42.9668,42 41.8018,42 L21.9998,42 L9.9998,50 L13.9998,42 L6.9538,42 C4.8188,42 3.3908,39.766 4.2578,37.782 L9.5028,25.782 C9.9768,24.698 11.0328,24 12.1978,24 L26.3018,24" id="Stroke-438" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

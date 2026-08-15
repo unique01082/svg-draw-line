@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>db-row-height</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+
+</defs>
+    <g id="General" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SLICES-64px" transform="translate(-360.000000, -400.000000)">
+
+</g>
+        <g id="ICONS" transform="translate(-355.000000, -395.000000)">
+            <g id="db-row-height" transform="translate(360.000000, 404.000000)">
+                <polygon id="Fill-12" fill="#7BBDEC" points="0 48 52 48 52 40 0 40">
+
+</polygon>
+                <polygon id="Fill-13" fill="#5D94C7" points="0 40 52 40 52 8 0 8">
+
+</polygon>
+                <polygon id="Fill-14" fill="#7BBDEC" points="0 8 52 8 52 0 0 0">
+
+</polygon>
+                <polygon id="Stroke-15" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="0 48 52 48 52 0 0 0">
+
+</polygon>
+                <path d="M52,8 L0,8" id="Stroke-17" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <path d="M52,40 L0,40" id="Stroke-18" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+                <polyline id="Stroke-20" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="20 18 26 12 32 18">
+
+</polyline>
+                <polyline id="Stroke-21" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="20 30 26 36 32 30">
+
+</polyline>
+                <path d="M26,36 L26,12" id="Stroke-22" stroke="#414547" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+</path>
+            </g>
+        </g>
+    </g>
+</svg>

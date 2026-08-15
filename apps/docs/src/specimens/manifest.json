@@ -1,252 +1,411 @@
 {
-  "collectionId": "education-duotone-line-icons",
-  "collectionName": "Education Duotone Line Icons",
-  "creator": "Jack Liu",
-  "creatorUrl": "https://dribbble.com/strayguy",
-  "sourceUrl": "https://www.svgrepo.com/collection/education-duotone-line-icons/",
-  "acquisitionMirror": "https://www.svgviewer.dev/",
+  "collectionId": "pixellove-bordered-vectors",
+  "collectionName": "Pixellove Bordered Vectors",
+  "creator": "Pixellove",
+  "creatorUrl": "https://www.svgrepo.com/author/pixellove/",
+  "sourceUrl": "https://www.svgrepo.com/collection/pixellove-bordered-vectors/",
   "acquisitionDate": "2026-08-15",
   "license": "Public Domain (CC0)",
   "specimens": [
     {
-      "slug": "jug",
-      "label": "Jug",
-      "originalName": "Jug",
-      "file": "jug.svg",
-      "sourceId": 386922,
-      "sha256": "42929074b36bbe4d9ed632e959a08f75996c9ddf8245da881af862756e2d40e5"
+      "slug": "cld-cloud-network-folder",
+      "label": "Cld Cloud Network Folder",
+      "originalName": "Cld Cloud Network Folder",
+      "file": "cld-cloud-network-folder.svg",
+      "sourceId": 506896,
+      "sha256": "d83a8a8f1be19289aa97c2acc41547fb691de08cc42cf73876cc3b6284c7dfeb"
     },
     {
-      "slug": "box",
-      "label": "Box",
-      "originalName": "Box",
-      "file": "box.svg",
-      "sourceId": 386923,
-      "sha256": "8ad7ac3478294f600024760473da91ef8865f234450054404f545a8252f07228"
+      "slug": "cha-translate-2",
+      "label": "Cha Translate 2",
+      "originalName": "Cha Translate 2",
+      "file": "cha-translate-2.svg",
+      "sourceId": 506897,
+      "sha256": "41f438f08394583d832edeb32c21933482770955e006f621a440114d29a54274"
     },
     {
-      "slug": "shopping-cart",
-      "label": "Shopping Cart",
-      "originalName": "Shopping Cart",
-      "file": "shopping-cart.svg",
-      "sourceId": 386924,
-      "sha256": "83b8299592d1edbe2f2ae0c25812649a6bf21b56ff3ce14c696c3ae16070ce66"
+      "slug": "cld-cloud-computer-network",
+      "label": "Cld Cloud Computer Network",
+      "originalName": "Cld Cloud Computer Network",
+      "file": "cld-cloud-computer-network.svg",
+      "sourceId": 506898,
+      "sha256": "f64788d8c966414666ffc53c48c32b0719c25a94a4e52f8e03322d425921e4ab"
     },
     {
-      "slug": "alarm-clock",
-      "label": "Alarm Clock",
-      "originalName": "Alarm Clock",
-      "file": "alarm-clock.svg",
-      "sourceId": 386925,
-      "sha256": "bb45347b661e52e54a0c8639ad6da718e4e6e5d232342a0834731f007184ad61"
+      "slug": "cld-cloud-phone",
+      "label": "Cld Cloud Phone",
+      "originalName": "Cld Cloud Phone",
+      "file": "cld-cloud-phone.svg",
+      "sourceId": 506899,
+      "sha256": "66aa65118c77c5ef8c5b34349a851395b02ed4b42064b68cf70003082b75222f"
     },
     {
-      "slug": "pig",
-      "label": "Pig",
-      "originalName": "Pig",
-      "file": "pig.svg",
-      "sourceId": 386926,
-      "sha256": "2c9460de38b9ed035f1a611ab0c5e5d8c83efbf008991a659a966ab0bb604e1e"
+      "slug": "cha-rect-swear",
+      "label": "Cha Rect Swear",
+      "originalName": "Cha Rect Swear",
+      "file": "cha-rect-swear.svg",
+      "sourceId": 506900,
+      "sha256": "79526817dbc7a0c189a8097c772bfe5fb5693095e40f4677042997fac688eb0c"
     },
     {
-      "slug": "folder",
-      "label": "Folder",
-      "originalName": "Folder",
-      "file": "folder.svg",
-      "sourceId": 386927,
-      "sha256": "bd7ee35fbe18b75186957fc6bbccfa3409035b4998859721020afd2d66749e46"
+      "slug": "cld-cloud-wifi",
+      "label": "Cld Cloud Wifi",
+      "originalName": "Cld Cloud Wifi",
+      "file": "cld-cloud-wifi.svg",
+      "sourceId": 506901,
+      "sha256": "313a744cb892b205ce768235dbb8f8128c4c81e335d3314aba9da0343a3c8f7a"
     },
     {
-      "slug": "avatar",
-      "label": "Avatar",
-      "originalName": "Avatar",
-      "file": "avatar.svg",
-      "sourceId": 386928,
-      "sha256": "00c727e8af24a26f24fa7f92191291b52a1946a332a1419a917f23a8aa93bc16"
+      "slug": "cle-soap-bar",
+      "label": "Cle Soap Bar",
+      "originalName": "Cle Soap Bar",
+      "file": "cle-soap-bar.svg",
+      "sourceId": 506902,
+      "sha256": "508acb3865504c5e569af2fd09fc885419715e9860d741dc7d2bcd1fdb112887"
     },
     {
-      "slug": "lighting",
-      "label": "Lighting",
-      "originalName": "Lighting",
-      "file": "lighting.svg",
-      "sourceId": 386929,
-      "sha256": "c4d0abae4f4f1bef8c6bb522be2454632abc7ccdcfdb4c126fd5d9615cffd8a8"
+      "slug": "cle-peg",
+      "label": "Cle Peg",
+      "originalName": "Cle Peg",
+      "file": "cle-peg.svg",
+      "sourceId": 506903,
+      "sha256": "7264b8c222b8a27342cdd8080b9441872b055abd423b03c39e28a071ad69e7db"
     },
     {
-      "slug": "camera-1",
-      "label": "Camera I",
-      "originalName": "Camera",
-      "file": "camera-1.svg",
-      "sourceId": 386930,
-      "sha256": "afc849063fa2dc8941636611746645c4ba1d66ed27dd6868da5ad9e91409350f"
+      "slug": "cle-spraycan",
+      "label": "Cle Spraycan",
+      "originalName": "Cle Spraycan",
+      "file": "cle-spraycan.svg",
+      "sourceId": 506904,
+      "sha256": "aa76fb93d86d53c1ee888cf977796551a72c7a2bea01edde70b0948e97976f5e"
     },
     {
-      "slug": "notebook",
-      "label": "Notebook",
-      "originalName": "Notebook",
-      "file": "notebook.svg",
-      "sourceId": 386931,
-      "sha256": "23f65c40d6d38a7e00067c80da05be2d5aa760acebf358dbbe1ece409c67527f"
+      "slug": "cld-server",
+      "label": "Cld Server",
+      "originalName": "Cld Server",
+      "file": "cld-server.svg",
+      "sourceId": 506905,
+      "sha256": "9e947d46e9906f57a8386ed2f66baf9eab57078fa2dd46c0834c805ac8e457de"
     },
     {
-      "slug": "house",
-      "label": "House",
-      "originalName": "House",
-      "file": "house.svg",
-      "sourceId": 386932,
-      "sha256": "8d68ed5aa7e7c37026ccf13f8d8fa8b706ccfc1940ba5a4baf8b98819a832889"
+      "slug": "cle-dustpan-brush",
+      "label": "Cle Dustpan Brush",
+      "originalName": "Cle Dustpan Brush",
+      "file": "cle-dustpan-brush.svg",
+      "sourceId": 506906,
+      "sha256": "2558811998896cc2b1061244f98bc65535b334688f8b11b3488e361ed2204e6a"
     },
     {
-      "slug": "office-1",
-      "label": "Office I",
-      "originalName": "Office",
-      "file": "office-1.svg",
-      "sourceId": 386933,
-      "sha256": "bf936f6976cef5d6334928d1475f923af08becedc4b4044cbaff1c6981379012"
+      "slug": "clo-bowler",
+      "label": "Clo Bowler",
+      "originalName": "Clo Bowler",
+      "file": "clo-bowler.svg",
+      "sourceId": 506907,
+      "sha256": "8dc6973d0ef20c4496ab4c1cd33e6be1aebf7ab235d6ec50bbed6f08648e0f5e"
     },
     {
-      "slug": "office-2",
-      "label": "Office II",
-      "originalName": "Office",
-      "file": "office-2.svg",
-      "sourceId": 386934,
-      "sha256": "e34979a268a9780c42984154ec6697140bc173f5b72c8983f74ab9c745ff3239"
+      "slug": "cle-wash-basin",
+      "label": "Cle Wash Basin",
+      "originalName": "Cle Wash Basin",
+      "file": "cle-wash-basin.svg",
+      "sourceId": 506908,
+      "sha256": "09114beb27fcfab0138420537755c3f05551ffbc71b6e1cf3cb15ef4cd599ed7"
     },
     {
-      "slug": "car",
-      "label": "Car",
-      "originalName": "Car",
-      "file": "car.svg",
-      "sourceId": 386935,
-      "sha256": "cc2d053f0047525ec58c1a15f9024f04b6270b3c339cdb6f06132a7cf7c6e542"
+      "slug": "clo-t-hanger",
+      "label": "Clo T Hanger",
+      "originalName": "Clo T Hanger",
+      "file": "clo-t-hanger.svg",
+      "sourceId": 506909,
+      "sha256": "8920f523fd4cab983af77d18729c7ee3ef8f94133ea48fba69925caefd9dd0fa"
     },
     {
-      "slug": "bachelor-hat",
-      "label": "Bachelor Hat",
-      "originalName": "Bachelor Hat",
-      "file": "bachelor-hat.svg",
-      "sourceId": 386936,
-      "sha256": "e447e9357ad565c7e2e1c0b382cb926727af6caa005f76cff399246747fec7e3"
+      "slug": "clo-converse",
+      "label": "Clo Converse",
+      "originalName": "Clo Converse",
+      "file": "clo-converse.svg",
+      "sourceId": 506910,
+      "sha256": "bb8b16b09f1fa4c50de00339f22e63649659fe714cc6f3ea13485a4888deeb2b"
     },
     {
-      "slug": "computer",
-      "label": "Computer",
-      "originalName": "Computer",
-      "file": "computer.svg",
-      "sourceId": 386937,
-      "sha256": "29814d1161570c0736b4bd8dea9d5f235e1a98017297f436c4f05518ada3db65"
+      "slug": "clo-polo",
+      "label": "Clo Polo",
+      "originalName": "Clo Polo",
+      "file": "clo-polo.svg",
+      "sourceId": 506911,
+      "sha256": "e1ea68cba7d650f11fe52f6f54f1cfa3adb4b9ca7cfce6070d479a5c01a17e13"
     },
     {
-      "slug": "writing-bowl",
-      "label": "Writing Bowl",
-      "originalName": "Writing Bowl",
-      "file": "writing-bowl.svg",
-      "sourceId": 386938,
-      "sha256": "6fc2d1ccbb6f980708ac6b0dd9582665510c42ea6d17626464751b8c9d997d62"
+      "slug": "clo-briefs",
+      "label": "Clo Briefs",
+      "originalName": "Clo Briefs",
+      "file": "clo-briefs.svg",
+      "sourceId": 506912,
+      "sha256": "952e8449dc97fc056ba5c2a5270a1919c5cd77501834bba2cda477b7286a6db7"
     },
     {
-      "slug": "file-board",
-      "label": "File Board",
-      "originalName": "File Board",
-      "file": "file-board.svg",
-      "sourceId": 386939,
-      "sha256": "997d7c8f2a1b4f8b8569b653bcdbf015707979234ba78df693469464a639cb1e"
+      "slug": "com-keyboard",
+      "label": "Com Keyboard",
+      "originalName": "Com Keyboard",
+      "file": "com-keyboard.svg",
+      "sourceId": 506913,
+      "sha256": "06490a8b3b717273c614dfb0e47b735b9fe694a1e1e8a97474e013eb9bbc05d0"
     },
     {
-      "slug": "camera-2",
-      "label": "Camera II",
-      "originalName": "Camera",
-      "file": "camera-2.svg",
-      "sourceId": 386940,
-      "sha256": "c3ff83badac91f0599be272a435a44861d45d4f77da599e13a4cfc361b6349ea"
+      "slug": "con-circular-saw",
+      "label": "Con Circular Saw",
+      "originalName": "Con Circular Saw",
+      "file": "con-circular-saw.svg",
+      "sourceId": 506914,
+      "sha256": "26c061bfa8d7c6d51266477483b2f5cdcd63863db49dc7714f0d7b7352741e0e"
     },
     {
-      "slug": "u-disk",
-      "label": "U Disk",
-      "originalName": "U Disk",
-      "file": "u-disk.svg",
-      "sourceId": 386941,
-      "sha256": "9cfef2da9da082f6911c85e4b3aedfd5fcc171d1c55fc7d9b0069e6be72dff2c"
+      "slug": "com-mouse-wireless-mac",
+      "label": "Com Mouse Wireless Mac",
+      "originalName": "Com Mouse Wireless Mac",
+      "file": "com-mouse-wireless-mac.svg",
+      "sourceId": 506915,
+      "sha256": "b2fb62e2c31391fbcf8487be5910f44585b34cdf3e44cd6a85fc2d06c0870f6a"
     },
     {
-      "slug": "bowl",
-      "label": "Bowl",
-      "originalName": "Bowl",
-      "file": "bowl.svg",
-      "sourceId": 386942,
-      "sha256": "ec0766e59189da875c36ba7034046cc5dc8293d28153149e2e43925b3965cad7"
+      "slug": "com-mac-old",
+      "label": "Com Mac Old",
+      "originalName": "Com Mac Old",
+      "file": "com-mac-old.svg",
+      "sourceId": 506916,
+      "sha256": "7fec9c1eeaaa158a67e6f3cb5147b12d897d2e7a5a856eda5ccc089d3192038a"
     },
     {
-      "slug": "clothing",
-      "label": "Clothing",
-      "originalName": "Clothing",
-      "file": "clothing.svg",
-      "sourceId": 386943,
-      "sha256": "dbef8c2d91caf70d7bf2672c137b597e9dc0d0c6d5d7005af976a28c3de445f2"
+      "slug": "com-usb-stock",
+      "label": "Com Usb Stock",
+      "originalName": "Com Usb Stock",
+      "file": "com-usb-stock.svg",
+      "sourceId": 506917,
+      "sha256": "3acc3dc5492e2a1067569ff924d0396fa3144c9e82795f80e7d6cea93fd1bc96"
     },
     {
-      "slug": "globe",
-      "label": "Globe",
-      "originalName": "Globe",
-      "file": "globe.svg",
-      "sourceId": 386944,
-      "sha256": "99380b879d73b93fa5222c6577c344bb1f6c12d3cfbb0031fff0d42f0f457b70"
+      "slug": "com-laptop-code",
+      "label": "Com Laptop Code",
+      "originalName": "Com Laptop Code",
+      "file": "com-laptop-code.svg",
+      "sourceId": 506918,
+      "sha256": "272065bceeb1cef67a406bc452b534428ec50a733db78aaccad585df95106b42"
     },
     {
-      "slug": "book",
-      "label": "Book",
-      "originalName": "Book",
-      "file": "book.svg",
-      "sourceId": 386945,
-      "sha256": "5446ce630b994a216f7e4d322b81c9bfefa60b51fd40fcfff241d83d057b31c1"
+      "slug": "con-drill",
+      "label": "Con Drill",
+      "originalName": "Con Drill",
+      "file": "con-drill.svg",
+      "sourceId": 506919,
+      "sha256": "61f4a44efb1fd4afd5ac3e14dbc4caa945228cff667a70a177dd8a6ad53f9a66"
     },
     {
-      "slug": "office-3",
-      "label": "Office III",
-      "originalName": "Office",
-      "file": "office-3.svg",
-      "sourceId": 386946,
-      "sha256": "e896d344b290b19484975e912c6907a3ff054df8a9decc3a68e75df5fe26fb42"
+      "slug": "con-ruler-pencil",
+      "label": "Con Ruler Pencil",
+      "originalName": "Con Ruler Pencil",
+      "file": "con-ruler-pencil.svg",
+      "sourceId": 506920,
+      "sha256": "70ea66b0f2327f74e5a537e872e589c181734e00b4160e3de51c10917f6f1bc6"
     },
     {
-      "slug": "documentation-1",
-      "label": "Documentation I",
-      "originalName": "Documentation",
-      "file": "documentation-1.svg",
-      "sourceId": 386947,
-      "sha256": "e13e34e61641b4f531b9af5e18b53e695aaa753230e22df77e4abc9d63f45650"
+      "slug": "con-warning",
+      "label": "Con Warning",
+      "originalName": "Con Warning",
+      "file": "con-warning.svg",
+      "sourceId": 506921,
+      "sha256": "ac562e82f43b2fca148475d1c1b4ee1bf1009c78d4b625fb17153f77c3c706f5"
     },
     {
-      "slug": "documentation-2",
-      "label": "Documentation II",
-      "originalName": "Documentation",
-      "file": "documentation-2.svg",
-      "sourceId": 386948,
-      "sha256": "056d4e02e31990852093655c2cdc6331a3569525591bb4446373aa69f6e4d87e"
+      "slug": "db-copy",
+      "label": "Db Copy",
+      "originalName": "Db Copy",
+      "file": "db-copy.svg",
+      "sourceId": 506922,
+      "sha256": "bdd19150a77622bdbf94aea5a1648274dd59ab667446f45d593f5c23df94e6a7"
     },
     {
-      "slug": "reagent-bottle",
-      "label": "Reagent Bottle",
-      "originalName": "Reagent Bottle",
-      "file": "reagent-bottle.svg",
-      "sourceId": 386949,
-      "sha256": "b8b16f98ce5252fa74984e85019b2eea6bcd689b8afa59a5aa38308f24656f5d"
+      "slug": "db-network-2",
+      "label": "Db Network 2",
+      "originalName": "Db Network 2",
+      "file": "db-network-2.svg",
+      "sourceId": 506923,
+      "sha256": "70ff5605e48b1d90cb4fd1c31c3f507cda1a5401c94a73e3a2076b1284fb3ce1"
     },
     {
-      "slug": "trophies",
-      "label": "Trophies",
-      "originalName": "Trophies",
-      "file": "trophies.svg",
-      "sourceId": 386950,
-      "sha256": "25b2cdd5cddc71046a0c35d24dfef48b33fe853ee794392563bef44920c37a29"
+      "slug": "con-protractor",
+      "label": "Con Protractor",
+      "originalName": "Con Protractor",
+      "file": "con-protractor.svg",
+      "sourceId": 506924,
+      "sha256": "672dc558afc287215c809c6786b421cb624ac4be5ba6c0e0ff199f3fd4f16636"
     },
     {
-      "slug": "tv",
-      "label": "TV",
-      "originalName": "Tv",
-      "file": "tv.svg",
-      "sourceId": 386951,
-      "sha256": "b4f2aa2337d078c2d123c2d5b5f26d855b162ac78838c81aa353aa38fb422871"
+      "slug": "db-row-height",
+      "label": "Db Row Height",
+      "originalName": "Db Row Height",
+      "file": "db-row-height.svg",
+      "sourceId": 506925,
+      "sha256": "78796cb3b46b02f21442c7eeddb8cb85ec22803cca3c2a3fe8178707072ba1e2"
+    },
+    {
+      "slug": "db-table",
+      "label": "Db Table",
+      "originalName": "Db Table",
+      "file": "db-table.svg",
+      "sourceId": 506926,
+      "sha256": "12fd1bdafbdcf17914c7b971b226328ffa97cd565322a92829b1ce180f128060"
+    },
+    {
+      "slug": "des-pour",
+      "label": "Des Pour",
+      "originalName": "Des Pour",
+      "file": "des-pour.svg",
+      "sourceId": 506927,
+      "sha256": "65ee4963451ab6fb2cd3e816bc32734cb46e929efc94e3b83cd015b208f78c39"
+    },
+    {
+      "slug": "des-palette",
+      "label": "Des Palette",
+      "originalName": "Des Palette",
+      "file": "des-palette.svg",
+      "sourceId": 506928,
+      "sha256": "2c108c5083506327cc107b9d0626b2bdee5b43885f424553d10fcbcec07037e2"
+    },
+    {
+      "slug": "db-tables-swap",
+      "label": "Db Tables Swap",
+      "originalName": "Db Tables Swap",
+      "file": "db-tables-swap.svg",
+      "sourceId": 506929,
+      "sha256": "63d5d60093c7033dc7faab1c160e6cd2c3afa83e4f801a30297d211493a870ba"
+    },
+    {
+      "slug": "des-ink-well",
+      "label": "Des Ink Well",
+      "originalName": "Des Ink Well",
+      "file": "des-ink-well.svg",
+      "sourceId": 506930,
+      "sha256": "ec540aabf1a110c09c6318748cf483badc09a43482ebae1eaeb0456ac4845722"
+    },
+    {
+      "slug": "des-protractor",
+      "label": "Des Protractor",
+      "originalName": "Des Protractor",
+      "file": "des-protractor.svg",
+      "sourceId": 506931,
+      "sha256": "542aa86e5253221f82353dcf3d9fb79847f81849bb79b8277227d85bccef40b7"
+    },
+    {
+      "slug": "gen-flag-6",
+      "label": "Gen Flag 6",
+      "originalName": "Gen Flag 6",
+      "file": "gen-flag-6.svg",
+      "sourceId": 506932,
+      "sha256": "fec422ee62661d5baa7fa48f3c0b75a8170772605b0b50724ebd2a2b43238e6d"
+    },
+    {
+      "slug": "gen-heart-rate",
+      "label": "Gen Heart Rate",
+      "originalName": "Gen Heart Rate",
+      "file": "gen-heart-rate.svg",
+      "sourceId": 506933,
+      "sha256": "025cbd2d905bc1e89a264565d7d9da81f48c050446d608add436d5039deef383"
+    },
+    {
+      "slug": "gen-jewel",
+      "label": "Gen Jewel",
+      "originalName": "Gen Jewel",
+      "file": "gen-jewel.svg",
+      "sourceId": 506934,
+      "sha256": "337bdd96a250343e311739f503c2088c4759a9d83fbdba178a5e43404d9a2c15"
+    },
+    {
+      "slug": "des-wand-2",
+      "label": "Des Wand 2",
+      "originalName": "Des Wand 2",
+      "file": "des-wand-2.svg",
+      "sourceId": 506935,
+      "sha256": "84669cdc27b4c320cd08c99fa84d8e379ca0ebf6152cf47ed1db4d637fe35c11"
+    },
+    {
+      "slug": "gen-lifebelt",
+      "label": "Gen Lifebelt",
+      "originalName": "Gen Lifebelt",
+      "file": "gen-lifebelt.svg",
+      "sourceId": 506936,
+      "sha256": "64809262c345aab430951196366bb0a8668d67972a5e99e2730b1382d671dcdb"
+    },
+    {
+      "slug": "gen-pill",
+      "label": "Gen Pill",
+      "originalName": "Gen Pill",
+      "file": "gen-pill.svg",
+      "sourceId": 506937,
+      "sha256": "b55caf7d46ccc6170015e111b28635f6525b1ef2a2530bdde2d6eb710d9e4d3e"
+    },
+    {
+      "slug": "cel-rings-love",
+      "label": "Cel Rings Love",
+      "originalName": "Cel Rings Love",
+      "file": "cel-rings-love.svg",
+      "sourceId": 506938,
+      "sha256": "8c9b5bbdf80b0fd0807a67665940cf7e75865bb80178bde5b6a1591e020b6763"
+    },
+    {
+      "slug": "cel-balloons",
+      "label": "Cel Balloons",
+      "originalName": "Cel Balloons",
+      "file": "cel-balloons.svg",
+      "sourceId": 506939,
+      "sha256": "2b174e28f5fa5a7624b1178544b4728e5f241585cd32e7da674105806e474819"
+    },
+    {
+      "slug": "cel-reindeer",
+      "label": "Cel Reindeer",
+      "originalName": "Cel Reindeer",
+      "file": "cel-reindeer.svg",
+      "sourceId": 506940,
+      "sha256": "6d18a44a232cc03b427567d2062167eac3518b9b0596d67c1ec42d7d06398278"
+    },
+    {
+      "slug": "cel-cake-wedding",
+      "label": "Cel Cake Wedding",
+      "originalName": "Cel Cake Wedding",
+      "file": "cel-cake-wedding.svg",
+      "sourceId": 506941,
+      "sha256": "3c48c015a104237196e95170413a263f93d5aa6356c78381815d931a6556f3c3"
+    },
+    {
+      "slug": "cel-snow-globe",
+      "label": "Cel Snow Globe",
+      "originalName": "Cel Snow Globe",
+      "file": "cel-snow-globe.svg",
+      "sourceId": 506942,
+      "sha256": "29d6098fe780ea745d40c17553dfea84c117531679c0c9b25df96e62db1118dd"
+    },
+    {
+      "slug": "cha-bubbles-two",
+      "label": "Cha Bubbles Two",
+      "originalName": "Cha Bubbles Two",
+      "file": "cha-bubbles-two.svg",
+      "sourceId": 506943,
+      "sha256": "f9736099ad1b8e2ac15332647373f65069b53f0089e3fa5c21ec8c6a5ff6c8d3"
+    },
+    {
+      "slug": "cha-cloud",
+      "label": "Cha Cloud",
+      "originalName": "Cha Cloud",
+      "file": "cha-cloud.svg",
+      "sourceId": 506944,
+      "sha256": "6ac2b1dee8cb081f979b5cca7a8681d7af9bc8f484013560372bf6ce6b5c3161"
+    },
+    {
+      "slug": "cha-bubble-female",
+      "label": "Cha Bubble Female",
+      "originalName": "Cha Bubble Female",
+      "file": "cha-bubble-female.svg",
+      "sourceId": 506945,
+      "sha256": "7c3418ca0c2892bffbfb2823464e8593dca168714034d22296a9d6f621a7c9a8"
     }
   ]
 }
