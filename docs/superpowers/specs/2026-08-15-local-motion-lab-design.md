@@ -6,7 +6,7 @@ Status: Approved
 ## Goal
 
 Create a polished local demo that installs and exercises the published
-`@baole-space/svg-motion@0.1.0` package. The demo must make the library's core
+`@baolq/svg-motion@0.1.0` package. The demo must make the library's core
 capabilities easy to explore without becoming part of the library build or
 published npm package.
 
@@ -108,4 +108,4 @@ Verification includes:
 
 The demo is not a documentation site, hosted product, Studio editor, timeline
 authoring tool, icon pack, or new library API. It does not add morphing or
-plugins and does not change `@baole-space/svg-motion` runtime behavior.
+plugins and does not change `@baolq/svg-motion` runtime behavior.

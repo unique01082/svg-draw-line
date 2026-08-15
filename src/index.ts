@@ -2,9 +2,7 @@ import createDOMPurify from "dompurify";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
-const INSTANCE_SEQUENCE = Symbol.for(
-  "@baole-space/svg-motion.instance-sequence",
-);
+const INSTANCE_SEQUENCE = Symbol.for("@baolq/svg-motion.instance-sequence");
 const FAILED_SETUP_ANIMATIONS = new WeakMap<SVGSVGElement, Animation[]>();
 
 const FORBIDDEN_TAGS = [

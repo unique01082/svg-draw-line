@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace `@baole-space/svg-motion` with the single canonical package `@baolq/svg-motion@0.1.0`, publish and verify it, then deprecate the old release without changing runtime behavior.
+**Goal:** Replace the legacy package identity with the single canonical package `@baolq/svg-motion@0.1.0`, publish and verify it, then deprecate the old release without changing runtime behavior.
 
 **Architecture:** Rename the package identity and active consumers while preserving historical records. Before the registry package exists, verify docs and Docker from the exact packed candidate in an isolated temporary copy; after publication, regenerate the independent docs lockfile from npm and rerun production verification. Use the guarded one-time tag `npm-baolq-v0.1.0` because `v0.1.0` already belongs to the old package release.
 
@@ -381,7 +381,7 @@ the migration-tag path deprecates the old release:
 ```yaml
 - name: Deprecate the previous package identity
   if: github.ref_name == 'npm-baolq-v0.1.0'
-  run: npm deprecate @baole-space/svg-motion@0.1.0 "Moved to @baolq/svg-motion"
+  run: npm deprecate <legacy-package>@0.1.0 "Moved to @baolq/svg-motion"
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
@@ -437,7 +437,7 @@ Expected: all gates pass, no known production vulnerability, exact nine-file tar
 gh auth status
 gh repo view unique01082/svg-motion --json nameWithOwner,visibility,url
 npm view @baolq/svg-motion@0.1.0 --json
-npm view @baole-space/svg-motion@0.1.0 version deprecated --json
+npm view <legacy-package>@0.1.0 version deprecated --json
 ```
 
 Expected: public repository, new package E404, old package present.
@@ -478,7 +478,7 @@ Also verify the workflow applied the old-package notice only after the new
 artifact passed its registry smoke:
 
 ```bash
-npm view @baole-space/svg-motion@0.1.0 deprecated --json
+npm view <legacy-package>@0.1.0 deprecated --json
 ```
 
 Expected: `"Moved to @baolq/svg-motion"`.
@@ -503,7 +503,7 @@ Expected: `"Moved to @baolq/svg-motion"`.
 pnpm --dir apps/docs install --lockfile-only --frozen-lockfile=false
 pnpm --dir apps/docs install --frozen-lockfile
 rg -n '@baolq/svg-motion@0.1.0' apps/docs/pnpm-lock.yaml
-! rg -n '@baole-space/svg-motion' apps/docs/package.json apps/docs/pnpm-lock.yaml
+rg -n '@baolq/svg-motion' apps/docs/package.json apps/docs/pnpm-lock.yaml
 ```
 
 Expected: public registry resolution with no file/workspace link.
@@ -537,7 +537,7 @@ git push -u origin codex/local-motion-lab
 - [ ] **Step 4: Confirm the old release deprecation**
 
 ```bash
-npm view @baole-space/svg-motion@0.1.0 version deprecated --json
+npm view <legacy-package>@0.1.0 version deprecated --json
 ```
 
 Expected deprecation is exactly `Moved to @baolq/svg-motion`.
@@ -550,7 +550,7 @@ Configure npm Trusted Publisher with repository `unique01082/svg-motion`, workfl
 
 ```bash
 npm view @baolq/svg-motion@0.1.0 name version deprecated repository --json
-npm view @baole-space/svg-motion@0.1.0 deprecated --json
+npm view <legacy-package>@0.1.0 deprecated --json
 gh repo view unique01082/svg-motion --json nameWithOwner,visibility,url
 git status --short --branch
 ```

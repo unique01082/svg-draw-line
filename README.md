@@ -152,6 +152,28 @@ await mountSvgMotion(
 
 The runtime targets evergreen Chromium, Firefox, and WebKit browsers with Web Animations API and `SVGGeometryElement.getTotalLength()`. Package imports are SSR-safe, but preparing, mounting, or animating SVG requires a browser DOM. The package does not include Anime.js or Ant Design.
 
+## Verification
+
+The repository keeps library, documentation, and delivery checks separate so a
+passing package build cannot hide a docs or container regression. GitHub Actions
+CI runs independent `library`, `docs`, and `docker` jobs on every push and pull
+request.
+
+| Scope                    | Command                  | Coverage                                                                       |
+| ------------------------ | ------------------------ | ------------------------------------------------------------------------------ |
+| Unit and contract        | `pnpm test`              | Core APIs, React adapter, typed errors, accessibility and security regressions |
+| Native browser behavior  | `pnpm test:browser`      | Web Animations API and SVG geometry in Chromium, Firefox, and WebKit           |
+| Packed-package consumers | `pnpm test:consumer`     | Tarball imports, strict types, tree-shaking, Vanilla and React consumers       |
+| Complete library gate    | `pnpm verify`            | Format, lint, strict types, unit, browser, build and consumer checks           |
+| Documentation site       | `pnpm docs:test`         | Routes, components, prerendered pages and browser flows                        |
+| API snapshot             | `pnpm docs:api:check`    | Public root and React declarations remain aligned with documentation           |
+| Docker delivery          | `pnpm docs:docker:smoke` | nginx health, deep links, caching and security headers                         |
+
+Unit coverage includes the React adapter and security regressions as first-class
+contracts. The CI badge at the top of this README always reflects the current
+workflow result. Test totals are intentionally not hard-coded here because the
+suite grows with every regression case.
+
 ## Releasing
 
 Pull requests and pushes run `pnpm verify`. Tags matching `vX.Y.Z` run the same gates, reject a tag that differs from `package.json`, and publish with public access and provenance.

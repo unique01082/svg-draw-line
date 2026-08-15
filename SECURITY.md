@@ -6,7 +6,7 @@ The current `0.1.x` line receives security fixes. Pre-release prototypes and unt
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities privately through the repository's [GitHub Security advisory form](https://github.com/unique01082/svg-draw-line/security/advisories/new).
+Please report suspected vulnerabilities privately through the repository's [GitHub Security advisory form](https://github.com/unique01082/svg-motion/security/advisories/new).
 
 Do not open a public issue, discussion, or pull request for an undisclosed vulnerability. Include:
 

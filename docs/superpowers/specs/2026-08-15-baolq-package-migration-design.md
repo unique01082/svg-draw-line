@@ -6,7 +6,7 @@ Make `@baolq/svg-motion` the single canonical npm identity for SVG Motion while
 preserving the existing `0.1.0` runtime, public API, React entry point, and
 versioned documentation line.
 
-The migration replaces the published `@baole-space/svg-motion` identity; it
+The migration replaces the published legacy package identity; it
 does not introduce a compatibility fork or a second maintained release line.
 
 ## Package identity
@@ -18,7 +18,7 @@ does not introduce a compatibility fork or a second maintained release line.
   `@baolq/svg-motion-docs`.
 - Update package metadata, badges, links, release contracts, consumer fixtures,
   lockfiles, documentation examples, API content, and CI to use the new scope.
-- Update repository metadata from `unique01082/svg-draw-line` to
+- Update repository metadata from the retired repository name to
   `unique01082/svg-motion`.
 - Keep `svg-motion.baole.space`, `/docs/0.1/*`, and package version `0.1.0`.
 
@@ -30,7 +30,7 @@ and Docker verification matrix. Publication uses public access and provenance.
 
 After the registry confirms `@baolq/svg-motion@0.1.0` is installable and its
 root and `/react` entries work from the registry tarball, deprecate
-`@baole-space/svg-motion@0.1.0` with the message:
+the legacy `0.1.0` package with the message:
 
 > Moved to @baolq/svg-motion
 
@@ -81,5 +81,5 @@ verified.
 - No runtime or public API behavior changes.
 - No version bump beyond the new package's initial `0.1.0` release.
 - No dual publishing or continued maintenance under the old scope.
-- No unpublish of `@baole-space/svg-motion`.
+- No unpublish of the legacy package identity.
 - No change to the documentation hostname or versioned URL structure.

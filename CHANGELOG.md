@@ -14,4 +14,4 @@ All notable changes to this project are documented in this file. The format is b
 - Strict TypeScript declarations and ESM packaging for Node.js 22 and evergreen browsers.
 - Unit, security, package, and native integration coverage across Chromium, Firefox, and WebKit, plus packed Vanilla and React consumer tests.
 
-[0.1.0]: https://github.com/unique01082/svg-draw-line/releases/tag/v0.1.0
+[0.1.0]: https://github.com/unique01082/svg-motion/releases/tag/npm-baolq-v0.1.0

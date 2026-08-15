@@ -216,6 +216,36 @@ describe("release contract", () => {
     expect(readme).toMatch(/Chromium.*Firefox.*WebKit/s);
   });
 
+  it("documents the complete test and CI surface without volatile counts", async () => {
+    const readme = await readFile(new URL("README.md", ROOT), "utf8");
+
+    expect(readme).toContain("## Verification");
+    for (const command of [
+      "pnpm test",
+      "pnpm test:browser",
+      "pnpm test:consumer",
+      "pnpm verify",
+      "pnpm docs:test",
+      "pnpm docs:api:check",
+      "pnpm docs:docker:smoke",
+    ]) {
+      expect(readme).toContain(`\`${command}\``);
+    }
+    for (const scope of [
+      "Unit and contract",
+      "Chromium, Firefox, and WebKit",
+      "React adapter",
+      "security regressions",
+      "Packed-package consumers",
+      "API snapshot",
+      "Docker",
+    ]) {
+      expect(readme).toContain(scope);
+    }
+    expect(readme).toMatch(/CI.*library.*docs.*docker/is);
+    expect(readme).not.toMatch(/\b\d+\/\d+\s+(?:tests?|passing|passed)\b/i);
+  });
+
   it("ships contributor, security, and release-history guidance", async () => {
     const [contributing, security, changelog] = await Promise.all([
       readFile(new URL("CONTRIBUTING.md", ROOT), "utf8"),

@@ -2,16 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build and locally run a polished React playground plus gallery that consumes the published `@baole-space/svg-motion@0.1.0` package.
+**Goal:** Build and locally run a polished React playground plus gallery that consumes the published `@baolq/svg-motion@0.1.0` package.
 
 **Architecture:** Create an independent Vite consumer in `examples/playground` with its own manifest and lockfile. Keep deterministic SVG fixtures and state helpers separate from the React shell, use `<SvgMotion>` for rendering and its public ref/controller for transport, and verify the real registry package in Playwright rather than importing library source.
 
-**Tech Stack:** React 18, TypeScript 5.9, Vite 8, `@baole-space/svg-motion@0.1.0`, Vitest 4, Playwright 1.62, CSS.
+**Tech Stack:** React 18, TypeScript 5.9, Vite 8, `@baolq/svg-motion@0.1.0`, Vitest 4, Playwright 1.62, CSS.
 
 ## Global Constraints
 
 - The demo lives under `examples/playground` and is excluded from the npm package allowlist.
-- The demo pins the published `@baole-space/svg-motion` version `0.1.0` and never imports `../../src` or another local package path.
+- The demo pins the published `@baolq/svg-motion` version `0.1.0` and never imports `../../src` or another local package path.
 - The page combines one interactive playground with a gallery on the same route.
 - Supported source flows are SVG markup, URL, and local SVG file upload.
 - Supported presets are `draw`, `fade`, `scale`, `stagger`, and `pulse`.
@@ -58,13 +58,13 @@
 **Interfaces:**
 
 - Produces: `PresetName`, `DemoFixture`, `DEMO_FIXTURES`, `DEFAULT_FIXTURE`, and `fixtureById(id)` for the application and browser tests.
-- Produces: a minimal Vite app importing `SvgMotion` only from `@baole-space/svg-motion/react`.
+- Produces: a minimal Vite app importing `SvgMotion` only from `@baolq/svg-motion/react`.
 
 - [ ] **Step 1: Create the isolated manifest and strict toolchain**
 
 ```json
 {
-  "name": "@baole-space/svg-motion-playground",
+  "name": "@baolq/svg-motion-playground",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -77,7 +77,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@baole-space/svg-motion": "0.1.0",
+    "@baolq/svg-motion": "0.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -233,7 +233,7 @@ Keep every fixture as complete valid SVG markup with a `viewBox`, an accessible 
 - [ ] **Step 5: Add the smallest registry-importing React shell**
 
 ```tsx
-import { SvgMotion } from "@baole-space/svg-motion/react";
+import { SvgMotion } from "@baolq/svg-motion/react";
 import { DEFAULT_FIXTURE } from "./fixtures";
 
 export function App() {
@@ -254,7 +254,7 @@ Mount this component from `main.tsx` using `createRoot`. Add only structural res
 
 - [ ] **Step 6: Run GREEN gates and prove registry resolution**
 
-Run: `pnpm --dir examples/playground test && pnpm --dir examples/playground build && rg -n 'resolution:.*svg-motion-0.1.0|@baole-space/svg-motion@0.1.0' examples/playground/pnpm-lock.yaml`
+Run: `pnpm --dir examples/playground test && pnpm --dir examples/playground build && rg -n 'resolution:.*svg-motion-0.1.0|@baolq/svg-motion@0.1.0' examples/playground/pnpm-lock.yaml`
 
 Expected: fixture tests and build PASS; the lockfile resolves the npm tarball at exactly `0.1.0`.
 
@@ -486,7 +486,7 @@ Use a labelled radio group. Markup mode renders the editor, URL mode renders a U
 
 Run: `pnpm --dir examples/playground test:e2e && pnpm --dir examples/playground build`
 
-Expected: all gallery/source tests PASS, all five cards render through the released adapter, and the build contains `@baole-space/svg-motion` code from `node_modules`.
+Expected: all gallery/source tests PASS, all five cards render through the released adapter, and the build contains `@baolq/svg-motion` code from `node_modules`.
 
 - [ ] **Step 6: Commit**
 

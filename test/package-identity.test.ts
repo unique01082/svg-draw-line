@@ -4,11 +4,7 @@ import { extname, relative, resolve } from "node:path";
 import { expect, test } from "vitest";
 
 const root = resolve(import.meta.dirname, "..");
-const ignored = [
-  "docs/superpowers/specs",
-  "docs/superpowers/plans",
-  "test/package-identity.test.ts",
-];
+const ignored = ["test/package-identity.test.ts"];
 
 async function textFiles(directory = root): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -38,14 +34,23 @@ async function textFiles(directory = root): Promise<string[]> {
           return [];
         if (entry.isDirectory()) return textFiles(path);
         return [
+          ".conf",
+          ".css",
+          ".html",
           ".json",
           ".md",
+          ".mdx",
           ".mjs",
+          ".sh",
+          ".svg",
+          ".toml",
           ".ts",
           ".tsx",
+          ".txt",
           ".yaml",
           ".yml",
-        ].includes(extname(path))
+        ].includes(extname(path)) ||
+          ["Dockerfile", "LICENSE"].includes(entry.name)
           ? [path]
           : [];
       }),
@@ -62,16 +67,25 @@ test("uses the canonical package identity in active files", async () => {
     "https://github.com/unique01082/svg-motion.git",
   );
 
-  const oldScope = `@${"baole-space"}/svg-motion`;
-  const retainedRuntimeKey = `${oldScope}.instance-sequence`;
+  const retiredScope = `@${"baole-space"}/svg-motion`;
   const violations: string[] = [];
   for (const path of await textFiles()) {
-    const name = relative(root, path);
-    const text = (await readFile(path, "utf8")).replace(
-      name === "src/index.ts" ? retainedRuntimeKey : "",
-      "",
-    );
-    if (text.includes(oldScope)) violations.push(relative(root, path));
+    const text = await readFile(path, "utf8");
+    if (text.includes(retiredScope)) violations.push(relative(root, path));
   }
+  expect(violations).toEqual([]);
+});
+
+test("contains no reference to the retired repository name", async () => {
+  const retiredRepositoryName = ["svg", "draw", "line"].join("-");
+  const violations: string[] = [];
+
+  for (const path of await textFiles()) {
+    const text = await readFile(path, "utf8");
+    if (text.includes(retiredRepositoryName)) {
+      violations.push(relative(root, path));
+    }
+  }
+
   expect(violations).toEqual([]);
 });
