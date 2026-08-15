@@ -7,7 +7,7 @@ settings:
 importers:
   .:
     dependencies:
-      "@baole-space/svg-motion":
+      "@baolq/svg-motion":
         specifier: 0.1.0
         version: 0.1.0(react@18.3.1)
       "@mdx-js/react":
@@ -118,10 +118,10 @@ packages:
       }
     engines: { node: ">=6.9.0" }
 
-  "@baole-space/svg-motion@0.1.0":
+  "@baolq/svg-motion@0.1.0":
     resolution:
       {
-        integrity: sha512-0FSo+nazmh2lk4A+eNm8+nJBjYvd426OeX+Ark+Ocl0qzbi5e9HZ3dnKsixbattPEgzviNtjBIYpap99DrX2/A==,
+        integrity: sha512-BLupRmmkgGqaEozJLnS776Y+lwg6+X/4cER35jHa+UFO1MtZbUUuXnlB6kDTWEtWj3ZOxHlF+Pmhp6X77SqieA==,
       }
     engines: { node: ">=22" }
     peerDependencies:
@@ -2401,7 +2401,7 @@ snapshots:
 
   "@babel/runtime@7.29.7": {}
 
-  "@baole-space/svg-motion@0.1.0(react@18.3.1)":
+  "@baolq/svg-motion@0.1.0(react@18.3.1)":
     dependencies:
       dompurify: 3.4.13
     optionalDependencies:

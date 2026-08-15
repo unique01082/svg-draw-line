@@ -50,7 +50,7 @@
     "test:consumer": "node scripts/consumer-smoke.mjs",
     "docs:dev": "pnpm --dir apps/docs dev",
     "docs:build": "pnpm --dir apps/docs build",
-    "docs:test": "pnpm --dir apps/docs verify",
+    "docs:test": "node scripts/docs-test.mjs",
     "docs:api": "pnpm build && pnpm --dir apps/docs api:generate",
     "docs:api:check": "pnpm build && pnpm --dir apps/docs api:check",
     "docs:docker:smoke": "node scripts/docker-smoke.mjs",

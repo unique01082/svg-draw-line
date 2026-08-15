@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*.*.*"
-      - "npm-baolq-v*.*.*"
 
 permissions:
   contents: read
@@ -31,7 +30,9 @@ jobs:
         id: package
         run: |
           spec="$(node -p 'const p=require("./package.json"); p.name+"@"+p.version')"
+          version="$(node -p 'require("./package.json").version')"
           echo "spec=$spec" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Require an unpublished target version
         run: |
           if npm view "${{ steps.package.outputs.spec }}" version >/dev/null 2>&1; then
@@ -39,18 +40,21 @@ jobs:
             exit 1
           fi
       - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Verify published entries
         run: |
-          test "$(npm view '${{ steps.package.outputs.spec }}' version)" = "0.1.0"
+          for attempt in $(seq 1 18); do
+            published_version="$(npm view '${{ steps.package.outputs.spec }}' version 2>/dev/null || true)"
+            if [ "$published_version" = "${{ steps.package.outputs.version }}" ]; then
+              break
+            fi
+            if [ "$attempt" = "18" ]; then
+              echo "Registry did not expose ${{ steps.package.outputs.spec }} within 3 minutes."
+              exit 1
+            fi
+            sleep 10
+          done
           mkdir "$RUNNER_TEMP/svg-motion-registry-smoke"
           cd "$RUNNER_TEMP/svg-motion-registry-smoke"
           npm init --yes
           npm install "${{ steps.package.outputs.spec }}" react@18
           node --input-type=module -e 'const core=await import("@baolq/svg-motion"); const react=await import("@baolq/svg-motion/react"); if(!core.prepareSvg||!react.SvgMotion) process.exit(1)'
-      - name: Deprecate the previous package identity
-        if: github.ref_name == 'npm-baolq-v0.1.0'
-        run: npm deprecate @baole-space/svg-motion@0.1.0 "Moved to @baolq/svg-motion"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

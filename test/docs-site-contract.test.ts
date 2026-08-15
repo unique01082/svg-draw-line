@@ -130,9 +130,16 @@ describe("documentation site delivery contract", () => {
       resolve(docsRoot, "playwright.config.ts"),
       "utf8",
     );
+    const packageJson = readJson<{ scripts: Record<string, string> }>(
+      resolve(root, "package.json"),
+    );
+    const runner = readFileSync(resolve(root, "scripts/docs-test.mjs"), "utf8");
     expect(config).toContain("DOCS_TEST_PORT");
     expect(config).toMatch(/baseURL:\s*origin/);
     expect(config).toMatch(/--port \$\{port\}/);
+    expect(packageJson.scripts["docs:test"]).toBe("node scripts/docs-test.mjs");
+    expect(runner).toContain('server.listen(0, "127.0.0.1"');
+    expect(runner).toContain("DOCS_TEST_PORT");
   });
 
   it("scaffolds a new minor snapshot without rewriting an existing line", () => {
