@@ -85,6 +85,58 @@ test("uses native geometry lengths and WAAPI for every drawable primitive", asyn
   expect(result.diagnostics).toEqual([]);
 });
 
+test("resolves detached internal stylesheet paint without connecting the caller", async ({
+  page,
+}) => {
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.detachedInternalStyle(),
+  );
+
+  expect(result.started).toEqual({
+    animationCount: 1,
+    connected: false,
+    hasFillOpacityKeyframe: false,
+    stroke: "",
+    strokeOpacity: "0.75",
+    strokeWidth: "",
+  });
+  expect(result.effective.fill).toBe("none");
+  expect(result.effective.stroke).toBe("rgb(220, 38, 38)");
+  expect(result.effective.strokeOpacity).toBe("0.75");
+  expect(result.effective.strokeWidth).toBe("5px");
+  expect(result.restored).toBe(true);
+  expect(result.state).toBe("cancelled");
+  expect(result.terminalAnimationCount).toBe(0);
+  expect(result.probeCount).toBe(0);
+});
+
+test("detached style resolution cannot load or execute hostile probe content", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  const requests = await installRequestInterception(page);
+
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.detachedHostileStyleProbe(),
+  );
+  await page.waitForTimeout(100);
+
+  expect(result).toEqual({
+    callerConnected: false,
+    executed: 0,
+    probeCount: 0,
+    restored: true,
+    state: "cancelled",
+  });
+  expect(requests.attackerRequests).toEqual([]);
+  expect(requests.unexpectedRequests).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("keeps gradient, mask, clip, filter, and use references local", async ({
   page,
 }) => {

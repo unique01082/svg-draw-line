@@ -238,6 +238,113 @@ function referenceSummary() {
   return { targets, values };
 }
 
+function detachedInternalStyle() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.innerHTML = `
+    <style>
+      svg { --ink: rgb(220, 38, 38); color: var(--ink) }
+      .ink { fill: #00f; stroke: #00f; stroke-width: 2; stroke-opacity: .25 }
+      g .ink { fill: none; stroke: currentColor; stroke-width: 5; stroke-opacity: .5 }
+    </style>
+    <g>
+      <path class="ink" fill="#0f0" stroke="#000" stroke-width="1"
+        style="stroke-opacity: .75" d="M10 10h80" />
+    </g>
+  `;
+  const path = svg.querySelector("path")!;
+  const original = svg.outerHTML;
+  const nativeAnimate = Element.prototype.animate;
+  const created: Array<{ animation: Animation; target: Element }> = [];
+  Element.prototype.animate = function (keyframes, options) {
+    const animation = nativeAnimate.call(this, keyframes, options);
+    created.push({ animation, target: this });
+    return animation;
+  };
+  let controller;
+  try {
+    controller = animateSvg(svg, {
+      autoplay: false,
+      duration: 1000,
+      stagger: 0,
+    });
+  } finally {
+    Element.prototype.animate = nativeAnimate;
+  }
+  const pathAnimation = created.find(
+    ({ target }) => target === path,
+  )?.animation;
+  const keyframes =
+    (pathAnimation?.effect as KeyframeEffect | null)?.getKeyframes() ?? [];
+  const started = {
+    animationCount: created.length,
+    connected: svg.isConnected,
+    hasFillOpacityKeyframe: keyframes.some(
+      (keyframe: ComputedKeyframe) => "fillOpacity" in keyframe,
+    ),
+    stroke: path.style.stroke,
+    strokeOpacity: path.style.strokeOpacity,
+    strokeWidth: path.style.strokeWidth,
+  };
+
+  stage.append(svg);
+  const computed = getComputedStyle(path);
+  const effective = {
+    fill: computed.fill,
+    stroke: computed.stroke,
+    strokeOpacity: computed.strokeOpacity,
+    strokeWidth: computed.strokeWidth,
+  };
+  svg.remove();
+  controller.cancel();
+
+  return {
+    effective,
+    probeCount: document.querySelectorAll("[data-svg-motion-style-probe]")
+      .length,
+    restored: svg.outerHTML === original,
+    state: controller.state,
+    started,
+    terminalAnimationCount: created.filter(
+      ({ animation }) => animation.playState !== "idle",
+    ).length,
+  };
+}
+
+function detachedHostileStyleProbe() {
+  const marker = "__svgMotionDetachedProbeExecuted";
+  Reflect.set(globalThis, marker, 0);
+  const svg = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">
+    <style>
+      @import url("https://attacker.invalid/probe.css");
+      svg { --ink: rgb(220, 38, 38); color: var(--ink) }
+      .ink { fill: none; stroke: currentColor; stroke-width: 5 }
+      .load { fill: image-set(url("https://attacker.invalid/paint.png") 1x) }
+    </style>
+    <script>globalThis.${marker} += 1</script>
+    <foreignObject><img xmlns="http://www.w3.org/1999/xhtml" src="https://attacker.invalid/foreign.png" onerror="globalThis.${marker} += 1" /></foreignObject>
+    <image href="https://attacker.invalid/image.png" />
+    <path class="ink load" d="M10 10h80" style="stroke-opacity: .75" onload="globalThis.${marker} += 1" />
+  </svg>`,
+    "image/svg+xml",
+  ).documentElement as unknown as SVGSVGElement;
+  const original = svg.outerHTML;
+  const controller = animateSvg(svg, { autoplay: false });
+  const callerConnected =
+    svg.isConnected && svg.ownerDocument.defaultView !== null;
+  controller.cancel();
+  const executed = Reflect.get(globalThis, marker);
+  Reflect.deleteProperty(globalThis, marker);
+  return {
+    callerConnected,
+    executed,
+    probeCount: document.querySelectorAll("[data-svg-motion-style-probe]")
+      .length,
+    restored: svg.outerHTML === original,
+    state: controller.state,
+  };
+}
+
 window.svgMotionHarness = {
   artwork,
   async completeNaturally() {
@@ -257,6 +364,8 @@ window.svgMotionHarness = {
       state: instance?.controller.state,
     };
   },
+  detachedHostileStyleProbe,
+  detachedInternalStyle,
   finish() {
     instance?.controller.finish();
     return summary();
@@ -308,6 +417,8 @@ declare global {
       completeNaturally(): Promise<ReturnType<typeof artwork>>;
       destroyController(): ReturnType<typeof artwork>;
       destroyInstance(): { connected: boolean; state: string | undefined };
+      detachedHostileStyleProbe(): ReturnType<typeof detachedHostileStyleProbe>;
+      detachedInternalStyle(): ReturnType<typeof detachedInternalStyle>;
       finish(): ReturnType<typeof summary>;
       mount(
         fixture: FixtureName,

@@ -1377,6 +1377,7 @@ const NON_RENDERED_ELEMENTS = new Set([
   "desc",
   "title",
   "metadata",
+  "style",
   "clipPath",
   "mask",
   "marker",
@@ -1480,6 +1481,215 @@ const PRESENTATION_DEFAULTS: Readonly<Record<string, string>> = {
   visibility: "visible",
 };
 
+const MEASURED_PRESENTATION_PROPERTIES = [
+  "display",
+  "fill",
+  "fill-opacity",
+  "opacity",
+  "stroke",
+  "stroke-opacity",
+  "stroke-width",
+  "visibility",
+] as const;
+const PROBE_RESOURCE_ELEMENTS = new Set([
+  "audio",
+  "discard",
+  "embed",
+  "feImage",
+  "foreignObject",
+  "iframe",
+  "image",
+  "link",
+  "object",
+  "script",
+  "set",
+  "video",
+  "animate",
+  "animateMotion",
+  "animateTransform",
+]);
+const PROBE_RESOURCE_CSS = /(?:cross-fade|element|image-set|paint)\s*\(/i;
+
+type PresentationMap = ReadonlyMap<SVGElement, ReadonlyMap<string, string>>;
+
+function isLiveDocumentConnection(element: Element): boolean {
+  return element.isConnected && element.ownerDocument.defaultView !== null;
+}
+
+function isSafeProbeCssValue(value: string): boolean {
+  return (
+    !DANGEROUS_CSS.test(value) &&
+    !PROBE_RESOURCE_CSS.test(value) &&
+    hasOnlyLocalUrlFunctions(value)
+  );
+}
+
+function safeProbeDeclarationText(declaration: CSSStyleDeclaration): string {
+  const safeDeclarations: string[] = [];
+  for (let index = 0; index < declaration.length; index += 1) {
+    const property = declaration.item(index).toLowerCase();
+    const value = declaration.getPropertyValue(property).trim();
+    if (
+      (!SAFE_STYLE_PROPERTIES.has(property) && !property.startsWith("--")) ||
+      !isSafeProbeCssValue(value)
+    ) {
+      continue;
+    }
+    const priority = declaration.getPropertyPriority(property);
+    safeDeclarations.push(
+      `${property}: ${value}${priority ? ` !${priority}` : ""}`,
+    );
+  }
+  return safeDeclarations.join("; ");
+}
+
+function safeProbeRuleText(rule: CSSRule): string {
+  if (rule.type === CSSRule.STYLE_RULE) {
+    const styleRule = rule as CSSStyleRule;
+    const declarations = safeProbeDeclarationText(styleRule.style);
+    const nested = [...styleRule.cssRules].map(safeProbeRuleText).join("\n");
+    if (!declarations && !nested) return "";
+    return `${styleRule.selectorText} { ${declarations}${
+      declarations && nested ? "; " : ""
+    }${nested} }`;
+  }
+
+  if (
+    rule.type === CSSRule.MEDIA_RULE ||
+    rule.type === CSSRule.SUPPORTS_RULE ||
+    rule.constructor.name === "CSSLayerBlockRule" ||
+    rule.constructor.name === "CSSScopeRule"
+  ) {
+    const groupingRule = rule as CSSGroupingRule;
+    const rules = [...groupingRule.cssRules]
+      .map(safeProbeRuleText)
+      .filter(Boolean)
+      .join("\n");
+    if (!rules) return "";
+    const blockStart = rule.cssText.indexOf("{");
+    if (blockStart === -1) return "";
+    return `${rule.cssText.slice(0, blockStart).trim()} { ${rules} }`;
+  }
+
+  return "";
+}
+
+function safeProbeStylesheet(stylesheet: string): string {
+  if (typeof CSSStyleSheet === "undefined") return "";
+  try {
+    const parsed = new CSSStyleSheet();
+    parsed.replaceSync(stylesheet);
+    return [...parsed.cssRules]
+      .map(safeProbeRuleText)
+      .filter(Boolean)
+      .join("\n");
+  } catch {
+    return "";
+  }
+}
+
+function sanitizeProbeClone(svg: SVGSVGElement): void {
+  for (const element of [svg, ...svg.querySelectorAll("*")]) {
+    if (
+      element !== svg &&
+      (element.namespaceURI !== SVG_NAMESPACE ||
+        PROBE_RESOURCE_ELEMENTS.has(element.localName))
+    ) {
+      element.remove();
+      continue;
+    }
+
+    if (element.localName === "style") {
+      const stylesheet = safeProbeStylesheet(element.textContent ?? "");
+      if (stylesheet) element.textContent = stylesheet;
+      else element.remove();
+      continue;
+    }
+
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.localName.toLowerCase();
+      const value = attribute.value;
+      if (name === "style") continue;
+      if (
+        name.startsWith("on") ||
+        name === "src" ||
+        name === "base" ||
+        (name === "href" && !LOCAL_URL_REFERENCE.test(value.trim())) ||
+        DANGEROUS_CSS.test(value) ||
+        PROBE_RESOURCE_CSS.test(value) ||
+        !hasOnlyLocalUrlFunctions(value)
+      ) {
+        element.removeAttributeNode(attribute);
+      }
+    }
+
+    if (element.hasAttribute("style")) {
+      const declarations = safeProbeDeclarationText(
+        (element as SVGElement).style,
+      );
+      if (declarations) element.setAttribute("style", declarations);
+      else element.removeAttribute("style");
+    }
+  }
+}
+
+function detachedPresentation(svg: SVGSVGElement): PresentationMap | undefined {
+  if (
+    isLiveDocumentConnection(svg) ||
+    svg.querySelector("style") === null ||
+    typeof document === "undefined" ||
+    document.body === null
+  ) {
+    return undefined;
+  }
+
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  const originals = [svg, ...svg.querySelectorAll("*")];
+  const clones = [clone, ...clone.querySelectorAll("*")];
+  const pairs = originals.map((element, index) => [element, clones[index]]);
+  let host: HTMLDivElement | undefined;
+
+  try {
+    sanitizeProbeClone(clone);
+    const connectedClone = document.adoptNode(clone);
+    host = document.createElement("div");
+    host.dataset.svgMotionStyleProbe = "";
+    host.style.cssText =
+      "all:initial!important;display:none!important;color:black!important";
+    const shadow = host.attachShadow({ mode: "closed" });
+    shadow.append(connectedClone);
+    document.body.append(host);
+
+    const presentation = new Map<SVGElement, ReadonlyMap<string, string>>();
+    for (const [original, measured] of pairs) {
+      if (
+        !original ||
+        !measured ||
+        original.namespaceURI !== SVG_NAMESPACE ||
+        measured.namespaceURI !== SVG_NAMESPACE ||
+        !measured.isConnected
+      ) {
+        continue;
+      }
+      const computed = getComputedStyle(measured);
+      presentation.set(
+        original as SVGElement,
+        new Map(
+          MEASURED_PRESENTATION_PROPERTIES.map((property) => [
+            property,
+            computed.getPropertyValue(property).trim(),
+          ]),
+        ),
+      );
+    }
+    return presentation;
+  } catch {
+    return undefined;
+  } finally {
+    host?.remove();
+  }
+}
+
 function localPresentationValue(element: SVGElement, property: string): string {
   return (
     element.style.getPropertyValue(property).trim() ||
@@ -1488,8 +1698,15 @@ function localPresentationValue(element: SVGElement, property: string): string {
   );
 }
 
-function presentationValue(element: SVGElement, property: string): string {
-  if (element.isConnected) {
+function presentationValue(
+  element: SVGElement,
+  property: string,
+  presentation?: PresentationMap,
+): string {
+  const measured = presentation?.get(element)?.get(property);
+  if (measured) return measured;
+
+  if (isLiveDocumentConnection(element)) {
     try {
       const computed = getComputedStyle(element)
         .getPropertyValue(property)
@@ -1534,8 +1751,9 @@ function presentationNumber(
   element: SVGElement,
   property: string,
   fallback: number,
+  presentation?: PresentationMap,
 ): number {
-  const value = presentationValue(element, property).trim();
+  const value = presentationValue(element, property, presentation).trim();
   const number = Number.parseFloat(value);
   if (!Number.isFinite(number)) return fallback;
   return value.endsWith("%") ? number / 100 : number;
@@ -1587,12 +1805,28 @@ function fillApplies(element: SVGElement): boolean {
 function effectiveGeometryPaint(
   element: SVGElement,
   length: number,
+  presentation?: PresentationMap,
 ): DrawableGeometry | undefined {
-  const fill = presentationValue(element, "fill");
-  const fillOpacity = presentationNumber(element, "fill-opacity", 1);
-  const stroke = presentationValue(element, "stroke");
-  const strokeOpacity = presentationNumber(element, "stroke-opacity", 1);
-  const strokeWidth = presentationNumber(element, "stroke-width", 1);
+  const fill = presentationValue(element, "fill", presentation);
+  const fillOpacity = presentationNumber(
+    element,
+    "fill-opacity",
+    1,
+    presentation,
+  );
+  const stroke = presentationValue(element, "stroke", presentation);
+  const strokeOpacity = presentationNumber(
+    element,
+    "stroke-opacity",
+    1,
+    presentation,
+  );
+  const strokeWidth = presentationNumber(
+    element,
+    "stroke-width",
+    1,
+    presentation,
+  );
   const fillVisible = fillApplies(element) && hasPaint(fill) && fillOpacity > 0;
   const strokeVisible =
     hasPaint(stroke) && strokeOpacity > 0 && strokeWidth > 0;
@@ -1602,7 +1836,10 @@ function effectiveGeometryPaint(
     : undefined;
 }
 
-function isVisible(element: SVGElement): boolean {
+function isVisible(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): boolean {
   for (
     let current: Element | null = element;
     current instanceof SVGElement;
@@ -1610,9 +1847,19 @@ function isVisible(element: SVGElement): boolean {
   ) {
     if (NON_RENDERED_ELEMENTS.has(current.localName)) return false;
 
-    const display = presentationValue(current, "display").toLowerCase();
-    const visibility = presentationValue(current, "visibility").toLowerCase();
-    const opacity = Number.parseFloat(presentationValue(current, "opacity"));
+    const display = presentationValue(
+      current,
+      "display",
+      presentation,
+    ).toLowerCase();
+    const visibility = presentationValue(
+      current,
+      "visibility",
+      presentation,
+    ).toLowerCase();
+    const opacity = Number.parseFloat(
+      presentationValue(current, "opacity", presentation),
+    );
     if (
       display === "none" ||
       visibility === "hidden" ||
@@ -1628,8 +1875,11 @@ function isVisible(element: SVGElement): boolean {
   return true;
 }
 
-function isVisibleLeaf(element: SVGElement): boolean {
-  return element.children.length === 0 && isVisible(element);
+function isVisibleLeaf(
+  element: SVGElement,
+  presentation?: PresentationMap,
+): boolean {
+  return element.children.length === 0 && isVisible(element, presentation);
 }
 
 function snapshotAttributes(
@@ -1714,13 +1964,17 @@ function buildDrawPlans(
 ): MotionPlan[] {
   const selected = selectElements(svg, options.selector);
   const drawable = new Map<SVGElement, DrawableGeometry>();
+  const presentation = detachedPresentation(svg);
 
   for (const element of selected) {
-    if (!DRAWABLE_GEOMETRY.has(element.localName) || !isVisible(element))
+    if (
+      !DRAWABLE_GEOMETRY.has(element.localName) ||
+      !isVisible(element, presentation)
+    )
       continue;
     const length = geometryLength(element);
     if (length === undefined) continue;
-    const paint = effectiveGeometryPaint(element, length);
+    const paint = effectiveGeometryPaint(element, length, presentation);
     if (paint) drawable.set(element, paint);
   }
 
@@ -1772,7 +2026,7 @@ function buildDrawPlans(
       });
     } else if (
       !DRAWABLE_GEOMETRY.has(element.localName) &&
-      isVisibleLeaf(element)
+      isVisibleLeaf(element, presentation)
     ) {
       plans.push({
         target: element,
@@ -1821,7 +2075,7 @@ function buildPlans(
   }
   if (options.preset === "stagger") {
     const plans = selectElements(svg, options.selector)
-      .filter(isVisibleLeaf)
+      .filter((element) => isVisibleLeaf(element))
       .map((target) => ({
         target,
         keyframes: [{ opacity: 0 }, { opacity: 1 }],
@@ -2069,7 +2323,12 @@ export function animateSvg(
       state = "running";
     },
     pause() {
-      if (state === "destroyed" || animations.length === 0) return;
+      if (
+        state === "destroyed" ||
+        state === "failed" ||
+        animations.length === 0
+      )
+        return;
       runActiveOperation(() => {
         for (const animation of animations) animation.pause();
       });
@@ -2099,7 +2358,12 @@ export function animateSvg(
       state = "running";
     },
     finish() {
-      if (state === "destroyed" || animations.length === 0) return;
+      if (
+        state === "destroyed" ||
+        state === "failed" ||
+        animations.length === 0
+      )
+        return;
       runActiveOperation(() => {
         for (const [index, animation] of animations.entries()) {
           const plan = plans[index];
@@ -2123,6 +2387,7 @@ export function animateSvg(
       if (!Number.isFinite(progress) || progress < 0 || progress > 1) {
         throw new RangeError("seek progress must be between 0 and 1.");
       }
+      if (state === "failed") return;
       const timelineDuration = Math.max(
         0,
         ...plans.map((plan) => {

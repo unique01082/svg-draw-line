@@ -1202,6 +1202,170 @@ describe("SvgMotionController", () => {
     },
   );
 
+  it.each(["pause", "finish", "seek"] as const)(
+    "keeps failed state, run, and ownership inert for %s",
+    async (control) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root);
+      const failedRun = controller.finished;
+      const animation = allAnimations(root)[0]!;
+      const animateMock = vi.mocked(Element.prototype.animate);
+      const cancel = vi.spyOn(animation, "cancel").mockImplementation(() => {
+        throw new Error("private persistent cleanup failure");
+      });
+
+      let failure: unknown;
+      try {
+        controller.cancel();
+      } catch (error) {
+        failure = error;
+      }
+      await expect(failedRun).rejects.toBe(failure);
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+
+      const pause = vi.spyOn(animation, "pause");
+      const finish = vi.spyOn(animation, "finish");
+      const setCurrentTime = vi.fn();
+      const currentTime = animation.currentTime;
+      Object.defineProperty(animation, "currentTime", {
+        configurable: true,
+        get: () => currentTime,
+        set: setCurrentTime,
+      });
+
+      expect(() => {
+        if (control === "seek") controller.seek(0.5);
+        else controller[control]();
+      }).not.toThrow();
+
+      expect(controller.state).toBe("failed");
+      expect(controller.finished).toBe(failedRun);
+      await expect(controller.finished).rejects.toBe(failure);
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(pause).not.toHaveBeenCalled();
+      expect(finish).not.toHaveBeenCalled();
+      expect(setCurrentTime).not.toHaveBeenCalled();
+      expect(animateMock).toHaveBeenCalledTimes(1);
+      expect(allAnimations(root)).toEqual([animation]);
+      expect(root.outerHTML).toBe(original);
+    },
+  );
+
+  it.each(["play", "reverse", "restart"] as const)(
+    "recovers failed cleanup through a fresh %s run after transient retry",
+    async (control) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root);
+      const failedRun = controller.finished;
+      const staleAnimation = allAnimations(root)[0]!;
+      const nativeCancel = staleAnimation.cancel.bind(staleAnimation);
+      const cancel = vi
+        .spyOn(staleAnimation, "cancel")
+        .mockImplementationOnce(() => {
+          throw new Error("private transient cleanup failure");
+        })
+        .mockImplementation(nativeCancel);
+      const stalePause = vi.spyOn(staleAnimation, "pause");
+      const staleFinish = vi.spyOn(staleAnimation, "finish");
+      const stalePlay = vi.spyOn(staleAnimation, "play");
+      const staleReverse = vi.spyOn(staleAnimation, "reverse");
+      const animateMock = vi.mocked(Element.prototype.animate);
+
+      let failure: unknown;
+      try {
+        controller.cancel();
+      } catch (error) {
+        failure = error;
+      }
+      await expect(failedRun).rejects.toBe(failure);
+      expect(controller.state).toBe("failed");
+      expect(root.outerHTML).toBe(original);
+
+      expect(() => controller[control]()).not.toThrow();
+      const recoveredRun = controller.finished;
+      const recoveredAnimation = allAnimations(root)[0]!;
+
+      expect(recoveredRun).not.toBe(failedRun);
+      expect(controller.state).toBe("running");
+      expect(cancel).toHaveBeenCalledTimes(2);
+      expect(stalePause).not.toHaveBeenCalled();
+      expect(staleFinish).not.toHaveBeenCalled();
+      expect(stalePlay).not.toHaveBeenCalled();
+      expect(staleReverse).not.toHaveBeenCalled();
+      expect(animateMock).toHaveBeenCalledTimes(2);
+      expect(recoveredAnimation).not.toBe(staleAnimation);
+
+      controller.cancel();
+      await recoveredRun;
+      expect(controller.state).toBe("cancelled");
+      expect(root.outerHTML).toBe(original);
+      expect(allAnimations(root)).toEqual([]);
+    },
+  );
+
+  it.each(["play", "reverse", "restart"] as const)(
+    "rejects a distinct fresh %s run on every persistent cleanup retry",
+    async (control) => {
+      const root = geometry();
+      const original = root.outerHTML;
+      const controller = animateSvg(root);
+      const originalRun = controller.finished;
+      const staleAnimation = allAnimations(root)[0]!;
+      const cancel = vi
+        .spyOn(staleAnimation, "cancel")
+        .mockImplementation(() => {
+          throw new Error("private persistent cleanup failure");
+        });
+      const stalePause = vi.spyOn(staleAnimation, "pause");
+      const staleFinish = vi.spyOn(staleAnimation, "finish");
+      const stalePlay = vi.spyOn(staleAnimation, "play");
+      const staleReverse = vi.spyOn(staleAnimation, "reverse");
+      const animateMock = vi.mocked(Element.prototype.animate);
+
+      let originalFailure: unknown;
+      try {
+        controller.cancel();
+      } catch (error) {
+        originalFailure = error;
+      }
+      await expect(originalRun).rejects.toBe(originalFailure);
+
+      let previousRun = originalRun;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        let failure: unknown;
+        try {
+          controller[control]();
+        } catch (error) {
+          failure = error;
+        }
+        const retryRun = controller.finished;
+        expect(failure).toEqual(
+          expect.objectContaining({
+            name: "SvgAnimationError",
+            code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+            message: "The SVG animation did not complete.",
+          }),
+        );
+        expect(retryRun).not.toBe(previousRun);
+        await expect(retryRun).rejects.toBe(failure);
+        expect(controller.state).toBe("failed");
+        expect(allAnimations(root)).toEqual([staleAnimation]);
+        expect(root.outerHTML).toBe(original);
+        previousRun = retryRun;
+      }
+
+      expect(cancel).toHaveBeenCalledTimes(3);
+      expect(stalePause).not.toHaveBeenCalled();
+      expect(staleFinish).not.toHaveBeenCalled();
+      expect(stalePlay).not.toHaveBeenCalled();
+      expect(staleReverse).not.toHaveBeenCalled();
+      expect(animateMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("rejects naturally settling cleanup failures without an unhandled throw", async () => {
     const root = geometry();
     const original = root.outerHTML;
