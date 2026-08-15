@@ -87,7 +87,11 @@ async function fetchOriginal(sourceId, slug) {
     await delay(500 * 2 ** attempt);
   }
 
-  const svg = (await response.text()).trim().concat("\n");
+  const svg = (await response.text())
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+$/gm, "")
+    .trim()
+    .concat("\n");
   if (
     (svg.match(/<svg\b/g)?.length ?? 0) !== 1 ||
     !/<svg\b[^>]*\bviewBox="[^"]+"/i.test(svg) ||

@@ -70,6 +70,29 @@ describe("documentation site delivery contract", () => {
     }
   });
 
+  it("keeps every MDX motion example linked to a real specimen", () => {
+    const contentRoot = resolve(docsRoot, "content/0.1");
+    const manifest = readJson<{ specimens: Array<{ slug: string }> }>(
+      resolve(docsRoot, "src/specimens/manifest.json"),
+    );
+    const specimenSlugs = new Set(manifest.specimens.map(({ slug }) => slug));
+    const referencedSlugs = readdirSync(contentRoot)
+      .filter((file) => file.endsWith(".mdx"))
+      .flatMap((file) =>
+        Array.from(
+          readFileSync(resolve(contentRoot, file), "utf8").matchAll(
+            /<MotionExample\s+[^>]*specimen="([^"]+)"/g,
+          ),
+          (match) => match[1] ?? "",
+        ),
+      );
+
+    expect(referencedSlugs.length).toBeGreaterThan(0);
+    expect(referencedSlugs.filter((slug) => !specimenSlugs.has(slug))).toEqual(
+      [],
+    );
+  });
+
   it("stores exactly 50 safe, checksummed, local Public Domain SVG specimens", () => {
     const manifest = readJson<{
       collectionId: string;
@@ -105,6 +128,8 @@ describe("documentation site delivery contract", () => {
         resolve(docsRoot, "public/specimens", specimen.file),
         "utf8",
       );
+      expect(svg).not.toContain("\r");
+      expect(svg).not.toMatch(/[ \t]+$/m);
       expect(svg.match(/<svg\b/g)).toHaveLength(1);
       expect(svg).toMatch(/viewBox="[^"]+"/);
       expect(svg).not.toMatch(
