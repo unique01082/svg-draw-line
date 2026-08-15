@@ -79,6 +79,50 @@ async function flushUnhandledRejections() {
   await Promise.resolve();
 }
 
+type CleanupFailure = "transient" | "persistent";
+
+function failNativeCancel(
+  animation: RecordedAnimation,
+  failure: CleanupFailure,
+) {
+  const cancel = vi.spyOn(animation, "cancel");
+  const throwFailure = () => {
+    throw new Error(`private ${failure} cancel failure`);
+  };
+  if (failure === "transient") cancel.mockImplementationOnce(throwFailure);
+  else cancel.mockImplementation(throwFailure);
+  return cancel;
+}
+
+async function captureCleanupDiagnostics(action: () => Promise<void>) {
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  let thrown: unknown;
+  try {
+    try {
+      await action();
+    } catch (error) {
+      thrown = error;
+    }
+    await flushUnhandledRejections();
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+  }
+  return { consoleError, thrown, unhandled };
+}
+
+function expectSafeCleanupError(error: unknown) {
+  expect(error).toEqual(
+    expect.objectContaining({
+      name: "SvgAnimationError",
+      code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+      message: "The SVG animation did not complete.",
+    }),
+  );
+}
+
 beforeEach(() => {
   installWaapi();
   installGeometryLengths();
@@ -303,6 +347,111 @@ describe("SvgMotion", () => {
     expect(retained!.controller).toBeNull();
   });
 
+  it.each(["transient", "persistent"] as const)(
+    "contains a %s native cleanup failure during unmount",
+    async (failure) => {
+      const errors: unknown[] = [];
+      const ref = createRef<SvgMotionHandle>();
+      let retained: SvgMotionHandle | null = null;
+      const { root } = await render(
+        createElement(SvgMotion, {
+          ref,
+          source: SVG_SOURCE,
+          trust: "trusted",
+          onError: (error) => errors.push(error),
+          onReady: (handle) => {
+            retained = handle;
+          },
+        }),
+      );
+      const svg = ref.current!.svg!;
+      const controller = ref.current!.controller!;
+      const animation = allAnimations(svg)[0]!;
+      const cancel = failNativeCancel(animation, failure);
+
+      const diagnostics = await captureCleanupDiagnostics(async () => {
+        await act(async () => root.unmount());
+      });
+      roots = roots.filter((candidate) => candidate !== root);
+
+      expect(diagnostics.thrown).toBeUndefined();
+      expect(diagnostics.consoleError).not.toHaveBeenCalled();
+      expect(diagnostics.unhandled).toEqual([]);
+      expect(cancel).toHaveBeenCalledTimes(2);
+      expect(svg.isConnected).toBe(false);
+      expect(retained).not.toBeNull();
+      expect(retained!.svg).toBeNull();
+      expect(retained!.controller).toBeNull();
+      expect(errors).toEqual([]);
+      if (failure === "transient") {
+        expect(controller.state).toBe("destroyed");
+        expect(allAnimations(svg)).toEqual([]);
+      } else {
+        expect(controller.state).toBe("failed");
+        expect(allAnimations(svg)).toEqual([animation]);
+      }
+    },
+  );
+
+  it.each(["transient", "persistent"] as const)(
+    "contains a %s native cleanup failure during source replacement",
+    async (failure) => {
+      const errors: unknown[] = [];
+      const ready: SvgMotionHandle[] = [];
+      const ref = createRef<SvgMotionHandle>();
+      const { host, root } = await render(
+        createElement(SvgMotion, {
+          ref,
+          source:
+            '<svg xmlns="http://www.w3.org/2000/svg" data-source="old"><path fill="#f00" d="M0 0h10" /></svg>',
+          trust: "trusted",
+          onError: (error) => errors.push(error),
+          onReady: (handle) => ready.push(handle),
+        }),
+      );
+      const retained = ready[0]!;
+      const oldSvg = retained.svg!;
+      const oldController = retained.controller!;
+      const oldAnimation = allAnimations(oldSvg)[0]!;
+      const cancel = failNativeCancel(oldAnimation, failure);
+
+      const diagnostics = await captureCleanupDiagnostics(async () => {
+        await act(async () => {
+          root.render(
+            createElement(SvgMotion, {
+              ref,
+              source:
+                '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+              trust: "trusted",
+              onError: (error) => errors.push(error),
+              onReady: (handle) => ready.push(handle),
+            }),
+          );
+        });
+      });
+
+      expect(diagnostics.thrown).toBeUndefined();
+      expect(diagnostics.consoleError).not.toHaveBeenCalled();
+      expect(diagnostics.unhandled).toEqual([]);
+      expect(cancel).toHaveBeenCalledTimes(2);
+      expect(oldSvg.isConnected).toBe(false);
+      expect(host.querySelectorAll("svg")).toHaveLength(1);
+      expect(ready).toEqual([retained, retained]);
+      expect(retained.svg?.dataset.source).toBe("new");
+      expect(retained.controller?.state).toBe("running");
+      if (failure === "transient") {
+        expect(oldController.state).toBe("destroyed");
+        expect(allAnimations(oldSvg)).toEqual([]);
+        expect(errors).toEqual([]);
+      } else {
+        expect(oldController.state).toBe("failed");
+        expect(allAnimations(oldSvg)).toEqual([oldAnimation]);
+        expect(errors).toHaveLength(1);
+        expectSafeCleanupError(errors[0]);
+      }
+    },
+  );
+
   it("keeps a retained handle live through replacement and obsolete cleanup", async () => {
     let resolveSlow!: (response: Response) => void;
     let pendingSignal: AbortSignal | undefined;
@@ -378,6 +527,109 @@ describe("SvgMotion", () => {
     expect(retained.controller).toBe(replacementController);
     expect(replacementSvg?.isConnected).toBe(true);
   });
+
+  it.each(["transient", "persistent"] as const)(
+    "contains a %s native cleanup failure from an obsolete mount resolution",
+    async (failure) => {
+      class NonAbortingController {
+        readonly signal = { aborted: false } as AbortSignal;
+        abort() {}
+      }
+      vi.stubGlobal("AbortController", NonAbortingController);
+      let resolveObsolete!: (response: Response) => void;
+      vi.stubGlobal(
+        "fetch",
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveObsolete = resolve;
+          }),
+      );
+      const errors: unknown[] = [];
+      const ready: SvgMotionHandle[] = [];
+      const ref = createRef<SvgMotionHandle>();
+      const { host, root } = await render(
+        createElement(SvgMotion, {
+          ref,
+          source: "/obsolete.svg",
+          trust: "trusted",
+          onError: (error) => errors.push(error),
+          onReady: (handle) => ready.push(handle),
+        }),
+      );
+
+      await act(async () => {
+        root.render(
+          createElement(SvgMotion, {
+            ref,
+            source:
+              '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+            trust: "trusted",
+            onError: (error) => errors.push(error),
+            onReady: (handle) => ready.push(handle),
+          }),
+        );
+      });
+      const retained = ready[0]!;
+      const replacementSvg = retained.svg!;
+      const replacementController = retained.controller!;
+      const nativeCancel = RecordedAnimation.prototype.cancel;
+      let obsoleteSvg: SVGSVGElement | undefined;
+      let obsoleteAnimation: RecordedAnimation | undefined;
+      let obsoleteCancelAttempts = 0;
+      const recordObsoleteAnimation = (animation: RecordedAnimation) => {
+        obsoleteAnimation = animation;
+      };
+      vi.spyOn(RecordedAnimation.prototype, "cancel").mockImplementation(
+        function (this: RecordedAnimation) {
+          const svg = this.target.closest("svg") as SVGSVGElement | null;
+          if (svg?.dataset.source === "obsolete") {
+            obsoleteSvg = svg;
+            recordObsoleteAnimation(this);
+            obsoleteCancelAttempts += 1;
+            if (failure === "persistent" || obsoleteCancelAttempts === 1) {
+              throw new Error(`private ${failure} obsolete cancel failure`);
+            }
+          }
+          nativeCancel.call(this);
+        },
+      );
+
+      const diagnostics = await captureCleanupDiagnostics(async () => {
+        await act(async () => {
+          resolveObsolete(
+            new Response(
+              '<svg xmlns="http://www.w3.org/2000/svg" data-source="obsolete"><path fill="#f00" d="M0 0h10" /></svg>',
+              {
+                headers: { "content-type": "image/svg+xml" },
+                status: 200,
+              },
+            ),
+          );
+        });
+      });
+
+      expect(diagnostics.thrown).toBeUndefined();
+      expect(diagnostics.consoleError).not.toHaveBeenCalled();
+      expect(diagnostics.unhandled).toEqual([]);
+      expect(obsoleteCancelAttempts).toBe(2);
+      expect(obsoleteSvg).toBeInstanceOf(SVGSVGElement);
+      expect(obsoleteSvg?.isConnected).toBe(false);
+      expect(host.querySelectorAll("svg")).toHaveLength(1);
+      expect(ready).toEqual([retained]);
+      expect(retained.svg).toBe(replacementSvg);
+      expect(retained.controller).toBe(replacementController);
+      expect(replacementSvg.isConnected).toBe(true);
+      expect(replacementController.state).toBe("running");
+      if (failure === "transient") {
+        expect(allAnimations(obsoleteSvg!)).toEqual([]);
+        expect(errors).toEqual([]);
+      } else {
+        expect(allAnimations(obsoleteSvg!)).toEqual([obsoleteAnimation]);
+        expect(errors).toHaveLength(1);
+        expectSafeCleanupError(errors[0]);
+      }
+    },
+  );
 
   it("surfaces preparation errors and renders the fallback", async () => {
     const errors: unknown[] = [];
@@ -536,6 +788,58 @@ describe("useSvgMotion", () => {
     expect(ready).toHaveLength(2);
     expect(finishes).toEqual([]);
   });
+
+  it.each(["transient", "persistent"] as const)(
+    "contains a %s native cleanup failure when the callback ref detaches",
+    async (failure) => {
+      const errors: unknown[] = [];
+      const options: UseSvgMotionOptions = {
+        source: SVG_SOURCE,
+        trust: "trusted",
+        onError: (error) => errors.push(error),
+      };
+      const { root } = await render(
+        createElement(DetachableHarness, { attached: true, options }),
+      );
+      const oldSvg = current!.svg!;
+      const oldController = current!.controller!;
+      const oldAnimation = allAnimations(oldSvg)[0]!;
+      const cancel = failNativeCancel(oldAnimation, failure);
+
+      const diagnostics = await captureCleanupDiagnostics(async () => {
+        await act(async () => {
+          root.render(
+            createElement(DetachableHarness, { attached: false, options }),
+          );
+        });
+      });
+
+      expect(diagnostics.thrown).toBeUndefined();
+      expect(diagnostics.consoleError).not.toHaveBeenCalled();
+      expect(diagnostics.unhandled).toEqual([]);
+      expect(cancel).toHaveBeenCalledTimes(2);
+      expect(current).toEqual(
+        expect.objectContaining({
+          svg: null,
+          controller: null,
+          status: "idle",
+          error: null,
+          diagnostics: [],
+        }),
+      );
+      expect(oldSvg.isConnected).toBe(false);
+      if (failure === "transient") {
+        expect(oldController.state).toBe("destroyed");
+        expect(allAnimations(oldSvg)).toEqual([]);
+        expect(errors).toEqual([]);
+      } else {
+        expect(oldController.state).toBe("failed");
+        expect(allAnimations(oldSvg)).toEqual([oldAnimation]);
+        expect(errors).toHaveLength(1);
+        expectSafeCleanupError(errors[0]);
+      }
+    },
+  );
 
   it("does not remount when only the options object identity changes", async () => {
     const { root } = await render(

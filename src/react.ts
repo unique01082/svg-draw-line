@@ -17,6 +17,7 @@ import {
   type SvgDiagnostic,
   type SvgMotionController,
   type SvgMotionControllerState,
+  type SvgMotionInstance,
   type SvgSource,
 } from "./index.js";
 
@@ -108,6 +109,7 @@ const IDLE_SNAPSHOT: LifecycleSnapshot = {
   error: null,
   diagnostics: EMPTY_DIAGNOSTICS,
 };
+const DESTROY_ATTEMPTS = 2;
 const VALID_ROLES = new Set<SvgMotionRole>([
   "img",
   "graphics-document",
@@ -236,6 +238,28 @@ function invokeSafely<Arguments extends unknown[]>(
   } catch {
     // Consumer callback failures do not belong to adapter-owned promises.
   }
+}
+
+function destroyOwnedInstance(
+  instance: SvgMotionInstance,
+  onPersistentFailure?: (error: unknown) => void,
+): void {
+  let firstFailure: unknown;
+  for (let attempt = 0; attempt < DESTROY_ATTEMPTS; attempt += 1) {
+    try {
+      instance.destroy();
+      return;
+    } catch (error) {
+      firstFailure ??= error;
+    }
+  }
+
+  try {
+    instance.svg.remove();
+  } catch {
+    // Native cleanup failure must not escape through React teardown.
+  }
+  invokeSafely(onPersistentFailure, firstFailure);
 }
 
 function validRole(value: string | null): SvgMotionRole | undefined {
@@ -476,12 +500,20 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
   });
   const svgPropsRef = useRef(svgProps);
   const hadContainerRef = useRef(false);
+  const mountedRef = useRef(false);
   callbacksRef.current = { onReady, onFinish, onCancel, onError };
   svgPropsRef.current = svgProps;
   const containerRef = useCallback<RefCallback<Element>>((node) => {
     setContainer(node);
   }, []);
   const styleSignature = stableStyleSignature(svgProps.style);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!container) {
@@ -503,6 +535,9 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
     let active = true;
     const abortController = new AbortController();
     let destroyCurrent: (() => void) | undefined;
+    const reportCleanupFailure = (error: unknown) => {
+      if (mountedRef.current) invokeSafely(callbacksRef.current.onError, error);
+    };
     setSnapshot({
       svg: null,
       controller: null,
@@ -535,7 +570,7 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
       .then(
         (instance) => {
           if (!active) {
-            instance.destroy();
+            destroyOwnedInstance(instance, reportCleanupFailure);
             return;
           }
           applySvgProps(instance.svg, svgPropsRef.current);
@@ -559,7 +594,7 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
           );
           destroyCurrent = () => {
             observed.disconnect();
-            instance.destroy();
+            destroyOwnedInstance(instance, reportCleanupFailure);
           };
           const ready = {
             svg: instance.svg,
