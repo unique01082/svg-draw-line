@@ -15,7 +15,7 @@ Safe, browser-native animation for any SVG. `@baole-space/svg-motion` is an ESM-
 | Web Animations API      | Native playback control with no Anime.js dependency                        |
 | Verified across engines | Real-browser coverage in evergreen Chromium, Firefox, and WebKit           |
 
-[Install](#install) · [Vanilla](#vanilla) · [React](#react) · [Security](#security-cors-and-csp) · [Contributing](./CONTRIBUTING.md) · [Security policy](./SECURITY.md) · [Changelog](./CHANGELOG.md)
+[Documentation](https://svg-motion.baole.space/docs/0.1/getting-started) · [Playground](https://svg-motion.baole.space/playground) · [Install](#install) · [Vanilla](#vanilla) · [React](#react) · [Security](#security-cors-and-csp) · [Contributing](./CONTRIBUTING.md) · [Security policy](./SECURITY.md) · [Changelog](./CHANGELOG.md)
 
 ## Install
 
@@ -25,18 +25,20 @@ pnpm add @baole-space/svg-motion
 
 Add `react >=18` only when using the React entry.
 
-## Local Motion Lab
+## Documentation site
 
-The interactive playground and gallery install the published `0.1.0` package,
-not the repository source:
+The production documentation application lives in `apps/docs`. It installs the
+published `0.1.0` package from the registry rather than linking repository source:
 
 ```bash
-pnpm --dir examples/playground install
-pnpm demo
+pnpm --dir apps/docs install --frozen-lockfile
+pnpm docs:dev
 ```
 
-Open the URL printed by Vite. Use `pnpm demo:test` for its unit and browser
-checks.
+Use `pnpm docs:test` for unit, prerender and three-engine browser checks.
+`pnpm docs:docker:smoke` verifies the production nginx image. See the
+[deployment guide](./docs/deployment/svg-motion.baole.space.md) for the later
+self-hosted rollout; repository implementation does not modify live DNS or servers.
 
 ## Vanilla
 

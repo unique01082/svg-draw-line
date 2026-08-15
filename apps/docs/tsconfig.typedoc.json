@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["DOM", "ES2022"]
+  },
+  "include": ["../../dist/index.d.ts", "../../dist/react.d.ts"]
+}

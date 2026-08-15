@@ -1,0 +1,38 @@
+export const meta = {
+  title: "Production guides",
+  description: "Sanitization, networking, CSP and accessibility.",
+};
+
+# Production guides
+
+## Sanitization
+
+Source APIs default to `trust: "sanitize"`. The pipeline removes scripts, event handlers, `foreignObject`, SMIL, external resources and dangerous CSS while retaining safe SVG presentation and internal fragment references. Use `trusted` only for SVG you control.
+
+<Callout>
+  Diagnostics contain safe codes and counts. They never echo untrusted markup.
+</Callout>
+
+<h2 id="cors-csp">CORS and CSP</h2>
+
+URL sources use `fetch`, so their origin must permit CORS. A compatible CSP commonly allows scripts and styles from the site itself, images from the site plus approved HTTPS origins, and `connect-src` for SVG URL sources. The library never requires `unsafe-eval`.
+
+```text
+default-src 'self';
+script-src 'self';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: https:;
+connect-src 'self' https:;
+object-src 'none';
+base-uri 'self';
+```
+
+## Accessibility
+
+Provide `aria-label` or `aria-labelledby` for meaningful SVGs. A source `<title>` and role are preserved. Without an accessible name the React adapter marks the SVG `aria-hidden`. The library does not automatically react to `prefers-reduced-motion`; the application should decide whether to autoplay.
+
+## Related
+
+- [Getting started](/docs/0.1/getting-started)
+- [React adapter](/docs/0.1/react)
+- [API reference](/docs/0.1/reference)

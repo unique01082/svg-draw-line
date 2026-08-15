@@ -1,0 +1,43 @@
+export const meta = {
+  title: "Motion system",
+  description: "Presets, timing and controller lifecycle.",
+};
+
+# Motion system
+
+Motion plans use native `Element.animate()` and geometry lengths from `getTotalLength()`.
+
+## Presets
+
+- `draw` reveals path and primitive geometry, then restores the original artwork.
+- `fade` fades the whole SVG.
+- `scale` combines opacity with a root scale from `0.92` to `1`.
+- `stagger` fades visual leaves in document order without touching `defs`.
+- `pulse` scales `1 → 1.05 → 1`; repetition follows `iterations`.
+
+<MotionExample specimen="coffee" preset="stagger" />
+
+## Timing
+
+The defaults are `duration: 1200`, `easing: "ease-in-out"`, one iteration and autoplay. `stagger: "auto"` distributes starts across at most 600ms. Explicit numeric stagger values are milliseconds.
+
+```ts
+animateSvg(svg, {
+  preset: "draw",
+  duration: 1600,
+  delay: 100,
+  easing: "cubic-bezier(.22,1,.36,1)",
+  direction: "alternate",
+  iterations: 2,
+});
+```
+
+## Controller
+
+Controllers expose `play`, `pause`, `reverse`, `restart`, `finish`, `cancel`, `seek(0..1)` and `destroy`. `cancel()` restores the initial art; `finish()` presents the final frame; `destroy()` removes owned animations and temporary styles.
+
+## Related
+
+- [Core API](/docs/0.1/core)
+- [React adapter](/docs/0.1/react)
+- [Playground](/playground)

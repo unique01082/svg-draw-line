@@ -1,0 +1,44 @@
+export const meta = {
+  title: "React adapter",
+  description: "Use SvgMotion and useSvgMotion in React 18+.",
+};
+
+# React adapter
+
+Import React bindings from `@baole-space/svg-motion/react`. The root entry stays React-free.
+
+## Component
+
+```tsx
+import { SvgMotion } from "@baole-space/svg-motion/react";
+
+<SvgMotion
+  source="/diagram.svg"
+  preset="draw"
+  autoplay
+  svgProps={{ "aria-label": "Architecture diagram" }}
+/>;
+```
+
+The forwarded ref exposes `svg` and `controller`. Lifecycle callbacks include `onReady`, `onFinish`, `onCancel` and `onError`.
+
+## Hook
+
+`useSvgMotion(options)` returns `containerRef`, `svg`, `controller`, `status`, `error` and `diagnostics`.
+
+```tsx
+const motion = useSvgMotion({ source, preset: "scale", autoplay: false });
+return <div ref={motion.containerRef} />;
+```
+
+## SSR
+
+Importing the React entry is DOM-free and SSR-safe. Preparation and animation start only after a browser container mounts.
+
+<ApiTable entry="react" />
+
+## Related
+
+- [Getting started](/docs/0.1/getting-started)
+- [Motion system](/docs/0.1/motion)
+- [Accessibility guide](/docs/0.1/guides#accessibility)

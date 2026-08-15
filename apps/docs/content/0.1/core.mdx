@@ -1,0 +1,46 @@
+export const meta = {
+  title: "Core API",
+  description: "Prepare, animate and mount SVG without a framework.",
+};
+
+# Core API
+
+The root entry is framework-agnostic and has no React dependency.
+
+<h2 id="prepare-svg">prepareSvg</h2>
+
+`prepareSvg(source, options)` reads, validates, sanitizes, namespaces IDs and returns a detached `PreparedSvg`.
+
+```ts
+const prepared = await prepareSvg(file, {
+  trust: "sanitize",
+  maxBytes: 5 * 1024 * 1024,
+  signal: abortController.signal,
+});
+```
+
+<h2 id="animate-svg">animateSvg</h2>
+
+`animateSvg(svg, options)` is the low-level caller-owned node API. It snapshots all temporary attributes and returns a synchronous controller.
+
+```ts
+const controller = animateSvg(svg, {
+  preset: "stagger",
+  autoplay: false,
+  stagger: 80,
+});
+controller.play();
+await controller.finished;
+```
+
+<h2 id="mount-svg-motion">mountSvgMotion</h2>
+
+`mountSvgMotion(container, source, options)` combines preparation, mounting and motion. Its instance `destroy()` also removes the appended SVG.
+
+<ApiTable entry="core" />
+
+## Related
+
+- [Getting started](/docs/0.1/getting-started)
+- [Motion system](/docs/0.1/motion)
+- [API reference](/docs/0.1/reference)

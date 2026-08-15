@@ -1,0 +1,12 @@
+.git
+.github
+.worktrees
+.superpowers
+node_modules
+**/node_modules
+dist
+**/dist
+**/dist-ssr
+playwright-report
+test-results
+*.log

@@ -1,0 +1,28 @@
+export const meta = {
+  title: "API reference",
+  description: "Public exports, errors, diagnostics and browser support.",
+};
+
+# API reference
+
+The table below is generated from the public declaration files emitted for package `0.1.0`. CI compares the reflection snapshot with every build.
+
+## Public exports
+
+<ApiTable entry="all" />
+
+## Errors
+
+Preparation failures use `SvgPreparationError`; animation failures use `SvgAnimationError`. Inspect the stable `code`, not the human-readable message. Categories cover unsupported environments or sources, byte limits, fetch and abort failures, invalid or unsafe SVG, setup failures and runtime animation failures.
+
+Diagnostics report non-fatal fallbacks such as an SVG without drawable geometry. Entries expose only a code and safe counts.
+
+## Browser support
+
+Version 0.1 targets evergreen Chromium, Firefox and WebKit with native Web Animations API and `SVGGeometryElement.getTotalLength()` support. The package is ESM-only and requires Node 22+ for its development toolchain.
+
+## Related
+
+- [Core API](/docs/0.1/core)
+- [React adapter](/docs/0.1/react)
+- [Production guides](/docs/0.1/guides)

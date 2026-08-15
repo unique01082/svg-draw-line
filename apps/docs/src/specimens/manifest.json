@@ -1,0 +1,157 @@
+{
+  "collectionId": 54491,
+  "collectionName": "果汁饮品",
+  "creator": "美少女壮士a",
+  "sourceUrl": "https://www.iconfont.cn/collections/detail?cid=54491",
+  "acquisitionDate": "2026-08-15",
+  "rights": "Commercial use and raw SVG redistribution confirmed by the repository owner.",
+  "specimens": [
+    {
+      "slug": "mango-juice",
+      "label": "Mango juice",
+      "chineseName": "芒果汁",
+      "file": "mango-juice.svg",
+      "sha256": "618f23af5d5078f8558c203aef5712e0d5576f059e28a6ca1ec5db7dd02581e8"
+    },
+    {
+      "slug": "congee",
+      "label": "Congee",
+      "chineseName": "粥",
+      "file": "congee.svg",
+      "sha256": "bcecc91dcc59f336669f331e4cd1502b918aef12253cf80b9999d6ecd96ec868"
+    },
+    {
+      "slug": "walnut-drink",
+      "label": "Walnut drink",
+      "chineseName": "核桃露",
+      "file": "walnut-drink.svg",
+      "sha256": "ce83796e35edf92dabadc65ae98eda720ae087a18e277f3692e71799a55f4c21"
+    },
+    {
+      "slug": "mineral-water",
+      "label": "Mineral water",
+      "chineseName": "矿泉水",
+      "file": "mineral-water.svg",
+      "sha256": "de5eb17cf2b27bdbf5156745e0558c396f13c6315de60438e7391cc7f9f4843e"
+    },
+    {
+      "slug": "soup",
+      "label": "Soup",
+      "chineseName": "汤",
+      "file": "soup.svg",
+      "sha256": "b6f0042a449e1f8ccfdafbc5adac909ddbb3eb0377ee05c647169d37444a303b"
+    },
+    {
+      "slug": "soda-water",
+      "label": "Soda water",
+      "chineseName": "苏打水",
+      "file": "soda-water.svg",
+      "sha256": "95f49b4ae255cab3b9e672a03c13b568f5d78ad4a2c43f3b5dff5416a9f13146"
+    },
+    {
+      "slug": "coffee",
+      "label": "Coffee",
+      "chineseName": "咖啡",
+      "file": "coffee.svg",
+      "sha256": "dc1fb86fdd3c0cceb26c40bd1b372b306d3ea4ce1d7079f3e1d088cdac1bf5e6"
+    },
+    {
+      "slug": "beer",
+      "label": "Beer",
+      "chineseName": "啤酒",
+      "file": "beer.svg",
+      "sha256": "56b3d4803d951adbb392413616568eb3b1104307afd59837813fbe6ffa942fb5"
+    },
+    {
+      "slug": "cola",
+      "label": "Cola",
+      "chineseName": "可乐",
+      "file": "cola.svg",
+      "sha256": "c17e00fd0eaa00bd065b7c6f6e67c4e978795e63ca480974c93a3c45f4e35192"
+    },
+    {
+      "slug": "milk",
+      "label": "Milk",
+      "chineseName": "牛奶",
+      "file": "milk.svg",
+      "sha256": "458b122b057d6137d1a8357df4ebd047bec8d1c606d71e911b71ce7a502b3f29"
+    },
+    {
+      "slug": "almond-drink",
+      "label": "Almond drink",
+      "chineseName": "杏仁露",
+      "file": "almond-drink.svg",
+      "sha256": "acc53a7ac2d1327af4649fd9ac7f093d20ee42b8476a8db2a7a3ebccca3940a9"
+    },
+    {
+      "slug": "watermelon-juice",
+      "label": "Watermelon juice",
+      "chineseName": "西瓜汁",
+      "file": "watermelon-juice.svg",
+      "sha256": "ff39148232aa3573910e917e9e99b6a755b4beeb7e8bf0f9686df4ad5be83dca"
+    },
+    {
+      "slug": "soft-drink",
+      "label": "Soft drink",
+      "chineseName": "汽水",
+      "file": "soft-drink.svg",
+      "sha256": "d70d4d84885b7c0eaa3ef428f8656ed5a52fc932686d6f6cda47df664a3c973d"
+    },
+    {
+      "slug": "tomato-juice",
+      "label": "Tomato juice",
+      "chineseName": "番茄汁",
+      "file": "tomato-juice.svg",
+      "sha256": "5fc55d7de74f330a7994d993e7e0cd0db590621583e87fa2e7a0be194935d6ea"
+    },
+    {
+      "slug": "milk-tea",
+      "label": "Milk tea",
+      "chineseName": "奶茶",
+      "file": "milk-tea.svg",
+      "sha256": "616a0eec6472cd38c9b388cccd88599120a54919d00dc284282f1529bf7fd649"
+    },
+    {
+      "slug": "coconut-drink",
+      "label": "Coconut drink",
+      "chineseName": "椰汁",
+      "file": "coconut-drink.svg",
+      "sha256": "dbea7f27fe0f089791f12077d13282e397e0df065e4bd3d6a8cb8e9c08c22bcf"
+    },
+    {
+      "slug": "apple-juice",
+      "label": "Apple juice",
+      "chineseName": "苹果汁",
+      "file": "apple-juice.svg",
+      "sha256": "0bf59aa3c072fdc3370ffca586d77b2eafc05c52028a86c4b73c65ef810e6104"
+    },
+    {
+      "slug": "mixed-juice",
+      "label": "Mixed juice",
+      "chineseName": "其他果汁",
+      "file": "mixed-juice.svg",
+      "sha256": "2caf7f8d96cd290995be8b3ab2a250f65bedb60d0d9a7a562fd4b7cd56165563"
+    },
+    {
+      "slug": "yogurt",
+      "label": "Yogurt",
+      "chineseName": "酸奶",
+      "file": "yogurt.svg",
+      "sha256": "e8abf0b7ef15554e4ab07f04711ecf9b53030a6f359672b422bc3b2c6ab7c7bc"
+    },
+    {
+      "slug": "lemon-juice",
+      "label": "Lemon juice",
+      "chineseName": "柠檬汁",
+      "file": "lemon-juice.svg",
+      "sha256": "9fe37df72d245a114672b3261c1ca360202b2fdd525defae7224af403639aac8"
+    },
+    {
+      "slug": "herbal-medicine",
+      "label": "Herbal medicine",
+      "chineseName": "中药",
+      "file": "herbal-medicine.svg",
+      "sha256": "22900e4d14e811cbce230122c288d72fdb159f9d1173cf2e4dd1249640cb65b9"
+    }
+  ]
+}

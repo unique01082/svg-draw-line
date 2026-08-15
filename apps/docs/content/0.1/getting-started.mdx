@@ -1,0 +1,47 @@
+export const meta = {
+  title: "Getting started",
+  description: "Install SVG Motion and animate a safe SVG source.",
+};
+
+# Getting started
+
+`@baole-space/svg-motion` prepares arbitrary SVG input, preserves internal references, and animates it with the browser's Web Animations API.
+
+## Install
+
+```bash
+pnpm add @baole-space/svg-motion
+```
+
+React is an optional peer dependency. Install React 18 or newer only when using the `/react` entry.
+
+## First animation
+
+```ts
+import { mountSvgMotion } from "@baole-space/svg-motion";
+
+const instance = await mountSvgMotion(
+  document.querySelector("#stage"),
+  '<svg viewBox="0 0 120 40"><path d="M8 32C32 4 76 4 112 32"/></svg>',
+  { preset: "draw", duration: 1200 },
+);
+
+instance.controller.restart();
+```
+
+<MotionExample specimen="lemon-juice" preset="draw" />
+
+## Source types
+
+Use SVG markup, a same-origin or CORS-enabled `URL`, `Blob`, `File`, or `SVGSVGElement`. APIs that accept a source clone it; only `animateSvg()` works directly on a caller-owned node.
+
+<Callout>
+  Remote URLs must return an SVG through CORS. Failed fetches and invalid
+  sources reject with typed errors.
+</Callout>
+
+## Related
+
+- [Core API](/docs/0.1/core)
+- [Security and deployment guides](/docs/0.1/guides)
+- [Interactive Playground](/playground)

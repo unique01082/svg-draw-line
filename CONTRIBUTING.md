@@ -29,6 +29,29 @@ pnpm build
 pnpm test:consumer
 ```
 
+## Documentation development
+
+The versioned site is an independent application that consumes the published
+package from npm:
+
+```sh
+pnpm --dir apps/docs install --frozen-lockfile
+pnpm docs:dev
+pnpm docs:test
+pnpm docs:api:check
+pnpm docs:docker:smoke
+```
+
+Content for a published minor line is immutable under `apps/docs/content/<minor>`.
+Create a future snapshot with `pnpm docs:scaffold -- 0.2 0.2.0`; the command
+refuses to overwrite an existing line. Keep the route manifest, API reflection,
+canonical URLs and nginx `latest` redirect synchronized.
+
+The 21 licensed specimen SVGs are local documentation assets. Do not alter their
+paths, fills or viewboxes. Any collection update must also update checksums,
+provenance and `THIRD_PARTY_NOTICES.md` while keeping those assets outside the npm
+package allowlist.
+
 ## Development expectations
 
 - Add a failing regression test before changing behavior.

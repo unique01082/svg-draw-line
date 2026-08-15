@@ -1,0 +1,166 @@
+{
+  "packageVersion": "0.1.0",
+  "generatedFrom": ["dist/index.d.ts", "dist/react.d.ts"],
+  "exports": [
+    {
+      "name": "SvgAnimationError",
+      "kind": "Class",
+      "entry": "core"
+    },
+    {
+      "name": "SvgPreparationError",
+      "kind": "Class",
+      "entry": "core"
+    },
+    {
+      "name": "MountSvgMotionOptions",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "PreparedSvg",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "PrepareSvgOptions",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "SvgDiagnostic",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionController",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionInstance",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionOptions",
+      "kind": "Interface",
+      "entry": "core"
+    },
+    {
+      "name": "SvgAnimationErrorCode",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgDiagnosticCode",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionControllerState",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionOrder",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionPreset",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgPreparationErrorCode",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgSource",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SvgTrustMode",
+      "kind": "Type alias",
+      "entry": "core"
+    },
+    {
+      "name": "SVG_ANIMATION_ERROR_CODES",
+      "kind": "Variable",
+      "entry": "core"
+    },
+    {
+      "name": "SVG_PREPARATION_ERROR_CODES",
+      "kind": "Variable",
+      "entry": "core"
+    },
+    {
+      "name": "animateSvg",
+      "kind": "Function",
+      "entry": "core"
+    },
+    {
+      "name": "mountSvgMotion",
+      "kind": "Function",
+      "entry": "core"
+    },
+    {
+      "name": "prepareSvg",
+      "kind": "Function",
+      "entry": "core"
+    },
+    {
+      "name": "SvgMotionHandle",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotionProps",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotionReadyHandle",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotionSvgProps",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "UseSvgMotionOptions",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "UseSvgMotionResult",
+      "kind": "Interface",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotionRole",
+      "kind": "Type alias",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotionStatus",
+      "kind": "Type alias",
+      "entry": "react"
+    },
+    {
+      "name": "SvgMotion",
+      "kind": "Variable",
+      "entry": "react"
+    },
+    {
+      "name": "useSvgMotion",
+      "kind": "Function",
+      "entry": "react"
+    }
+  ]
+}
