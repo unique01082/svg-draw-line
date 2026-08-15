@@ -1498,7 +1498,6 @@ const PROBE_RESOURCE_ELEMENTS = new Set([
   "feImage",
   "foreignObject",
   "iframe",
-  "image",
   "link",
   "object",
   "script",
@@ -1614,6 +1613,7 @@ function sanitizeProbeClone(svg: SVGSVGElement): void {
         name.startsWith("on") ||
         name === "src" ||
         name === "base" ||
+        (element.localName === "image" && name === "href") ||
         (name === "href" && !LOCAL_URL_REFERENCE.test(value.trim())) ||
         DANGEROUS_CSS.test(value) ||
         PROBE_RESOURCE_CSS.test(value) ||

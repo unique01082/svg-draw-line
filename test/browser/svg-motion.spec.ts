@@ -137,6 +137,36 @@ test("detached style resolution cannot load or execute hostile probe content", a
   expect(errors).toEqual([]);
 });
 
+test("stylesheet-hidden detached images do not shift visible stagger timing", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  const requests = await installRequestInterception(page);
+
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.detachedHiddenImageStagger(),
+  );
+  await page.waitForTimeout(100);
+
+  expect(result).toEqual({
+    callerConnected: false,
+    created: [
+      { delay: 0, target: "visible-path" },
+      { delay: 100, target: "visible-successor" },
+    ],
+    probeCount: 0,
+    restored: true,
+    state: "cancelled",
+  });
+  expect(requests.attackerRequests).toEqual([]);
+  expect(requests.unexpectedRequests).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("keeps gradient, mask, clip, filter, and use references local", async ({
   page,
 }) => {

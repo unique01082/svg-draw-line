@@ -345,6 +345,55 @@ function detachedHostileStyleProbe() {
   };
 }
 
+function detachedHiddenImageStagger() {
+  const svg = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <style>.hidden-resource { display: none }</style>
+      <defs><image id="local-image" href="https://attacker.invalid/defs.png" /></defs>
+      <path id="visible-path" fill="none" stroke="#000" style="stroke-opacity: 1" d="M0 0h10" />
+      <image id="hidden-external" class="hidden-resource" href="https://attacker.invalid/external.png" />
+      <image id="hidden-data" class="hidden-resource" href="data:image/png;base64,iVBORw0KGgo=" />
+      <image id="hidden-local" class="hidden-resource" xlink:href="#local-image" />
+      <text id="visible-successor" x="4" y="14">Visible</text>
+    </svg>`,
+    "image/svg+xml",
+  ).documentElement as unknown as SVGSVGElement;
+  const original = svg.outerHTML;
+  const nativeAnimate = Element.prototype.animate;
+  const created: Array<{ delay: number; target: string }> = [];
+  Element.prototype.animate = function (keyframes, options) {
+    const animation = nativeAnimate.call(this, keyframes, options);
+    const timing = (animation.effect as KeyframeEffect | null)?.getTiming();
+    created.push({
+      delay: Number(timing?.delay ?? 0),
+      target: this.getAttribute("id") ?? "",
+    });
+    return animation;
+  };
+  let controller;
+  try {
+    controller = animateSvg(svg, {
+      autoplay: false,
+      duration: 1000,
+      stagger: 100,
+    });
+  } finally {
+    Element.prototype.animate = nativeAnimate;
+  }
+  const callerConnected =
+    svg.isConnected && svg.ownerDocument.defaultView !== null;
+  controller.cancel();
+
+  return {
+    callerConnected,
+    created,
+    probeCount: document.querySelectorAll("[data-svg-motion-style-probe]")
+      .length,
+    restored: svg.outerHTML === original,
+    state: controller.state,
+  };
+}
+
 window.svgMotionHarness = {
   artwork,
   async completeNaturally() {
@@ -364,6 +413,7 @@ window.svgMotionHarness = {
       state: instance?.controller.state,
     };
   },
+  detachedHiddenImageStagger,
   detachedHostileStyleProbe,
   detachedInternalStyle,
   finish() {
@@ -417,6 +467,9 @@ declare global {
       completeNaturally(): Promise<ReturnType<typeof artwork>>;
       destroyController(): ReturnType<typeof artwork>;
       destroyInstance(): { connected: boolean; state: string | undefined };
+      detachedHiddenImageStagger(): ReturnType<
+        typeof detachedHiddenImageStagger
+      >;
       detachedHostileStyleProbe(): ReturnType<typeof detachedHostileStyleProbe>;
       detachedInternalStyle(): ReturnType<typeof detachedInternalStyle>;
       finish(): ReturnType<typeof summary>;
