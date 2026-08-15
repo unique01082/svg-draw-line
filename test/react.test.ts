@@ -1,18 +1,27 @@
 // @vitest-environment jsdom
 
-import { act, createElement, createRef, type ReactElement } from "react";
+import {
+  StrictMode,
+  act,
+  createElement,
+  createRef,
+  type ReactElement,
+} from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SvgMotion,
   type SvgMotionHandle,
+  type SvgMotionReadyHandle,
   type UseSvgMotionOptions,
   type UseSvgMotionResult,
   useSvgMotion,
 } from "../src/react";
 import {
+  RecordedAnimation,
   allAnimations,
+  animationsFor,
   installWaapi,
   uninstallWaapi,
 } from "./waapi-test-support";
@@ -34,8 +43,45 @@ async function render(element: ReactElement) {
   return { host, root };
 }
 
+function installGeometryLengths() {
+  Object.defineProperty(SVGElement.prototype, "getTotalLength", {
+    configurable: true,
+    value: vi.fn(function (this: SVGElement) {
+      switch (this.localName) {
+        case "path":
+        case "line":
+        case "polyline":
+        case "polygon":
+          return 10;
+        case "circle":
+          return 2 * Math.PI * Number(this.getAttribute("r") ?? 0);
+        case "ellipse":
+          return (
+            Math.PI *
+            (Number(this.getAttribute("rx") ?? 0) +
+              Number(this.getAttribute("ry") ?? 0))
+          );
+        case "rect":
+          return (
+            2 *
+            (Number(this.getAttribute("width") ?? 0) +
+              Number(this.getAttribute("height") ?? 0))
+          );
+        default:
+          throw new TypeError("getTotalLength is only defined for geometry");
+      }
+    }),
+  });
+}
+
+async function flushUnhandledRejections() {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  await Promise.resolve();
+}
+
 beforeEach(() => {
   installWaapi();
+  installGeometryLengths();
   (
     globalThis as typeof globalThis & {
       IS_REACT_ACT_ENVIRONMENT: boolean;
@@ -49,6 +95,7 @@ afterEach(async () => {
   }
   roots = [];
   uninstallWaapi();
+  Reflect.deleteProperty(SVGElement.prototype, "getTotalLength");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.body.replaceChildren();
@@ -77,6 +124,25 @@ describe("SvgMotion", () => {
     expect(ref.current?.svg).toBe(svg);
     expect(ref.current?.controller?.state).toBe("running");
     expect(ready).toBe(ref.current);
+    const drawAnimation = animationsFor(svg.querySelector("path")!)[0]!;
+    expect(drawAnimation.keyframes).toEqual([
+      expect.objectContaining({
+        fillOpacity: 0,
+        strokeDasharray: "10",
+        strokeDashoffset: "10",
+      }),
+      expect.objectContaining({
+        fillOpacity: 0,
+        strokeDasharray: "10",
+        strokeDashoffset: "0",
+      }),
+      expect.objectContaining({
+        fillOpacity: 1,
+        strokeDasharray: "10",
+        strokeDashoffset: "0",
+      }),
+    ]);
+    expect(drawAnimation.playState).toBe("running");
   });
 
   it("supports autoplay false and a span container with container presentation", async () => {
@@ -155,14 +221,16 @@ describe("SvgMotion", () => {
     );
 
     const firstController = ref.current!.controller!;
-    for (const animation of allAnimations(ref.current!.svg!)) {
-      animation.completeNaturally();
-    }
-    await act(async () => firstController.finished);
+    await act(async () => {
+      for (const animation of allAnimations(ref.current!.svg!)) {
+        animation.completeNaturally();
+      }
+      await firstController.finished;
+    });
     expect(events).toEqual(["finish"]);
 
-    firstController.restart();
     await act(async () => {
+      firstController.restart();
       firstController.cancel();
       await firstController.finished;
     });
@@ -210,11 +278,15 @@ describe("SvgMotion", () => {
 
   it("destroys the live instance and removes its SVG on unmount", async () => {
     const ref = createRef<SvgMotionHandle>();
+    let retained: SvgMotionHandle | null = null;
     const { root } = await render(
       createElement(SvgMotion, {
         ref,
         source: SVG_SOURCE,
         trust: "trusted",
+        onReady(handle) {
+          retained = handle;
+        },
       }),
     );
     const svg = ref.current!.svg!;
@@ -226,6 +298,85 @@ describe("SvgMotion", () => {
     expect(svg.isConnected).toBe(false);
     expect(controller.state).toBe("destroyed");
     expect(allAnimations(svg)).toEqual([]);
+    expect(retained).not.toBeNull();
+    expect(retained!.svg).toBeNull();
+    expect(retained!.controller).toBeNull();
+  });
+
+  it("keeps a retained handle live through replacement and obsolete cleanup", async () => {
+    let resolveSlow!: (response: Response) => void;
+    let pendingSignal: AbortSignal | undefined;
+    vi.stubGlobal(
+      "fetch",
+      (_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((resolve) => {
+          pendingSignal = init?.signal ?? undefined;
+          resolveSlow = resolve;
+        }),
+    );
+    const ref = createRef<SvgMotionHandle>();
+    const readyHandles: SvgMotionHandle[] = [];
+    const ready = (handle: SvgMotionHandle) => readyHandles.push(handle);
+    const { root } = await render(
+      createElement(SvgMotion, {
+        ref,
+        source: SVG_SOURCE,
+        trust: "trusted",
+        onReady: ready,
+      }),
+    );
+    const retained = readyHandles[0]!;
+    const firstSvg = retained.svg!;
+    const firstController = retained.controller!;
+
+    await act(async () => {
+      root.render(
+        createElement(SvgMotion, {
+          ref,
+          source: "/slow.svg",
+          trust: "trusted",
+          onReady: ready,
+        }),
+      );
+    });
+
+    expect(pendingSignal?.aborted).toBe(false);
+    expect(firstController.state).toBe("destroyed");
+    expect(firstSvg.isConnected).toBe(false);
+    expect(retained.svg).toBeNull();
+    expect(retained.controller).toBeNull();
+
+    await act(async () => {
+      root.render(
+        createElement(SvgMotion, {
+          ref,
+          source:
+            '<svg xmlns="http://www.w3.org/2000/svg" data-source="new"><path fill="#0f0" d="M0 0h10" /></svg>',
+          trust: "trusted",
+          onReady: ready,
+        }),
+      );
+    });
+    const replacementSvg = retained.svg;
+    const replacementController = retained.controller;
+    expect(pendingSignal?.aborted).toBe(true);
+    expect(readyHandles).toEqual([retained, retained]);
+    expect(replacementSvg?.dataset.source).toBe("new");
+    expect(replacementController?.state).toBe("running");
+
+    await act(async () => {
+      resolveSlow(
+        new Response(SVG_SOURCE, {
+          headers: { "content-type": "image/svg+xml" },
+          status: 200,
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(retained.svg).toBe(replacementSvg);
+    expect(retained.controller).toBe(replacementController);
+    expect(replacementSvg?.isConnected).toBe(true);
   });
 
   it("surfaces preparation errors and renders the fallback", async () => {
@@ -294,6 +445,19 @@ describe("useSvgMotion", () => {
     return createElement("div", { ref: current.containerRef });
   }
 
+  function DetachableHarness({
+    attached,
+    options,
+  }: {
+    attached: boolean;
+    options: UseSvgMotionOptions;
+  }) {
+    current = useSvgMotion(options);
+    return attached
+      ? createElement("div", { ref: current.containerRef })
+      : null;
+  }
+
   afterEach(() => {
     current = null;
   });
@@ -309,9 +473,68 @@ describe("useSvgMotion", () => {
     expect(current?.controller?.state).toBe("running");
     expect(current?.status).toBe("running");
     expect(current?.error).toBeNull();
-    expect(current?.diagnostics).toEqual([
-      { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
-    ]);
+    expect(current?.diagnostics).toEqual([]);
+    expect(animationsFor(current!.svg!.querySelector("path")!)).toHaveLength(1);
+  });
+
+  it("publishes an idle empty snapshot while detached and remounts cleanly in StrictMode", async () => {
+    const ready: SvgMotionReadyHandle[] = [];
+    const finishes: string[] = [];
+    const options: UseSvgMotionOptions = {
+      source: SVG_SOURCE,
+      trust: "trusted",
+      onFinish: () => finishes.push("finish"),
+      onReady: (handle) => ready.push(handle),
+    };
+    const { root } = await render(
+      createElement(
+        StrictMode,
+        null,
+        createElement(DetachableHarness, { attached: true, options }),
+      ),
+    );
+    const firstSvg = current!.svg!;
+    const firstController = current!.controller!;
+
+    await act(async () => {
+      root.render(
+        createElement(
+          StrictMode,
+          null,
+          createElement(DetachableHarness, { attached: false, options }),
+        ),
+      );
+    });
+
+    expect(current).toEqual(
+      expect.objectContaining({
+        svg: null,
+        controller: null,
+        status: "idle",
+        error: null,
+        diagnostics: [],
+      }),
+    );
+    expect(firstSvg.isConnected).toBe(false);
+    expect(firstController.state).toBe("destroyed");
+    expect(allAnimations(firstSvg)).toEqual([]);
+    expect(finishes).toEqual([]);
+
+    await act(async () => {
+      root.render(
+        createElement(
+          StrictMode,
+          null,
+          createElement(DetachableHarness, { attached: true, options }),
+        ),
+      );
+    });
+
+    expect(current?.svg).not.toBe(firstSvg);
+    expect(current?.controller).not.toBe(firstController);
+    expect(current?.status).toBe("running");
+    expect(ready).toHaveLength(2);
+    expect(finishes).toEqual([]);
   });
 
   it("does not remount when only the options object identity changes", async () => {
@@ -361,13 +584,15 @@ describe("useSvgMotion", () => {
     );
     const controller = current!.controller!;
 
-    controller.finish();
-    await act(async () => controller.finished);
+    await act(async () => {
+      controller.finish();
+      await controller.finished;
+    });
     expect(current?.status).toBe("finished");
     expect(events).toEqual(["finish"]);
 
-    controller.restart();
     await act(async () => {
+      controller.restart();
       controller.cancel();
       await controller.finished;
     });
@@ -448,6 +673,136 @@ describe("useSvgMotion", () => {
     expect(current?.error).toBe(thrown);
     expect(errors).toEqual([thrown]);
   });
+
+  it.each(
+    (["onReady", "onFinish", "onCancel", "onError"] as const).flatMap(
+      (callbackName) =>
+        (["throw", "reject"] as const).map(
+          (failureMode) => [callbackName, failureMode] as const,
+        ),
+    ),
+  )(
+    "isolates a lifecycle callback that makes %s %s without an unhandled rejection",
+    async (callbackName, failureMode) => {
+      const failure = new Error(`${callbackName} ${failureMode}`);
+      let callCount = 0;
+      const callback = () => {
+        callCount += 1;
+        if (failureMode === "throw") throw failure;
+        return Promise.reject(failure);
+      };
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => unhandled.push(reason);
+      process.on("unhandledRejection", onUnhandled);
+
+      try {
+        if (callbackName === "onError") {
+          await render(
+            createElement(Harness, {
+              options: {
+                source: "<svg><path></svg>",
+                onError: callback,
+              },
+            }),
+          );
+        } else {
+          const options: UseSvgMotionOptions = {
+            source: SVG_SOURCE,
+            trust: "trusted",
+          };
+          Object.assign(options, { [callbackName]: callback });
+          await render(createElement(Harness, { options }));
+          const controller = current!.controller!;
+          if (callbackName === "onFinish") {
+            await act(async () => {
+              controller.finish();
+              await controller.finished;
+            });
+          } else if (callbackName === "onCancel") {
+            await act(async () => {
+              controller.cancel();
+              await controller.finished;
+            });
+          }
+        }
+        await flushUnhandledRejections();
+      } finally {
+        process.off("unhandledRejection", onUnhandled);
+      }
+
+      expect(callCount).toBe(1);
+      expect(unhandled).toEqual([]);
+    },
+  );
+
+  it.each(["pause", "finite finish", "infinite finish", "seek"] as const)(
+    "refreshes and observes a typed %s failure in finally",
+    async (failurePoint) => {
+      const errors: unknown[] = [];
+      const options: UseSvgMotionOptions = {
+        source: SVG_SOURCE,
+        trust: "trusted",
+        onError: (error) => errors.push(error),
+      };
+      if (failurePoint === "infinite finish") {
+        options.preset = "pulse";
+        options.iterations = Infinity;
+      }
+      await render(createElement(Harness, { options }));
+      const svg = current!.svg!;
+      const controller = current!.controller!;
+      const finished = controller.finished;
+      const animation = allAnimations(svg)[0]!;
+
+      if (failurePoint === "pause") {
+        vi.spyOn(animation, "pause").mockImplementationOnce(() => {
+          throw new Error("private pause failure");
+        });
+      } else if (failurePoint === "finite finish") {
+        vi.spyOn(animation, "finish").mockImplementationOnce(() => {
+          throw new Error("private finish failure");
+        });
+      } else {
+        const setCurrentTime = vi
+          .fn<(value: CSSNumberish | null) => void>()
+          .mockImplementationOnce(() => {
+            throw new Error(`private ${failurePoint} failure`);
+          });
+        Object.defineProperty(animation, "currentTime", {
+          configurable: true,
+          get: () => 0,
+          set: setCurrentTime,
+        });
+      }
+
+      let thrown: unknown;
+      act(() => {
+        try {
+          if (failurePoint === "pause") controller.pause();
+          else if (failurePoint === "seek") controller.seek(0.5);
+          else controller.finish();
+        } catch (error) {
+          thrown = error;
+        }
+      });
+
+      expect(thrown).toEqual(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+          message: "The SVG animation did not complete.",
+        }),
+      );
+      expect(current?.status).toBe("failed");
+      await act(async () => {
+        await expect(finished).rejects.toBe(thrown);
+      });
+      expect(current?.error).toBe(thrown);
+      expect(errors).toEqual([thrown]);
+      expect(allAnimations(svg)).toEqual([]);
+      expect(svg.querySelector("path")?.hasAttribute("style")).toBe(false);
+    },
+  );
 
   it("emits finish once when restart and finish settle back-to-back", async () => {
     const events: string[] = [];
@@ -658,10 +1013,11 @@ describe("SVG accessibility lifecycle", () => {
     expect(ref.current?.svg?.hasAttribute("role")).toBe(false);
   });
 
-  it("marks an unnamed SVG decorative without adding interaction behavior", async () => {
+  it("marks an unnamed SVG decorative without adding click replay behavior", async () => {
     const ref = createRef<SvgMotionHandle>();
     await render(
       createElement(SvgMotion, {
+        autoplay: false,
         ref,
         source: SVG_SOURCE,
         trust: "trusted",
@@ -673,8 +1029,22 @@ describe("SVG accessibility lifecycle", () => {
     expect(svg.getAttribute("aria-hidden")).toBe("true");
     expect(svg.hasAttribute("role")).toBe(false);
     expect(svg.hasAttribute("tabindex")).toBe(false);
+    const run = controller.finished;
+    const animations = allAnimations(svg);
+    const animation = animations[0]!;
+    const currentTime = animation.currentTime;
+    const play = vi.spyOn(controller, "play");
+    const restart = vi.spyOn(controller, "restart");
+    const nativePlay = vi.spyOn(RecordedAnimation.prototype, "play");
 
     svg.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(controller.state).toBe("running");
+
+    expect(controller.state).toBe("idle");
+    expect(controller.finished).toBe(run);
+    expect(allAnimations(svg)).toEqual(animations);
+    expect(animation.currentTime).toBe(currentTime);
+    expect(play).not.toHaveBeenCalled();
+    expect(restart).not.toHaveBeenCalled();
+    expect(nativePlay).not.toHaveBeenCalled();
   });
 });

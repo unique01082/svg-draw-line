@@ -101,6 +101,13 @@ interface CallbackSet {
 }
 
 const EMPTY_DIAGNOSTICS: readonly SvgDiagnostic[] = [];
+const IDLE_SNAPSHOT: LifecycleSnapshot = {
+  svg: null,
+  controller: null,
+  status: "idle",
+  error: null,
+  diagnostics: EMPTY_DIAGNOSTICS,
+};
 const VALID_ROLES = new Set<SvgMotionRole>([
   "img",
   "graphics-document",
@@ -219,6 +226,18 @@ function assignDefined<T extends object>(
   return target;
 }
 
+function invokeSafely<Arguments extends unknown[]>(
+  callback: ((...args: Arguments) => unknown) | undefined,
+  ...args: Arguments
+): void {
+  if (!callback) return;
+  try {
+    void Promise.resolve(callback(...args)).catch(() => undefined);
+  } catch {
+    // Consumer callback failures do not belong to adapter-owned promises.
+  }
+}
+
 function validRole(value: string | null): SvgMotionRole | undefined {
   return value && VALID_ROLES.has(value as SvgMotionRole)
     ? (value as SvgMotionRole)
@@ -309,22 +328,24 @@ function observeController(
     if (observed?.run === run) return observed;
     const observation: RunObservation = { run, delivered: false };
     observed = observation;
-    void run.then(
-      () => {
-        if (!active) return;
-        if (observed === observation) {
-          const terminal = terminalState(target.state);
-          if (terminal) observation.terminal ??= terminal;
+    void run
+      .then(
+        () => {
+          if (!active) return;
+          if (observed === observation) {
+            const terminal = terminalState(target.state);
+            if (terminal) observation.terminal ??= terminal;
+            onState(target.state);
+          }
+          deliver(observation);
+        },
+        (error: unknown) => {
+          if (!active || observed !== observation) return;
           onState(target.state);
-        }
-        deliver(observation);
-      },
-      (error: unknown) => {
-        if (!active || observed !== observation) return;
-        onState(target.state);
-        onFailure(error);
-      },
-    );
+          onFailure(error);
+        },
+      )
+      .catch(() => undefined);
     return observation;
   };
   const captureCurrentTerminal = () => {
@@ -356,8 +377,11 @@ function observeController(
       }
     },
     pause() {
-      target.pause();
-      update();
+      try {
+        target.pause();
+      } finally {
+        update();
+      }
     },
     reverse() {
       captureCurrentTerminal();
@@ -376,20 +400,32 @@ function observeController(
       }
     },
     finish() {
-      target.finish();
-      update();
+      try {
+        target.finish();
+      } finally {
+        update();
+      }
     },
     cancel() {
-      target.cancel();
-      update();
+      try {
+        target.cancel();
+      } finally {
+        update();
+      }
     },
     seek(progress) {
-      target.seek(progress);
-      update();
+      try {
+        target.seek(progress);
+      } finally {
+        update();
+      }
     },
     destroy() {
-      target.destroy();
-      update();
+      try {
+        target.destroy();
+      } finally {
+        update();
+      }
     },
   };
 
@@ -438,6 +474,7 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
     onError,
   });
   const svgPropsRef = useRef(svgProps);
+  const hadContainerRef = useRef(false);
   callbacksRef.current = { onReady, onFinish, onCancel, onError };
   svgPropsRef.current = svgProps;
   const containerRef = useCallback<RefCallback<Element>>((node) => {
@@ -446,7 +483,21 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
   const styleSignature = stableStyleSignature(svgProps.style);
 
   useEffect(() => {
-    if (!container) return;
+    if (!container) {
+      if (hadContainerRef.current) {
+        setSnapshot((current) =>
+          current.svg === null &&
+          current.controller === null &&
+          current.status === "idle" &&
+          current.error === null &&
+          current.diagnostics.length === 0
+            ? current
+            : IDLE_SNAPSHOT,
+        );
+      }
+      return;
+    }
+    hadContainerRef.current = true;
 
     let active = true;
     const abortController = new AbortController();
@@ -479,57 +530,61 @@ export function useSvgMotion(options: UseSvgMotionOptions): UseSvgMotionResult {
       },
     );
 
-    void mountSvgMotion(container, source, mountOptions).then(
-      (instance) => {
-        if (!active) {
-          instance.destroy();
-          return;
-        }
-        applySvgProps(instance.svg, svgPropsRef.current);
-        const observed = observeController(
-          instance.controller,
-          (status) => {
-            if (!active) return;
-            setSnapshot((current) => ({ ...current, status }));
-          },
-          (status) => {
-            if (status === "finished") callbacksRef.current.onFinish?.();
-            else if (status === "cancelled") callbacksRef.current.onCancel?.();
-          },
-          (error) => {
-            if (!active) return;
-            setSnapshot((current) => ({ ...current, error }));
-            callbacksRef.current.onError?.(error);
-          },
-        );
-        destroyCurrent = () => {
-          observed.disconnect();
-          instance.destroy();
-        };
-        const ready = {
-          svg: instance.svg,
-          controller: observed.controller,
-        } satisfies SvgMotionReadyHandle;
-        setSnapshot({
-          ...ready,
-          status: observed.controller.state,
-          error: null,
-          diagnostics: instance.diagnostics,
-        });
-        callbacksRef.current.onReady?.(ready);
-      },
-      (error: unknown) => {
-        if (!active || abortController.signal.aborted) return;
-        setSnapshot({
-          svg: null,
-          controller: null,
-          status: "error",
-          error,
-          diagnostics: EMPTY_DIAGNOSTICS,
-        });
-        callbacksRef.current.onError?.(error);
-      },
-    );
+    void mountSvgMotion(container, source, mountOptions)
+      .then(
+        (instance) => {
+          if (!active) {
+            instance.destroy();
+            return;
+          }
+          applySvgProps(instance.svg, svgPropsRef.current);
+          const observed = observeController(
+            instance.controller,
+            (status) => {
+              if (!active) return;
+              setSnapshot((current) => ({ ...current, status }));
+            },
+            (status) => {
+              if (status === "finished")
+                invokeSafely(callbacksRef.current.onFinish);
+              else if (status === "cancelled")
+                invokeSafely(callbacksRef.current.onCancel);
+            },
+            (error) => {
+              if (!active) return;
+              setSnapshot((current) => ({ ...current, error }));
+              invokeSafely(callbacksRef.current.onError, error);
+            },
+          );
+          destroyCurrent = () => {
+            observed.disconnect();
+            instance.destroy();
+          };
+          const ready = {
+            svg: instance.svg,
+            controller: observed.controller,
+          } satisfies SvgMotionReadyHandle;
+          setSnapshot({
+            ...ready,
+            status: observed.controller.state,
+            error: null,
+            diagnostics: instance.diagnostics,
+          });
+          invokeSafely(callbacksRef.current.onReady, ready);
+        },
+        (error: unknown) => {
+          if (!active || abortController.signal.aborted) return;
+          setSnapshot({
+            svg: null,
+            controller: null,
+            status: "error",
+            error,
+            diagnostics: EMPTY_DIAGNOSTICS,
+          });
+          invokeSafely(callbacksRef.current.onError, error);
+        },
+      )
+      .catch(() => undefined);
 
     return () => {
       active = false;
@@ -623,7 +678,7 @@ export const SvgMotion = forwardRef<SvgMotionHandle, SvgMotionProps>(
     }
     const reportReady = useCallback((ready: SvgMotionReadyHandle) => {
       liveRef.current = ready;
-      latestReadyCallback.current?.(handleRef.current!);
+      invokeSafely(latestReadyCallback.current, handleRef.current!);
     }, []);
     const result = useSvgMotion(
       assignDefined<UseSvgMotionOptions>(
@@ -650,6 +705,12 @@ export const SvgMotion = forwardRef<SvgMotionHandle, SvgMotionProps>(
     );
     liveRef.current = { svg: result.svg, controller: result.controller };
     useImperativeHandle(forwardedRef, () => handleRef.current!, []);
+    useEffect(
+      () => () => {
+        liveRef.current = { svg: null, controller: null };
+      },
+      [],
+    );
 
     const child =
       result.status === "loading"
