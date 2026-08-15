@@ -67,7 +67,7 @@ test("uses the canonical package identity in active files", async () => {
     "https://github.com/unique01082/svg-motion.git",
   );
 
-  const retiredScope = `@${"baole-space"}/svg-motion`;
+  const retiredScope = `@${["baole", "space"].join("-")}/svg-motion`;
   const violations: string[] = [];
   for (const path of await textFiles()) {
     const text = await readFile(path, "utf8");

@@ -89,7 +89,7 @@ test("uses the canonical package identity in active files", async () => {
   expect(packageJson.repository.url).toBe(
     "https://github.com/unique01082/svg-motion.git",
   );
-  const oldScope = `@${"baole-space"}/svg-motion`;
+  const oldScope = `@${["baole", "space"].join("-")}/svg-motion`;
   const violations: string[] = [];
   for (const path of await textFiles()) {
     if ((await readFile(path, "utf8")).includes(oldScope))
@@ -229,7 +229,7 @@ git commit -m "refactor: rename package to baolq svg motion"
 expect(docsPackage.name).toBe("@baolq/svg-motion-docs");
 expect(docsPackage.dependencies["@baolq/svg-motion"]).toBe("0.1.0");
 expect(
-  docsPackage.dependencies[`@${"baole-space"}/svg-motion`],
+  docsPackage.dependencies[`@${["baole", "space"].join("-")}/svg-motion`],
 ).toBeUndefined();
 expect(rootPackage.scripts["docs:candidate:verify"]).toMatch(
   /docs-candidate-smoke/,

@@ -35,7 +35,7 @@ describe("documentation site delivery contract", () => {
     expect(docsPackage.name).toBe("@baolq/svg-motion-docs");
     expect(docsPackage.dependencies["@baolq/svg-motion"]).toBe("0.1.0");
     expect(
-      docsPackage.dependencies[`@${"baole-space"}/svg-motion`],
+      docsPackage.dependencies[`@${["baole", "space"].join("-")}/svg-motion`],
     ).toBeUndefined();
     expect(rootPackage.scripts).toMatchObject({
       "docs:dev": expect.any(String),
