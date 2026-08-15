@@ -1,7 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">
-  <script>alert(1)</script>
-  <foreignObject><div xmlns="http://www.w3.org/1999/xhtml">unsafe</div></foreignObject>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:evil="urn:attacker" onload="hostile()">
+  <style>@import url(https://attacker.invalid/import.css); .remote { fill: image-set(url(https://attacker.invalid/one.png) 1x, url(https://attacker.invalid/two.png) 2x) }</style>
+  <script id="constructor">hostile()</script>
+  <foreignObject id="ownerDocument"><html:div onload="hostile()">unsafe</html:div></foreignObject>
   <animate attributeName="opacity" values="0;1" />
+  <set attributeName="display" to="none" />
   <image href="https://attacker.invalid/track.png" />
-  <rect width="10" height="10" fill="url(https://attacker.invalid/paint.svg#x)" />
+  <use xlink:href="https://attacker.invalid/symbols.svg#mark" />
+  <rect id="__proto__" name="querySelectorAll" width="10" height="10"
+    fill="url(https://attacker.invalid/paint.svg#x)"
+    filter="url(https://attacker.invalid/filter.svg#x)"
+    mask="url(https://attacker.invalid/mask.svg#x)"
+    style="fill: u\72l(https://attacker.invalid/escaped.svg#x); stroke: image-set(url(https://attacker.invalid/stroke.png) 1x)"
+    onclick="hostile()" />
+  <a id="toString" name="ownerDocument" href="javascript:hostile()"><path id="prototype" /></a>
+  <html:script onerror="hostile()" />
+  <evil:path id="querySelector" onload="hostile()" />
 </svg>

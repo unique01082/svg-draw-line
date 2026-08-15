@@ -75,10 +75,11 @@ describe("release contract", () => {
   });
 
   it("ships CI and a guarded trusted-publishing workflow", async () => {
-    const [ci, release, tagGuard] = await Promise.all([
+    const [ci, release, tagGuard, playwrightConfig] = await Promise.all([
       readFile(new URL(".github/workflows/ci.yml", ROOT), "utf8"),
       readFile(new URL(".github/workflows/publish.yml", ROOT), "utf8"),
       readFile(new URL("scripts/assert-release-tag.mjs", ROOT), "utf8"),
+      readFile(new URL("playwright.config.ts", ROOT), "utf8"),
     ]);
 
     expect(ci).toMatch(/pull_request:/);
@@ -93,6 +94,13 @@ describe("release contract", () => {
     expect(tagGuard).toMatch(/GITHUB_REF_NAME/);
     expect(release).toMatch(/npm publish --access public --provenance/);
 
+    const screenshotTolerance = playwrightConfig.match(
+      /maxDiffPixelRatio:\s*([\d.]+)/,
+    );
+    expect(screenshotTolerance).not.toBeNull();
+    expect(Number(screenshotTolerance?.[1])).toBeLessThanOrEqual(0.001);
+    expect(release).not.toMatch(/^\s*cache:\s*pnpm\s*$/m);
+
     for (const workflow of [ci, release]) {
       const actions = [...workflow.matchAll(/^\s*- uses:\s+(\S+)/gm)].map(
         ([, action]) => action,
@@ -102,5 +110,14 @@ describe("release contract", () => {
         expect(action).toMatch(/^[^@]+@[0-9a-f]{40}$/);
       }
     }
+  });
+
+  it("keeps a dedicated packed-package tree-shaking consumer", async () => {
+    await expect(
+      exists("test/consumers/tree-shake/package.json"),
+    ).resolves.toBe(true);
+    await expect(exists("test/consumers/tree-shake/main.ts")).resolves.toBe(
+      true,
+    );
   });
 });

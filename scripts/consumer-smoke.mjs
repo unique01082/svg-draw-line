@@ -63,7 +63,7 @@ async function verifyTarball(tarball) {
   }
 }
 
-async function installConsumer(name, tarball) {
+async function installConsumer(name, tarball, { nodeRuntime = true } = {}) {
   const source = resolve(root, "test/consumers", name);
   const target = join(temporaryRoot, name);
   await cp(source, target, { recursive: true });
@@ -79,12 +79,24 @@ async function installConsumer(name, tarball) {
     target,
   );
   run("pnpm", ["exec", "tsc", "--noEmit"], target);
-  run("node", ["runtime.mjs"], target);
+  if (nodeRuntime) run("node", ["runtime.mjs"], target);
   run("pnpm", ["exec", "vite", "build"], target);
 
   const assets = await readdir(join(target, "dist", "assets"));
   assert.ok(assets.some((file) => file.endsWith(".js")));
   return target;
+}
+
+async function readBuiltJavaScript(consumer) {
+  return (
+    await Promise.all(
+      (await readdir(join(consumer, "dist", "assets")))
+        .filter((file) => file.endsWith(".js"))
+        .map((file) =>
+          readFile(join(consumer, "dist", "assets", file), "utf8"),
+        ),
+    )
+  ).join("\n");
 }
 
 const contentTypes = {
@@ -190,6 +202,50 @@ async function verifyConsumerInBrowsers(name, consumer) {
   }
 }
 
+async function verifyTreeShakingConsumerInBrowsers(consumer) {
+  const server = await serveBuiltConsumer(consumer);
+  try {
+    for (const [browserName, browserType] of Object.entries({
+      chromium,
+      firefox,
+      webkit,
+    })) {
+      const browser = await browserType.launch();
+      try {
+        const page = await browser.newPage();
+        const errors = [];
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        page.on("pageerror", (error) => errors.push(error.message));
+        const response = await page.goto(server.url, {
+          waitUntil: "networkidle",
+        });
+        assert.ok(response?.ok(), `tree-shake/${browserName} did not load.`);
+        await page.waitForFunction(
+          () => globalThis.svgMotionTreeShakeConsumer?.ready === true,
+          undefined,
+          { timeout: 5_000 },
+        );
+        const result = await page.evaluate(
+          () => globalThis.svgMotionTreeShakeConsumer,
+        );
+        assert.equal(result.svgCount, 1);
+        assert.deepEqual(result.diagnostics, []);
+        assert.deepEqual(
+          errors,
+          [],
+          `tree-shake/${browserName} emitted errors.`,
+        );
+      } finally {
+        await browser.close();
+      }
+    }
+  } finally {
+    await server.close();
+  }
+}
+
 try {
   await rm(packDirectory, { force: true, recursive: true });
   await mkdir(packDirectory, { recursive: true });
@@ -202,20 +258,32 @@ try {
   await verifyTarball(tarball);
 
   const vanilla = await installConsumer("vanilla", tarball);
-  const vanillaBundle = (
-    await Promise.all(
-      (await readdir(join(vanilla, "dist", "assets")))
-        .filter((file) => file.endsWith(".js"))
-        .map((file) => readFile(join(vanilla, "dist", "assets", file), "utf8")),
-    )
-  ).join("\n");
+  const vanillaBundle = await readBuiltJavaScript(vanilla);
   assert.doesNotMatch(vanillaBundle, /react(?:\.production)?\.min/);
 
   const react = await installConsumer("react", tarball);
+  const treeShake = await installConsumer("tree-shake", tarball, {
+    nodeRuntime: false,
+  });
+  const treeShakeBundle = await readBuiltJavaScript(treeShake);
+  assert.match(treeShakeBundle, /treeShakeReady/);
+  assert.doesNotMatch(treeShakeBundle, /ANIMATION_FAILED/);
+  assert.doesNotMatch(
+    treeShakeBundle,
+    /animateSvg requires an SVG root element\./,
+  );
+  assert.doesNotMatch(treeShakeBundle, /useImperativeHandle/);
+  const treeShakeBytes = Buffer.byteLength(treeShakeBundle);
+  const vanillaBytes = Buffer.byteLength(vanillaBundle);
+  assert.ok(
+    treeShakeBytes < 45_000 && treeShakeBytes < vanillaBytes * 0.85,
+    `Tree-shaken bundle (${treeShakeBytes} bytes) is not materially smaller than the Vanilla bundle (${vanillaBytes} bytes).`,
+  );
   await verifyConsumerInBrowsers("vanilla", vanilla);
   await verifyConsumerInBrowsers("react", react);
+  await verifyTreeShakingConsumerInBrowsers(treeShake);
   console.log(
-    "Tarball contents and Vanilla/React consumers verified in Chromium, Firefox, and WebKit.",
+    "Tarball contents, tree-shaking, and Vanilla/React consumers verified in Chromium, Firefox, and WebKit.",
   );
 } finally {
   await rm(temporaryRoot, { force: true, recursive: true });

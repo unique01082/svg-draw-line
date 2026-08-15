@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 type NativeAnimationSnapshot = ReturnType<
   Window["svgMotionHarness"]["nativeAnimations"]
@@ -10,6 +10,44 @@ function expectNativeCheckpoint(
 ) {
   expect(animations).toHaveLength(7);
   expect(animations.every(predicate)).toBe(true);
+}
+
+type ArtworkSnapshot = ReturnType<Window["svgMotionHarness"]["artwork"]>;
+
+function expectRestoredArtwork(snapshot: ArtworkSnapshot, state: string) {
+  expect(snapshot.original).toContain("<svg");
+  expect(snapshot.current).toBe(snapshot.original);
+  expect(snapshot.matchesOriginal).toBe(true);
+  expect(snapshot.animationCount).toBe(0);
+  expect(snapshot.state).toBe(state);
+}
+
+async function installRequestInterception(page: Page) {
+  const observed: string[] = [];
+  const attackerRequests: string[] = [];
+  const unexpectedRequests: string[] = [];
+  const harnessOrigin = new URL(page.url()).origin;
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    const parsed = new URL(url);
+    observed.push(url);
+    if (parsed.origin !== harnessOrigin) unexpectedRequests.push(url);
+    if (parsed.hostname === "attacker.invalid") {
+      attackerRequests.push(url);
+      await route.abort("blockedbyclient");
+    } else if (parsed.origin !== harnessOrigin) {
+      await route.abort("blockedbyclient");
+    } else if (parsed.pathname === "/__interception_probe__") {
+      await route.fulfill({ status: 204 });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.evaluate(() => fetch("/__interception_probe__"));
+  expect(observed.some((url) => url.endsWith("/__interception_probe__"))).toBe(
+    true,
+  );
+  return { attackerRequests, observed, unexpectedRequests };
 }
 
 test.beforeEach(async ({ page }) => {
@@ -195,10 +233,111 @@ test("controller operations and instance destroy clean up", async ({
   expect(finished.state).toBe("finished");
   expect(finished.animationCount).toBe(0);
 
+  const publicMount = await page.evaluate(() =>
+    window.svgMotionHarness.mountPublicInstance("primitives"),
+  );
+  expect(publicMount.animationCount).toBe(7);
   const destroyed = await page.evaluate(() =>
     window.svgMotionHarness.destroyInstance(),
   );
   expect(destroyed).toEqual({ connected: false, state: "destroyed" });
+});
+
+test("restores exact prepared artwork after every native terminal path", async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    window.svgMotionHarness.mount("primitives", { duration: 20 }),
+  );
+  expectRestoredArtwork(
+    await page.evaluate(() => window.svgMotionHarness.completeNaturally()),
+    "finished",
+  );
+
+  await page.evaluate(() => window.svgMotionHarness.mount("primitives"));
+  await page.evaluate(() => window.svgMotionHarness.finish());
+  expectRestoredArtwork(
+    await page.evaluate(() => window.svgMotionHarness.artwork()),
+    "finished",
+  );
+
+  await page.evaluate(() => window.svgMotionHarness.mount("primitives"));
+  await page.evaluate(() => window.svgMotionHarness.cancel());
+  expectRestoredArtwork(
+    await page.evaluate(() => window.svgMotionHarness.artwork()),
+    "cancelled",
+  );
+
+  await page.evaluate(() => window.svgMotionHarness.mount("primitives"));
+  expectRestoredArtwork(
+    await page.evaluate(() => window.svgMotionHarness.destroyController()),
+    "destroyed",
+  );
+});
+
+test("renders the safe embedded bitmap without errors or unexpected requests", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  const requests = await installRequestInterception(page);
+
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.mount("embeddedBitmap"),
+  );
+  await page.evaluate(() => window.svgMotionHarness.waitForLoading());
+
+  expect(result.svgCount).toBe(1);
+  expect(result.embeddedBitmapCount).toBe(1);
+  expect(result.dataBitmapCount).toBe(1);
+  expect(result.diagnostics).toEqual([
+    { code: "NO_DRAWABLE_GEOMETRY", count: 1 },
+  ]);
+  expect(requests.attackerRequests).toEqual([]);
+  expect(requests.unexpectedRequests).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("sanitizes hostile browser input before it can perform network requests", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  const requests = await installRequestInterception(page);
+
+  const result = await page.evaluate(() =>
+    window.svgMotionHarness.mountMaliciousSource(),
+  );
+  await page.evaluate(() => window.svgMotionHarness.waitForLoading());
+
+  expect(result.sourceDangerousElementCount).toBeGreaterThan(0);
+  expect(result.sourceExternalReferenceCount).toBeGreaterThan(0);
+  expect(result.originalUnchanged).toBe(true);
+  expect(result.svgCount).toBe(1);
+  expect(result.dangerousElementCount).toBe(0);
+  expect(result.dangerousAttributeCount).toBe(0);
+  expect(result.externalReferenceCount).toBe(0);
+  expect(result.diagnostics.length).toBeGreaterThan(0);
+  expect(
+    result.diagnostics.every(
+      (diagnostic) =>
+        Object.keys(diagnostic).sort().join(",") === "code,count" &&
+        typeof diagnostic.code === "string" &&
+        typeof diagnostic.count === "number",
+    ),
+  ).toBe(true);
+  expect(JSON.stringify(result.diagnostics)).not.toMatch(
+    /attacker|hostile|constructor|ownerDocument/,
+  );
+  expect(requests.attackerRequests).toEqual([]);
+  expect(requests.unexpectedRequests).toEqual([]);
+  expect(errors).toEqual([]);
 });
 
 test("draw progress has deterministic visual snapshots", async ({ page }) => {
@@ -215,4 +354,24 @@ test("draw progress has deterministic visual snapshots", async ({ page }) => {
       caret: "hide",
     });
   }
+});
+
+test("native finish is visually identical to the unanimated artwork", async ({
+  page,
+}) => {
+  const stage = page.locator("#stage");
+  await page.evaluate(() =>
+    window.svgMotionHarness.renderUnanimated("primitives"),
+  );
+  await expect(stage).toHaveScreenshot("draw-original.png", {
+    animations: "allow",
+    caret: "hide",
+  });
+
+  await page.evaluate(() => window.svgMotionHarness.mount("primitives"));
+  await page.evaluate(() => window.svgMotionHarness.finish());
+  await expect(stage).toHaveScreenshot("draw-original.png", {
+    animations: "allow",
+    caret: "hide",
+  });
 });
