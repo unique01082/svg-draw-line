@@ -804,6 +804,159 @@ describe("useSvgMotion", () => {
     },
   );
 
+  it.each(
+    (["pause", "finite finish", "infinite finish", "seek"] as const).flatMap(
+      (failurePoint) =>
+        (["play", "reverse", "restart"] as const).map(
+          (recovery) => [failurePoint, recovery] as const,
+        ),
+    ),
+  )(
+    "delivers one %s failure when %s immediately starts a recovery run",
+    async (failurePoint, recovery) => {
+      const errors: unknown[] = [];
+      const finishes: string[] = [];
+      const cancels: string[] = [];
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => unhandled.push(reason);
+      const options: UseSvgMotionOptions = {
+        source: SVG_SOURCE,
+        trust: "trusted",
+        onCancel: () => cancels.push("cancel"),
+        onError: (error) => errors.push(error),
+        onFinish: () => finishes.push("finish"),
+      };
+      if (failurePoint === "infinite finish") {
+        options.preset = "pulse";
+        options.iterations = Infinity;
+      }
+      process.on("unhandledRejection", onUnhandled);
+
+      try {
+        await render(createElement(Harness, { options }));
+        const svg = current!.svg!;
+        const controller = current!.controller!;
+        const failedRun = controller.finished;
+        const animation = allAnimations(svg)[0]!;
+
+        if (failurePoint === "pause") {
+          vi.spyOn(animation, "pause").mockImplementationOnce(() => {
+            throw new Error("private pause failure");
+          });
+        } else if (failurePoint === "finite finish") {
+          vi.spyOn(animation, "finish").mockImplementationOnce(() => {
+            throw new Error("private finish failure");
+          });
+        } else {
+          const setCurrentTime = vi
+            .fn<(value: CSSNumberish | null) => void>()
+            .mockImplementationOnce(() => {
+              throw new Error(`private ${failurePoint} failure`);
+            });
+          Object.defineProperty(animation, "currentTime", {
+            configurable: true,
+            get: () => 0,
+            set: setCurrentTime,
+          });
+        }
+
+        let thrown: unknown;
+        let recoveredRun: Promise<void> | undefined;
+        await act(async () => {
+          try {
+            if (failurePoint === "pause") controller.pause();
+            else if (failurePoint === "seek") controller.seek(0.5);
+            else controller.finish();
+          } catch (error) {
+            thrown = error;
+          }
+          controller[recovery]();
+          recoveredRun = controller.finished;
+          await expect(failedRun).rejects.toBe(thrown);
+          await Promise.resolve();
+        });
+        await flushUnhandledRejections();
+
+        expect(thrown).toEqual(
+          expect.objectContaining({
+            name: "SvgAnimationError",
+            code: SVG_ANIMATION_ERROR_CODES.animationFailed,
+            message: "The SVG animation did not complete.",
+          }),
+        );
+        expect(recoveredRun).not.toBe(failedRun);
+        expect(controller.finished).toBe(recoveredRun);
+        expect(controller.state).toBe("running");
+        expect(current?.status).toBe("running");
+        expect(current?.error).toBeNull();
+        expect(errors).toEqual([thrown]);
+        expect(finishes).toEqual([]);
+        expect(cancels).toEqual([]);
+        expect(unhandled).toEqual([]);
+        expect(allAnimations(svg)).toHaveLength(1);
+      } finally {
+        process.off("unhandledRejection", onUnhandled);
+      }
+    },
+  );
+
+  it.each(["play", "reverse", "restart"] as const)(
+    "delivers one fresh %s setup failure before immediate recovery",
+    async (failurePoint) => {
+      const errors: unknown[] = [];
+      await render(
+        createElement(Harness, {
+          options: {
+            autoplay: false,
+            source: SVG_SOURCE,
+            trust: "trusted",
+            onError: (error) => errors.push(error),
+          },
+        }),
+      );
+      const svg = current!.svg!;
+      const controller = current!.controller!;
+      await act(async () => {
+        controller.cancel();
+        await controller.finished;
+      });
+      vi.spyOn(Element.prototype, "animate").mockImplementationOnce(() => {
+        throw new Error(`private fresh ${failurePoint} setup failure`);
+      });
+
+      let thrown: unknown;
+      let failedRun: Promise<void> | undefined;
+      let recoveredRun: Promise<void> | undefined;
+      await act(async () => {
+        try {
+          controller[failurePoint]();
+        } catch (error) {
+          thrown = error;
+        }
+        failedRun = controller.finished;
+        controller.play();
+        recoveredRun = controller.finished;
+        await expect(failedRun).rejects.toBe(thrown);
+        await Promise.resolve();
+      });
+
+      expect(thrown).toEqual(
+        expect.objectContaining({
+          name: "SvgAnimationError",
+          code: SVG_ANIMATION_ERROR_CODES.setupFailed,
+          message: "The SVG animation could not be created.",
+        }),
+      );
+      expect(recoveredRun).not.toBe(failedRun);
+      expect(controller.finished).toBe(recoveredRun);
+      expect(controller.state).toBe("running");
+      expect(current?.status).toBe("running");
+      expect(current?.error).toBeNull();
+      expect(errors).toEqual([thrown]);
+      expect(allAnimations(svg)).toHaveLength(1);
+    },
+  );
+
   it("emits finish once when restart and finish settle back-to-back", async () => {
     const events: string[] = [];
     await render(
