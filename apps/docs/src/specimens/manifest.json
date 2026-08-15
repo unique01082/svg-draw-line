@@ -1,157 +1,411 @@
 {
-  "collectionId": 54491,
-  "collectionName": "果汁饮品",
-  "creator": "美少女壮士a",
-  "sourceUrl": "https://www.iconfont.cn/collections/detail?cid=54491",
+  "collectionId": "pixellove-bordered-vectors",
+  "collectionName": "Pixellove Bordered Vectors",
+  "creator": "Pixellove",
+  "creatorUrl": "https://www.svgrepo.com/author/pixellove/",
+  "sourceUrl": "https://www.svgrepo.com/collection/pixellove-bordered-vectors/",
   "acquisitionDate": "2026-08-15",
-  "rights": "Commercial use and raw SVG redistribution confirmed by the repository owner.",
+  "license": "Public Domain (CC0)",
   "specimens": [
     {
-      "slug": "mango-juice",
-      "label": "Mango juice",
-      "chineseName": "芒果汁",
-      "file": "mango-juice.svg",
-      "sha256": "618f23af5d5078f8558c203aef5712e0d5576f059e28a6ca1ec5db7dd02581e8"
+      "slug": "cld-cloud-network-folder",
+      "label": "Cld Cloud Network Folder",
+      "originalName": "Cld Cloud Network Folder",
+      "file": "cld-cloud-network-folder.svg",
+      "sourceId": 506896,
+      "sha256": "c7969a72351918208a33568a3a42c178a71d5ea0199aae83c660077045f275cd"
     },
     {
-      "slug": "congee",
-      "label": "Congee",
-      "chineseName": "粥",
-      "file": "congee.svg",
-      "sha256": "bcecc91dcc59f336669f331e4cd1502b918aef12253cf80b9999d6ecd96ec868"
+      "slug": "cha-translate-2",
+      "label": "Cha Translate 2",
+      "originalName": "Cha Translate 2",
+      "file": "cha-translate-2.svg",
+      "sourceId": 506897,
+      "sha256": "49bcc450fc86bd23dcb5d505e44fb1bc15f72de1af1b4c9ca2209bdbf785399a"
     },
     {
-      "slug": "walnut-drink",
-      "label": "Walnut drink",
-      "chineseName": "核桃露",
-      "file": "walnut-drink.svg",
-      "sha256": "ce83796e35edf92dabadc65ae98eda720ae087a18e277f3692e71799a55f4c21"
+      "slug": "cld-cloud-computer-network",
+      "label": "Cld Cloud Computer Network",
+      "originalName": "Cld Cloud Computer Network",
+      "file": "cld-cloud-computer-network.svg",
+      "sourceId": 506898,
+      "sha256": "f7b861f58a6ab061049ae183cfaee3f14cee42e697e61e93053d3c007af8131d"
     },
     {
-      "slug": "mineral-water",
-      "label": "Mineral water",
-      "chineseName": "矿泉水",
-      "file": "mineral-water.svg",
-      "sha256": "de5eb17cf2b27bdbf5156745e0558c396f13c6315de60438e7391cc7f9f4843e"
+      "slug": "cld-cloud-phone",
+      "label": "Cld Cloud Phone",
+      "originalName": "Cld Cloud Phone",
+      "file": "cld-cloud-phone.svg",
+      "sourceId": 506899,
+      "sha256": "2ccaa8fd20f8048e29d61fb97d154bd0d7c81eb01e41f3a8807f9202bdb5494d"
     },
     {
-      "slug": "soup",
-      "label": "Soup",
-      "chineseName": "汤",
-      "file": "soup.svg",
-      "sha256": "b6f0042a449e1f8ccfdafbc5adac909ddbb3eb0377ee05c647169d37444a303b"
+      "slug": "cha-rect-swear",
+      "label": "Cha Rect Swear",
+      "originalName": "Cha Rect Swear",
+      "file": "cha-rect-swear.svg",
+      "sourceId": 506900,
+      "sha256": "525eebe800e7881905e36946d9d239051965c083f3c06f9a717c2bcd942c6dad"
     },
     {
-      "slug": "soda-water",
-      "label": "Soda water",
-      "chineseName": "苏打水",
-      "file": "soda-water.svg",
-      "sha256": "95f49b4ae255cab3b9e672a03c13b568f5d78ad4a2c43f3b5dff5416a9f13146"
+      "slug": "cld-cloud-wifi",
+      "label": "Cld Cloud Wifi",
+      "originalName": "Cld Cloud Wifi",
+      "file": "cld-cloud-wifi.svg",
+      "sourceId": 506901,
+      "sha256": "176549f7b585c537131a12b1580d75d05c4a9798d30e17675a29dd39d4d1a728"
     },
     {
-      "slug": "coffee",
-      "label": "Coffee",
-      "chineseName": "咖啡",
-      "file": "coffee.svg",
-      "sha256": "dc1fb86fdd3c0cceb26c40bd1b372b306d3ea4ce1d7079f3e1d088cdac1bf5e6"
+      "slug": "cle-soap-bar",
+      "label": "Cle Soap Bar",
+      "originalName": "Cle Soap Bar",
+      "file": "cle-soap-bar.svg",
+      "sourceId": 506902,
+      "sha256": "64a69ed3950dd192336c63301603c1df1baf7982f8e7d044f70581375b8363e6"
     },
     {
-      "slug": "beer",
-      "label": "Beer",
-      "chineseName": "啤酒",
-      "file": "beer.svg",
-      "sha256": "56b3d4803d951adbb392413616568eb3b1104307afd59837813fbe6ffa942fb5"
+      "slug": "cle-peg",
+      "label": "Cle Peg",
+      "originalName": "Cle Peg",
+      "file": "cle-peg.svg",
+      "sourceId": 506903,
+      "sha256": "cb847222b71d690568e3482c8645b87f96a539526c5eb76498d5e3dcbd6c7c09"
     },
     {
-      "slug": "cola",
-      "label": "Cola",
-      "chineseName": "可乐",
-      "file": "cola.svg",
-      "sha256": "c17e00fd0eaa00bd065b7c6f6e67c4e978795e63ca480974c93a3c45f4e35192"
+      "slug": "cle-spraycan",
+      "label": "Cle Spraycan",
+      "originalName": "Cle Spraycan",
+      "file": "cle-spraycan.svg",
+      "sourceId": 506904,
+      "sha256": "aa199dd63c286cd49c3d576632859284710939db4baf56e2068ce6f9f741a74a"
     },
     {
-      "slug": "milk",
-      "label": "Milk",
-      "chineseName": "牛奶",
-      "file": "milk.svg",
-      "sha256": "458b122b057d6137d1a8357df4ebd047bec8d1c606d71e911b71ce7a502b3f29"
+      "slug": "cld-server",
+      "label": "Cld Server",
+      "originalName": "Cld Server",
+      "file": "cld-server.svg",
+      "sourceId": 506905,
+      "sha256": "4ec2f469411340d40aaad7ddb5193e2a29209e37eb1742b44ce730465b57e5fa"
     },
     {
-      "slug": "almond-drink",
-      "label": "Almond drink",
-      "chineseName": "杏仁露",
-      "file": "almond-drink.svg",
-      "sha256": "acc53a7ac2d1327af4649fd9ac7f093d20ee42b8476a8db2a7a3ebccca3940a9"
+      "slug": "cle-dustpan-brush",
+      "label": "Cle Dustpan Brush",
+      "originalName": "Cle Dustpan Brush",
+      "file": "cle-dustpan-brush.svg",
+      "sourceId": 506906,
+      "sha256": "7a5831c63861ab1d4fa502b31e3e5e1371df4a10e33060732b79b2db7b517e93"
     },
     {
-      "slug": "watermelon-juice",
-      "label": "Watermelon juice",
-      "chineseName": "西瓜汁",
-      "file": "watermelon-juice.svg",
-      "sha256": "ff39148232aa3573910e917e9e99b6a755b4beeb7e8bf0f9686df4ad5be83dca"
+      "slug": "clo-bowler",
+      "label": "Clo Bowler",
+      "originalName": "Clo Bowler",
+      "file": "clo-bowler.svg",
+      "sourceId": 506907,
+      "sha256": "51c325d2f235324b8bf2800c49c03dd34e386e39f04b30a35e894916426e4020"
     },
     {
-      "slug": "soft-drink",
-      "label": "Soft drink",
-      "chineseName": "汽水",
-      "file": "soft-drink.svg",
-      "sha256": "d70d4d84885b7c0eaa3ef428f8656ed5a52fc932686d6f6cda47df664a3c973d"
+      "slug": "cle-wash-basin",
+      "label": "Cle Wash Basin",
+      "originalName": "Cle Wash Basin",
+      "file": "cle-wash-basin.svg",
+      "sourceId": 506908,
+      "sha256": "25890646c17900927bf604bc499ff84b67a79be6b434a51f8b2f24e85a77fb01"
     },
     {
-      "slug": "tomato-juice",
-      "label": "Tomato juice",
-      "chineseName": "番茄汁",
-      "file": "tomato-juice.svg",
-      "sha256": "5fc55d7de74f330a7994d993e7e0cd0db590621583e87fa2e7a0be194935d6ea"
+      "slug": "clo-t-hanger",
+      "label": "Clo T Hanger",
+      "originalName": "Clo T Hanger",
+      "file": "clo-t-hanger.svg",
+      "sourceId": 506909,
+      "sha256": "727b73bb7dc7e5801a4459e1689b3a0d2c491daab6f00f1d21ffce113a38a48d"
     },
     {
-      "slug": "milk-tea",
-      "label": "Milk tea",
-      "chineseName": "奶茶",
-      "file": "milk-tea.svg",
-      "sha256": "616a0eec6472cd38c9b388cccd88599120a54919d00dc284282f1529bf7fd649"
+      "slug": "clo-converse",
+      "label": "Clo Converse",
+      "originalName": "Clo Converse",
+      "file": "clo-converse.svg",
+      "sourceId": 506910,
+      "sha256": "ec1f32cf0664edf093ffbd67a6150ca67f25678e7c41e825e97d9886e05baef1"
     },
     {
-      "slug": "coconut-drink",
-      "label": "Coconut drink",
-      "chineseName": "椰汁",
-      "file": "coconut-drink.svg",
-      "sha256": "dbea7f27fe0f089791f12077d13282e397e0df065e4bd3d6a8cb8e9c08c22bcf"
+      "slug": "clo-polo",
+      "label": "Clo Polo",
+      "originalName": "Clo Polo",
+      "file": "clo-polo.svg",
+      "sourceId": 506911,
+      "sha256": "674f14375fd75b9a6b6151183c02e2293dfbedbf1fa02889390202666b6f9878"
     },
     {
-      "slug": "apple-juice",
-      "label": "Apple juice",
-      "chineseName": "苹果汁",
-      "file": "apple-juice.svg",
-      "sha256": "0bf59aa3c072fdc3370ffca586d77b2eafc05c52028a86c4b73c65ef810e6104"
+      "slug": "clo-briefs",
+      "label": "Clo Briefs",
+      "originalName": "Clo Briefs",
+      "file": "clo-briefs.svg",
+      "sourceId": 506912,
+      "sha256": "0a281e0b546614e33b49ddbf8fd2c941c9619ec73237a085555edcbe2966ede3"
     },
     {
-      "slug": "mixed-juice",
-      "label": "Mixed juice",
-      "chineseName": "其他果汁",
-      "file": "mixed-juice.svg",
-      "sha256": "2caf7f8d96cd290995be8b3ab2a250f65bedb60d0d9a7a562fd4b7cd56165563"
+      "slug": "com-keyboard",
+      "label": "Com Keyboard",
+      "originalName": "Com Keyboard",
+      "file": "com-keyboard.svg",
+      "sourceId": 506913,
+      "sha256": "a9a68319bbefbdf21a9a427bd321f9679302ab939c57e3a8ed15d5266b0e6a62"
     },
     {
-      "slug": "yogurt",
-      "label": "Yogurt",
-      "chineseName": "酸奶",
-      "file": "yogurt.svg",
-      "sha256": "e8abf0b7ef15554e4ab07f04711ecf9b53030a6f359672b422bc3b2c6ab7c7bc"
+      "slug": "con-circular-saw",
+      "label": "Con Circular Saw",
+      "originalName": "Con Circular Saw",
+      "file": "con-circular-saw.svg",
+      "sourceId": 506914,
+      "sha256": "6b729748edcc209ebc7dc2f98f6e27148d07305b40b649ef1990b4951eae0394"
     },
     {
-      "slug": "lemon-juice",
-      "label": "Lemon juice",
-      "chineseName": "柠檬汁",
-      "file": "lemon-juice.svg",
-      "sha256": "9fe37df72d245a114672b3261c1ca360202b2fdd525defae7224af403639aac8"
+      "slug": "com-mouse-wireless-mac",
+      "label": "Com Mouse Wireless Mac",
+      "originalName": "Com Mouse Wireless Mac",
+      "file": "com-mouse-wireless-mac.svg",
+      "sourceId": 506915,
+      "sha256": "bd4edacedec868006e4d117bf617f68b8d48bd163d8d8f296358e053f6295ab3"
     },
     {
-      "slug": "herbal-medicine",
-      "label": "Herbal medicine",
-      "chineseName": "中药",
-      "file": "herbal-medicine.svg",
-      "sha256": "22900e4d14e811cbce230122c288d72fdb159f9d1173cf2e4dd1249640cb65b9"
+      "slug": "com-mac-old",
+      "label": "Com Mac Old",
+      "originalName": "Com Mac Old",
+      "file": "com-mac-old.svg",
+      "sourceId": 506916,
+      "sha256": "650ef950aeb0abecf279a824c7b63a6a7d7caf873d79858f7278a07f682a6e5c"
+    },
+    {
+      "slug": "com-usb-stock",
+      "label": "Com Usb Stock",
+      "originalName": "Com Usb Stock",
+      "file": "com-usb-stock.svg",
+      "sourceId": 506917,
+      "sha256": "d5d8f6964ce69987fca25d598123c8c69c5feacad791dbbc43483fb916b85619"
+    },
+    {
+      "slug": "com-laptop-code",
+      "label": "Com Laptop Code",
+      "originalName": "Com Laptop Code",
+      "file": "com-laptop-code.svg",
+      "sourceId": 506918,
+      "sha256": "2778c0ac616205d258844ec50bd4fd98fd334edc550a2a09d91708f791668f43"
+    },
+    {
+      "slug": "con-drill",
+      "label": "Con Drill",
+      "originalName": "Con Drill",
+      "file": "con-drill.svg",
+      "sourceId": 506919,
+      "sha256": "7d74fcfd2b477859fe8b6f2b68904a0763315c583d61333229a36ebe0da7cceb"
+    },
+    {
+      "slug": "con-ruler-pencil",
+      "label": "Con Ruler Pencil",
+      "originalName": "Con Ruler Pencil",
+      "file": "con-ruler-pencil.svg",
+      "sourceId": 506920,
+      "sha256": "1bf84ab5d4581404861e8e87cebee33f95864a37afcb50ed395d4b9e55bf92ea"
+    },
+    {
+      "slug": "con-warning",
+      "label": "Con Warning",
+      "originalName": "Con Warning",
+      "file": "con-warning.svg",
+      "sourceId": 506921,
+      "sha256": "95c938fca447b5863fb39d5eb5b098376e49cde05c590e527504a66c6d4f22f6"
+    },
+    {
+      "slug": "db-copy",
+      "label": "Db Copy",
+      "originalName": "Db Copy",
+      "file": "db-copy.svg",
+      "sourceId": 506922,
+      "sha256": "28346dc12e264f2d34ab72fe20505afa26feec819f57f1fe5414217d505b1477"
+    },
+    {
+      "slug": "db-network-2",
+      "label": "Db Network 2",
+      "originalName": "Db Network 2",
+      "file": "db-network-2.svg",
+      "sourceId": 506923,
+      "sha256": "0cb27cbbe9c863347330531100cdb079d087d5d3b8c3bf97a73eab77fc41c1b6"
+    },
+    {
+      "slug": "con-protractor",
+      "label": "Con Protractor",
+      "originalName": "Con Protractor",
+      "file": "con-protractor.svg",
+      "sourceId": 506924,
+      "sha256": "48c9e06b60bba6917d2d0ce8e029e66463f05b47b534b15609224e814bed7dcf"
+    },
+    {
+      "slug": "db-row-height",
+      "label": "Db Row Height",
+      "originalName": "Db Row Height",
+      "file": "db-row-height.svg",
+      "sourceId": 506925,
+      "sha256": "27c251642b12ed79a186fd0261e0be6d6f46b079d901fcd70afe268ffbd20aad"
+    },
+    {
+      "slug": "db-table",
+      "label": "Db Table",
+      "originalName": "Db Table",
+      "file": "db-table.svg",
+      "sourceId": 506926,
+      "sha256": "8dc1345a333862f1b6223a46c9f8016ed942c23ee33a9a2f6f7a45f5a6bdae67"
+    },
+    {
+      "slug": "des-pour",
+      "label": "Des Pour",
+      "originalName": "Des Pour",
+      "file": "des-pour.svg",
+      "sourceId": 506927,
+      "sha256": "6e7cfd5c1b77cbdd8e65ffbb9b57f4ec1f0927a4dc1ee82e2a6800ed5e0a3a9b"
+    },
+    {
+      "slug": "des-palette",
+      "label": "Des Palette",
+      "originalName": "Des Palette",
+      "file": "des-palette.svg",
+      "sourceId": 506928,
+      "sha256": "91a2c835d7eebd4fa3bfa320cfb0d5296ec8379d815ac9bf40fb5c0e3b00915c"
+    },
+    {
+      "slug": "db-tables-swap",
+      "label": "Db Tables Swap",
+      "originalName": "Db Tables Swap",
+      "file": "db-tables-swap.svg",
+      "sourceId": 506929,
+      "sha256": "19c5c0dda698b1de78c46807ae27eb3424d7a2819b3e69f40c9c04e2cc8a318e"
+    },
+    {
+      "slug": "des-ink-well",
+      "label": "Des Ink Well",
+      "originalName": "Des Ink Well",
+      "file": "des-ink-well.svg",
+      "sourceId": 506930,
+      "sha256": "f24c53bd34be5b32af20daad307972291e4135915550526f35c5af7c3f655e7c"
+    },
+    {
+      "slug": "des-protractor",
+      "label": "Des Protractor",
+      "originalName": "Des Protractor",
+      "file": "des-protractor.svg",
+      "sourceId": 506931,
+      "sha256": "7886d291a3e8a878e85dd7950511bf2443d07d228c3eade5ae529b4f726a491f"
+    },
+    {
+      "slug": "gen-flag-6",
+      "label": "Gen Flag 6",
+      "originalName": "Gen Flag 6",
+      "file": "gen-flag-6.svg",
+      "sourceId": 506932,
+      "sha256": "9c644c819c1b4a328606918e6edf639f844211ecb6ecec09854494dca29a5fa4"
+    },
+    {
+      "slug": "gen-heart-rate",
+      "label": "Gen Heart Rate",
+      "originalName": "Gen Heart Rate",
+      "file": "gen-heart-rate.svg",
+      "sourceId": 506933,
+      "sha256": "5efd831105d4a547ea61f6edcb1b4ec62c056baa036e64ff424a7e8ea4635b6d"
+    },
+    {
+      "slug": "gen-jewel",
+      "label": "Gen Jewel",
+      "originalName": "Gen Jewel",
+      "file": "gen-jewel.svg",
+      "sourceId": 506934,
+      "sha256": "6eac4255154f2a1d34a71bb28a0bd986f09af7e10c61f34ca9fb76e4e7214714"
+    },
+    {
+      "slug": "des-wand-2",
+      "label": "Des Wand 2",
+      "originalName": "Des Wand 2",
+      "file": "des-wand-2.svg",
+      "sourceId": 506935,
+      "sha256": "7f1b22e074988ba4d36a1eaec18c077504735a327100403e3a1373450e47880a"
+    },
+    {
+      "slug": "gen-lifebelt",
+      "label": "Gen Lifebelt",
+      "originalName": "Gen Lifebelt",
+      "file": "gen-lifebelt.svg",
+      "sourceId": 506936,
+      "sha256": "67a04ea2e60b49728a39306a81823b3e4298f2fe8b19888fa18a789368d8b927"
+    },
+    {
+      "slug": "gen-pill",
+      "label": "Gen Pill",
+      "originalName": "Gen Pill",
+      "file": "gen-pill.svg",
+      "sourceId": 506937,
+      "sha256": "d1bcbe48866a1420fa373ae88f60376e565e5428d94d0524535227bacee4b2f4"
+    },
+    {
+      "slug": "cel-rings-love",
+      "label": "Cel Rings Love",
+      "originalName": "Cel Rings Love",
+      "file": "cel-rings-love.svg",
+      "sourceId": 506938,
+      "sha256": "d95b6e6ee2fc9034f95691e83b7de9735b1433f502985be8a5e530b9ec1ad65c"
+    },
+    {
+      "slug": "cel-balloons",
+      "label": "Cel Balloons",
+      "originalName": "Cel Balloons",
+      "file": "cel-balloons.svg",
+      "sourceId": 506939,
+      "sha256": "e1a7e6fea7572f1294e2524703c6b3ad8e6887212b3d9c32c4424f8416f7ee7b"
+    },
+    {
+      "slug": "cel-reindeer",
+      "label": "Cel Reindeer",
+      "originalName": "Cel Reindeer",
+      "file": "cel-reindeer.svg",
+      "sourceId": 506940,
+      "sha256": "18aca4a2c5702aace20871ef898420d9690c8a7d1a8ef85be19eb84e75e0f308"
+    },
+    {
+      "slug": "cel-cake-wedding",
+      "label": "Cel Cake Wedding",
+      "originalName": "Cel Cake Wedding",
+      "file": "cel-cake-wedding.svg",
+      "sourceId": 506941,
+      "sha256": "877bab193aaa5d25d922c0fe1361db920036d2858f3f98cc5d3645dd0c21458e"
+    },
+    {
+      "slug": "cel-snow-globe",
+      "label": "Cel Snow Globe",
+      "originalName": "Cel Snow Globe",
+      "file": "cel-snow-globe.svg",
+      "sourceId": 506942,
+      "sha256": "f0fd36f8e796f8b060bef946d0a9f41faa8e6881055a2d85bc9c702bf027cf79"
+    },
+    {
+      "slug": "cha-bubbles-two",
+      "label": "Cha Bubbles Two",
+      "originalName": "Cha Bubbles Two",
+      "file": "cha-bubbles-two.svg",
+      "sourceId": 506943,
+      "sha256": "c483b3649e3e3b5c97617dfa5b2eb825482d7f0a37c624397571316114e4dc59"
+    },
+    {
+      "slug": "cha-cloud",
+      "label": "Cha Cloud",
+      "originalName": "Cha Cloud",
+      "file": "cha-cloud.svg",
+      "sourceId": 506944,
+      "sha256": "86cc10d288f1a478ecf25512d17a9049f4a0b7cea76018c894400e39acd10f56"
+    },
+    {
+      "slug": "cha-bubble-female",
+      "label": "Cha Bubble Female",
+      "originalName": "Cha Bubble Female",
+      "file": "cha-bubble-female.svg",
+      "sourceId": 506945,
+      "sha256": "6715a09810e542b56b8e7f7f781ba8ab8262d49e5447a1e37791a5cd35f66af6"
     }
   ]
 }

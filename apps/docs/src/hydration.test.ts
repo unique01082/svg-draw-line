@@ -12,7 +12,7 @@ describe("static route hydration", () => {
     expect(
       canHydratePrerenderedRoute(
         "/playground",
-        "/playground?icon=coffee",
+        "/playground?icon=computer",
         true,
       ),
     ).toBe(false);

@@ -26,7 +26,9 @@ export function SiteRoutes() {
         </RouteErrorBoundary>
       </div>
       <footer className="site-footer">
-        <span>SVG MOTION / BAOLE.SPACE</span>
+        <a href="https://baole.space" aria-label="Visit baole.space">
+          SVG MOTION / A PART OF BAOLE.SPACE
+        </a>
         <span>MIT · PACKAGE 0.1.0</span>
       </footer>
     </div>

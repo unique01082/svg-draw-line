@@ -70,36 +70,68 @@ describe("documentation site delivery contract", () => {
     }
   });
 
-  it("stores exactly 21 safe, checksummed, locally licensed SVG specimens", () => {
+  it("keeps every MDX motion example linked to a real specimen", () => {
+    const contentRoot = resolve(docsRoot, "content/0.1");
+    const manifest = readJson<{ specimens: Array<{ slug: string }> }>(
+      resolve(docsRoot, "src/specimens/manifest.json"),
+    );
+    const specimenSlugs = new Set(manifest.specimens.map(({ slug }) => slug));
+    const referencedSlugs = readdirSync(contentRoot)
+      .filter((file) => file.endsWith(".mdx"))
+      .flatMap((file) =>
+        Array.from(
+          readFileSync(resolve(contentRoot, file), "utf8").matchAll(
+            /<MotionExample\s+[^>]*specimen="([^"]+)"/g,
+          ),
+          (match) => match[1] ?? "",
+        ),
+      );
+
+    expect(referencedSlugs.length).toBeGreaterThan(0);
+    expect(referencedSlugs.filter((slug) => !specimenSlugs.has(slug))).toEqual(
+      [],
+    );
+  });
+
+  it("stores exactly 50 safe, checksummed, local Public Domain SVG specimens", () => {
     const manifest = readJson<{
-      collectionId: number;
+      collectionId: string;
+      collectionName: string;
       creator: string;
       sourceUrl: string;
+      license: string;
       acquisitionDate: string;
       specimens: Array<{
         slug: string;
-        chineseName: string;
+        originalName: string;
         file: string;
         sha256: string;
       }>;
     }>(resolve(docsRoot, "src/specimens/manifest.json"));
 
-    expect(manifest.collectionId).toBe(54491);
-    expect(manifest.creator).toBe("美少女壮士a");
+    expect(manifest.collectionId).toBe("pixellove-bordered-vectors");
+    expect(manifest.collectionName).toBe("Pixellove Bordered Vectors");
+    expect(manifest.creator).toBe("Pixellove");
+    expect(manifest.license).toBe("Public Domain (CC0)");
     expect(manifest.sourceUrl).toBe(
-      "https://www.iconfont.cn/collections/detail?cid=54491",
+      "https://www.svgrepo.com/collection/pixellove-bordered-vectors/",
     );
     expect(manifest.acquisitionDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(manifest.specimens).toHaveLength(21);
-    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(21);
+    expect(manifest.specimens).toHaveLength(50);
+    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(50);
+    expect(manifest.specimens.every(({ originalName }) => originalName)).toBe(
+      true,
+    );
 
     for (const specimen of manifest.specimens) {
       const svg = readFileSync(
         resolve(docsRoot, "public/specimens", specimen.file),
         "utf8",
       );
+      expect(svg).not.toContain("\r");
+      expect(svg).not.toMatch(/[ \t]+$/m);
       expect(svg.match(/<svg\b/g)).toHaveLength(1);
-      expect(svg).toMatch(/viewBox="0 0 1024 1024"/);
+      expect(svg).toMatch(/viewBox="[^"]+"/);
       expect(svg).not.toMatch(
         /<script|<foreignObject|\son\w+=|javascript:|<image|<use|(?:href|src)=["'](?:https?:|\/\/)/i,
       );
@@ -110,7 +142,7 @@ describe("documentation site delivery contract", () => {
 
     expect(
       readFileSync(resolve(root, "THIRD_PARTY_NOTICES.md"), "utf8"),
-    ).toContain("果汁饮品");
+    ).toContain("Pixellove Bordered Vectors");
   });
 
   it("ships static delivery assets without changing the npm allowlist", () => {

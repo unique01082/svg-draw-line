@@ -42,12 +42,15 @@ pnpm docs:api:check
 pnpm docs:docker:smoke
 ```
 
-Content for a published minor line is immutable under `apps/docs/content/<minor>`.
+Published API prose, contracts, and runnable code for a minor line are immutable
+under `apps/docs/content/<minor>`. Editorial specimen references may be refreshed
+when the locally shipped collection changes, provided documented behavior stays
+the same and specimen-link validation passes.
 Create a future snapshot with `pnpm docs:scaffold -- 0.2 0.2.0`; the command
 refuses to overwrite an existing line. Keep the route manifest, API reflection,
 canonical URLs and nginx `latest` redirect synchronized.
 
-The 21 licensed specimen SVGs are local documentation assets. Do not alter their
+The 50 Public Domain specimen SVGs are local documentation assets. Do not alter their
 paths, fills or viewboxes. Any collection update must also update checksums,
 provenance and `THIRD_PARTY_NOTICES.md` while keeping those assets outside the npm
 package allowlist.
