@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   type SvgDiagnostic,
   type SvgMotionController,
@@ -33,6 +33,8 @@ function errorMessage(error: unknown): string {
 
 export function App() {
   const motionRef = useRef<SvgMotionHandle>(null);
+  const labHeadingRef = useRef<HTMLHeadingElement>(null);
+  const markupTimeoutRef = useRef<number | null>(null);
   const [sourceMode, setSourceMode] = useState<SourceMode>("markup");
   const [source, setSource] = useState<SvgSource>(DEFAULT_FIXTURE.source);
   const [sourceEditor, setSourceEditor] = useState(DEFAULT_FIXTURE.source);
@@ -47,17 +49,6 @@ export function App() {
   const [status, setStatus] = useState("loading");
   const [diagnostics, setDiagnostics] = useState<readonly SvgDiagnostic[]>([]);
   const [error, setError] = useState<unknown>(null);
-
-  useEffect(() => {
-    if (sourceMode !== "markup") return;
-    const timeout = window.setTimeout(() => {
-      setError(null);
-      setStatus("loading");
-      setSource(sourceEditor);
-      setSourceRevision((current) => current + 1);
-    }, 250);
-    return () => window.clearTimeout(timeout);
-  }, [sourceEditor, sourceMode]);
 
   const run = (action: (controller: SvgMotionController) => void) => {
     const controller = motionRef.current?.controller;
@@ -81,10 +72,19 @@ export function App() {
   };
 
   const openFixture = (fixture: DemoFixture) => {
+    if (markupTimeoutRef.current !== null) {
+      window.clearTimeout(markupTimeoutRef.current);
+    }
     setSourceMode("markup");
     setSourceEditor(fixture.source);
     setPreset(fixture.preset);
     applySource(fixture.source, fixture.title);
+    labHeadingRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
   };
 
   const loadFixture = (id: string) => openFixture(fixtureById(id));
@@ -104,11 +104,33 @@ export function App() {
     }
   };
 
+  const changeSourceMode = (nextMode: SourceMode) => {
+    if (nextMode !== "markup" && markupTimeoutRef.current !== null) {
+      window.clearTimeout(markupTimeoutRef.current);
+      markupTimeoutRef.current = null;
+    }
+    setSourceMode(nextMode);
+  };
+
+  const updateMarkup = (nextMarkup: string) => {
+    setSourceEditor(nextMarkup);
+    if (markupTimeoutRef.current !== null) {
+      window.clearTimeout(markupTimeoutRef.current);
+    }
+    markupTimeoutRef.current = window.setTimeout(() => {
+      setError(null);
+      setStatus("loading");
+      setSource(nextMarkup);
+      setSourceRevision((current) => current + 1);
+      markupTimeoutRef.current = null;
+    }, 250);
+  };
+
   return (
     <main className="lab-shell">
       <header className="lab-header">
         <p className="eyebrow">Interactive plotting desk</p>
-        <h1>SVG Motion Lab</h1>
+        <h1 ref={labHeadingRef}>SVG Motion Lab</h1>
         <p>
           Inspect the public controller against SVG sources, presets, and timing
           controls.
@@ -136,19 +158,36 @@ export function App() {
           </div>
 
           <div className="field-group">
-            <label htmlFor="source-mode">Source mode</label>
-            <select
-              id="source-mode"
-              data-testid="source-mode"
-              value={sourceMode}
-              onChange={(event) =>
-                setSourceMode(event.currentTarget.value as SourceMode)
-              }
-            >
-              <option value="markup">SVG markup</option>
-              <option value="url">URL</option>
-              <option value="file">File</option>
-            </select>
+            <fieldset className="source-modes">
+              <legend>Source mode</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="source-mode"
+                  checked={sourceMode === "markup"}
+                  onChange={() => changeSourceMode("markup")}
+                />
+                Markup source
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="source-mode"
+                  checked={sourceMode === "url"}
+                  onChange={() => changeSourceMode("url")}
+                />
+                URL source
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="source-mode"
+                  checked={sourceMode === "file"}
+                  onChange={() => changeSourceMode("file")}
+                />
+                File source
+              </label>
+            </fieldset>
           </div>
 
           {sourceMode === "markup" ? (
@@ -158,14 +197,14 @@ export function App() {
                 id="source-editor"
                 data-testid="source-editor"
                 value={sourceEditor}
-                onChange={(event) => setSourceEditor(event.currentTarget.value)}
+                onChange={(event) => updateMarkup(event.currentTarget.value)}
                 spellCheck={false}
               />
             </div>
           ) : null}
 
           {sourceMode === "url" ? (
-            <form className="source-form" onSubmit={submitUrl}>
+            <form className="source-form" noValidate onSubmit={submitUrl}>
               <label htmlFor="source-url">SVG URL</label>
               <div className="source-form-row">
                 <input
@@ -189,7 +228,7 @@ export function App() {
                 id="source-file"
                 data-testid="source-file"
                 type="file"
-                accept="image/svg+xml,.svg"
+                accept=".svg,image/svg+xml"
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
                   if (file) applySource(file, file.name);
@@ -327,34 +366,70 @@ export function App() {
               {status}
             </output>
           </div>
-          <SvgMotion
-            key={sourceRevision}
-            ref={motionRef}
-            className="motion-stage"
-            source={source}
-            preset={preset}
-            duration={duration}
-            easing={easing}
-            stagger={stagger}
-            svgProps={{ role: "img", "aria-label": activeTitle }}
-            onReady={(handle) => {
-              setStatus(handle.controller?.state ?? "idle");
-              setDiagnostics(handle.controller?.diagnostics ?? []);
-              setError(null);
-            }}
-            onFinish={() => setStatus("finished")}
-            onCancel={() => setStatus("cancelled")}
-            onError={(nextError) => {
-              setError(nextError);
-              setStatus("error");
-            }}
-          />
+          <div data-stage>
+            <SvgMotion
+              key={sourceRevision}
+              ref={motionRef}
+              className="motion-stage"
+              source={source}
+              preset={preset}
+              duration={duration}
+              easing={easing}
+              stagger={stagger}
+              svgProps={{ role: "img", "aria-label": activeTitle }}
+              onReady={(handle) => {
+                setStatus(handle.controller?.state ?? "idle");
+                setDiagnostics(handle.controller?.diagnostics ?? []);
+                setError(null);
+              }}
+              onFinish={() => setStatus("finished")}
+              onCancel={() => setStatus("cancelled")}
+              onError={(nextError) => {
+                setError(nextError);
+                setStatus("error");
+              }}
+            />
+          </div>
           {error ? <p role="alert">{errorMessage(error)}</p> : null}
           {diagnostics.length > 0 ? (
             <p className="diagnostics">
               Diagnostics: {diagnostics.map(({ code }) => code).join(", ")}
             </p>
           ) : null}
+        </div>
+      </section>
+
+      <section aria-labelledby="gallery-title" className="gallery-section">
+        <header>
+          <p className="eyebrow">Specimen library · 05</p>
+          <h2 id="gallery-title">One engine, different drawing systems.</h2>
+        </header>
+        <div className="gallery-grid">
+          {DEMO_FIXTURES.map((fixture) => (
+            <article className="specimen-card" key={fixture.id}>
+              <div className="specimen-preview" aria-hidden="true">
+                <SvgMotion
+                  source={fixture.source}
+                  preset={fixture.preset}
+                  duration={900}
+                  svgProps={{
+                    role: "img",
+                    "aria-label": `${fixture.title} preview`,
+                  }}
+                />
+              </div>
+              <h3>{fixture.title}</h3>
+              <p>{fixture.description}</p>
+              <ul aria-label="Capabilities">
+                {fixture.capability.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <button type="button" onClick={() => openFixture(fixture)}>
+                Open {fixture.title} in Lab
+              </button>
+            </article>
+          ))}
         </div>
       </section>
     </main>
