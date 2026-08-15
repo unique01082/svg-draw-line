@@ -70,26 +70,26 @@ test("remounts every preset and applies controller transport actions", async ({
   await expect(page.locator("[data-motion-status]")).toHaveText("running");
   await expect
     .poll(async () => {
-      return page
-        .locator("[data-stage] svg")
-        .evaluate((svg) =>
-          svg
-            .getAnimations({ subtree: true })
-            .every((animation) => animation.playState === "running"),
+      return page.locator("[data-stage] svg").evaluate((svg) => {
+        const animations = svg.getAnimations({ subtree: true });
+        return (
+          animations.length > 0 &&
+          animations.every((animation) => animation.playState === "running")
         );
+      });
     })
     .toBe(true);
   await page.getByRole("button", { name: "Pause" }).click();
   await expect(page.locator("[data-motion-status]")).toHaveText("paused");
   await expect
     .poll(async () => {
-      return page
-        .locator("[data-stage] svg")
-        .evaluate((svg) =>
-          svg
-            .getAnimations({ subtree: true })
-            .every((animation) => animation.playState === "paused"),
+      return page.locator("[data-stage] svg").evaluate((svg) => {
+        const animations = svg.getAnimations({ subtree: true });
+        return (
+          animations.length > 0 &&
+          animations.every((animation) => animation.playState === "paused")
         );
+      });
     })
     .toBe(true);
   await page.getByLabel("Progress").fill("50");
