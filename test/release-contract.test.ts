@@ -1,4 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { access, readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
@@ -110,6 +112,63 @@ describe("release contract", () => {
         expect(action).toMatch(/^[^@]+@[0-9a-f]{40}$/);
       }
     }
+  });
+
+  it("executes the release tag guard against the package version", () => {
+    const guard = fileURLToPath(
+      new URL("scripts/assert-release-tag.mjs", ROOT),
+    );
+    const baseEnvironment = { ...process.env };
+    delete baseEnvironment.GITHUB_REF_NAME;
+    const run = (tag: string | undefined) =>
+      execFileSync(process.execPath, [guard], {
+        env: {
+          ...baseEnvironment,
+          ...(tag === undefined ? {} : { GITHUB_REF_NAME: tag }),
+        },
+        stdio: "pipe",
+      });
+
+    expect(() => run("v0.1.0")).not.toThrow();
+    expect(() => run("v0.1.1")).toThrow();
+    expect(() => run(undefined)).toThrow();
+  });
+
+  it("documents every public usage and release boundary from the plan", async () => {
+    const [readme, license] = await Promise.all([
+      readFile(new URL("README.md", ROOT), "utf8"),
+      readFile(new URL("LICENSE", ROOT), "utf8"),
+    ]);
+
+    for (const heading of [
+      "## Vanilla",
+      "## React",
+      "## Sources",
+      "## Motion API",
+      "## Security, CORS, and CSP",
+      "## Accessibility and reduced motion",
+      "## Runtime support",
+      "## Releasing",
+    ]) {
+      expect(readme).toContain(heading);
+    }
+    for (const contract of [
+      "5 MiB",
+      'trust: "sanitize"',
+      'trust: "trusted"',
+      "SvgPreparationError",
+      "SvgAnimationError",
+      "prefers-reduced-motion",
+      "SSR-safe",
+      "NPM_TOKEN",
+      "Trusted Publisher",
+      "publish.yml",
+    ]) {
+      expect(readme).toContain(contract);
+    }
+    expect(readme).not.toMatch(/Vite \+ React|Edit <code>src\/App/);
+    expect(license).toMatch(/^MIT License/m);
+    expect(license).toContain("Copyright (c) 2026 Bao Le");
   });
 
   it("keeps a dedicated packed-package tree-shaking consumer", async () => {

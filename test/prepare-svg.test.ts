@@ -46,6 +46,21 @@ describe("prepareSvg sources", () => {
     expect(prepared.svg.querySelector("path")).not.toBeNull();
   });
 
+  it("forwards the caller AbortSignal to fetch", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn(async () => new Response(SVG, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await prepareSvg("https://example.test/icon.svg", {
+      signal: controller.signal,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL("https://example.test/icon.svg"),
+      { signal: controller.signal },
+    );
+  });
+
   it.each([
     ["Blob", new Blob([SVG], { type: "image/svg+xml" })],
     ["File", new File([SVG], "icon.svg", { type: "image/svg+xml" })],
@@ -209,6 +224,10 @@ describe("prepareSvg failures", () => {
   it.each([
     ["malformed XML", "<svg><path></svg>"],
     ["a non-SVG root", "<div>not svg</div>"],
+    [
+      "multiple SVG roots",
+      '<svg xmlns="http://www.w3.org/2000/svg"/><svg xmlns="http://www.w3.org/2000/svg"/>',
+    ],
   ])("rejects %s", async (_label, source) => {
     await expect(prepareSvg(source)).rejects.toSatisfy((error: unknown) => {
       expectPreparationError(error, "INVALID_SVG");
@@ -228,6 +247,36 @@ describe("prepareSvg failures", () => {
         },
       );
     }
+  });
+
+  it("enforces the default 5 MiB source ceiling", async () => {
+    const prefix = '<svg xmlns="http://www.w3.org/2000/svg"><desc>';
+    const suffix = "</desc></svg>";
+    const maxBytes = 5 * 1024 * 1024;
+    const markup = `${prefix}${"a".repeat(
+      maxBytes - prefix.length - suffix.length,
+    )}${suffix}`;
+
+    const prepared = await prepareSvg(markup, { trust: "trusted" });
+    expect(prepared.svg.querySelector("desc")?.textContent).toHaveLength(
+      maxBytes - prefix.length - suffix.length,
+    );
+
+    await expect(
+      prepareSvg(`${markup} `, { trust: "trusted" }),
+    ).rejects.toSatisfy((error: unknown) => {
+      expectPreparationError(error, "SOURCE_TOO_LARGE");
+      return true;
+    });
+  });
+
+  it("keeps the byte limit active in trusted mode", async () => {
+    await expect(
+      prepareSvg(SVG, { maxBytes: 8, trust: "trusted" }),
+    ).rejects.toSatisfy((error: unknown) => {
+      expectPreparationError(error, "SOURCE_TOO_LARGE");
+      return true;
+    });
   });
 
   it("rejects an oversized fetched response before reading it", async () => {

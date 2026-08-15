@@ -43,10 +43,53 @@ function nativeAnimations() {
           typeof animation.currentTime === "number"
             ? animation.currentTime
             : null,
+        duration:
+          typeof animation.effect?.getTiming().duration === "number"
+            ? animation.effect.getTiming().duration
+            : null,
         playbackRate: animation.playbackRate,
         playState: animation.playState,
       })),
   );
+}
+
+async function prepareRemoteSource(
+  url: string,
+  abortAfterMs?: number,
+): Promise<{
+  code: string | null;
+  diagnostics: readonly { code: string; count: number }[];
+  pathCount: number;
+}> {
+  const abortController =
+    abortAfterMs === undefined ? undefined : new AbortController();
+  const abortTimer =
+    abortController === undefined
+      ? undefined
+      : window.setTimeout(() => abortController.abort(), abortAfterMs);
+  try {
+    const prepared = await prepareSvg(url, {
+      ...(abortController === undefined
+        ? {}
+        : { signal: abortController.signal }),
+    });
+    return {
+      code: null,
+      diagnostics: prepared.diagnostics,
+      pathCount: prepared.svg.querySelectorAll("path").length,
+    };
+  } catch (error) {
+    return {
+      code:
+        typeof error === "object" && error !== null && "code" in error
+          ? String(error.code)
+          : "UNTYPED",
+      diagnostics: [],
+      pathCount: 0,
+    };
+  } finally {
+    if (abortTimer !== undefined) window.clearTimeout(abortTimer);
+  }
 }
 
 async function mount(
@@ -995,6 +1038,7 @@ window.svgMotionHarness = {
   mountMaliciousSource,
   mountPublicInstance,
   nativeAnimations,
+  prepareRemoteSource,
   references: referenceSummary,
   renderUnanimated,
   restart() {
@@ -1073,6 +1117,10 @@ declare global {
         options?: MountSvgMotionOptions,
       ): Promise<ReturnType<typeof summary>>;
       nativeAnimations(): ReturnType<typeof nativeAnimations>;
+      prepareRemoteSource(
+        url: string,
+        abortAfterMs?: number,
+      ): ReturnType<typeof prepareRemoteSource>;
       pause(): ReturnType<typeof summary>;
       play(): ReturnType<typeof summary>;
       references(): ReturnType<typeof referenceSummary>;

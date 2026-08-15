@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+
 import { expect, test, type Page } from "@playwright/test";
 
 type NativeAnimationSnapshot = ReturnType<
@@ -50,6 +52,45 @@ async function installRequestInterception(page: Page) {
   return { attackerRequests, observed, unexpectedRequests };
 }
 
+async function startCorsFixtureServer() {
+  const requests: Array<{ origin: string | undefined; path: string }> = [];
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h10" stroke="black"/></svg>';
+  const server = createServer((request, response) => {
+    const path = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
+    requests.push({ origin: request.headers.origin, path });
+    const respond = () => {
+      if (path !== "/denied.svg") {
+        response.setHeader("access-control-allow-origin", "*");
+      }
+      response.setHeader("content-type", "image/svg+xml");
+      response.end(svg);
+    };
+    if (path === "/slow.svg") {
+      const timer = setTimeout(respond, 250);
+      request.once("close", () => clearTimeout(timer));
+    } else {
+      respond();
+    }
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("CORS fixture server did not bind to a TCP port.");
+  }
+  return {
+    origin: `http://127.0.0.1:${address.port}`,
+    requests,
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  };
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
@@ -99,6 +140,72 @@ test("accepts every supported source type from another browser realm", async ({
       pathAnimations: 1,
     })),
   );
+});
+
+test("loads CORS-enabled URLs and types denied or aborted fetches", async ({
+  page,
+}) => {
+  const fixtureServer = await startCorsFixtureServer();
+  try {
+    const allowed = await page.evaluate(
+      (url) => window.svgMotionHarness.prepareRemoteSource(url),
+      `${fixtureServer.origin}/allowed.svg`,
+    );
+    const denied = await page.evaluate(
+      (url) => window.svgMotionHarness.prepareRemoteSource(url),
+      `${fixtureServer.origin}/denied.svg`,
+    );
+    const aborted = await page.evaluate(
+      (url) => window.svgMotionHarness.prepareRemoteSource(url, 10),
+      `${fixtureServer.origin}/slow.svg`,
+    );
+
+    expect(allowed).toEqual({ code: null, diagnostics: [], pathCount: 1 });
+    expect(denied).toEqual({
+      code: "FETCH_FAILED",
+      diagnostics: [],
+      pathCount: 0,
+    });
+    expect(aborted).toEqual({
+      code: "ABORTED",
+      diagnostics: [],
+      pathCount: 0,
+    });
+    expect(fixtureServer.requests.map(({ path }) => path)).toEqual([
+      "/allowed.svg",
+      "/denied.svg",
+      "/slow.svg",
+    ]);
+    const pageOrigin = new URL(page.url()).origin;
+    expect(
+      fixtureServer.requests.every(({ origin }) => origin === pageOrigin),
+    ).toBe(true);
+  } finally {
+    await fixtureServer.close();
+  }
+});
+
+test("leaves reduced-motion policy to the consumer", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+
+  const result = await page.evaluate(async () => {
+    const mounted = await window.svgMotionHarness.mount("primitives");
+    return {
+      animationDurations: window.svgMotionHarness
+        .nativeAnimations()
+        .map(({ duration }) => duration),
+      animationCount: mounted.animationCount,
+      mediaMatches: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      state: mounted.state,
+    };
+  });
+
+  expect(result).toEqual({
+    animationCount: 7,
+    animationDurations: Array.from({ length: 7 }, () => 1000),
+    mediaMatches: true,
+    state: "idle",
+  });
 });
 
 test("keeps trusted nested stylesheet selectors bound after namespacing", async ({
