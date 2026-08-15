@@ -41,7 +41,7 @@ export function PlaygroundPage() {
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSpecimen = specimenBySlug(
-    searchParams.get("icon") ?? "mango-juice",
+    searchParams.get("icon") ?? "bachelor-hat",
   );
   const initialPreset = presets.includes(searchParams.get("preset") as Preset)
     ? (searchParams.get("preset") as Preset)
@@ -58,7 +58,7 @@ export function PlaygroundPage() {
   const [duration, setDuration] = useState(1200);
   const [easing, setEasing] = useState("ease-in-out");
   const [stagger, setStagger] = useState<"auto" | number>("auto");
-  const [autoplay, setAutoplay] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
   const [progress, setProgress] = useState(0);
   const [revision, setRevision] = useState(0);
   const [readySequence, setReadySequence] = useState(0);
@@ -160,10 +160,10 @@ export function PlaygroundPage() {
         </p>
       </header>
       <div className="playground-grid">
-        <aside className="specimen-rail" aria-label="Beverage specimens">
+        <aside className="specimen-rail" aria-label="Education specimens">
           <header>
             <span>SPECIMEN LIBRARY</span>
-            <strong>21</strong>
+            <strong>{specimens.length}</strong>
           </header>
           <div className="specimen-list">
             {specimens.map((item, index) => (
@@ -186,7 +186,7 @@ export function PlaygroundPage() {
                 <img src={item.source} alt="" />
                 <span>
                   <strong>{item.label}</strong>
-                  <small lang="zh">{item.chineseName}</small>
+                  <small>{item.originalName}</small>
                 </span>
               </button>
             ))}
@@ -238,6 +238,7 @@ export function PlaygroundPage() {
                 easing={easing}
                 stagger={stagger}
                 autoplay={autoplay}
+                loop={autoplay}
                 revision={revision}
                 onReady={(handle) => {
                   setReady(Boolean(handle.controller));

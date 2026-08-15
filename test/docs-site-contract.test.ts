@@ -70,28 +70,35 @@ describe("documentation site delivery contract", () => {
     }
   });
 
-  it("stores exactly 21 safe, checksummed, locally licensed SVG specimens", () => {
+  it("stores exactly 30 safe, checksummed, local Public Domain SVG specimens", () => {
     const manifest = readJson<{
-      collectionId: number;
+      collectionId: string;
+      collectionName: string;
       creator: string;
       sourceUrl: string;
+      license: string;
       acquisitionDate: string;
       specimens: Array<{
         slug: string;
-        chineseName: string;
+        originalName: string;
         file: string;
         sha256: string;
       }>;
     }>(resolve(docsRoot, "src/specimens/manifest.json"));
 
-    expect(manifest.collectionId).toBe(54491);
-    expect(manifest.creator).toBe("美少女壮士a");
+    expect(manifest.collectionId).toBe("education-duotone-line-icons");
+    expect(manifest.collectionName).toBe("Education Duotone Line Icons");
+    expect(manifest.creator).toBe("Jack Liu");
+    expect(manifest.license).toBe("Public Domain (CC0)");
     expect(manifest.sourceUrl).toBe(
-      "https://www.iconfont.cn/collections/detail?cid=54491",
+      "https://www.svgrepo.com/collection/education-duotone-line-icons/",
     );
     expect(manifest.acquisitionDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(manifest.specimens).toHaveLength(21);
-    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(21);
+    expect(manifest.specimens).toHaveLength(30);
+    expect(new Set(manifest.specimens.map(({ slug }) => slug)).size).toBe(30);
+    expect(manifest.specimens.every(({ originalName }) => originalName)).toBe(
+      true,
+    );
 
     for (const specimen of manifest.specimens) {
       const svg = readFileSync(
@@ -110,7 +117,7 @@ describe("documentation site delivery contract", () => {
 
     expect(
       readFileSync(resolve(root, "THIRD_PARTY_NOTICES.md"), "utf8"),
-    ).toContain("果汁饮品");
+    ).toContain("Education Duotone Line Icons");
   });
 
   it("ships static delivery assets without changing the npm allowlist", () => {

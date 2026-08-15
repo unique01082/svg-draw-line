@@ -15,6 +15,7 @@
     "verify": "pnpm test && pnpm build && pnpm test:e2e",
     "api:generate": "node scripts/api-snapshot.mjs --write",
     "api:check": "node scripts/api-snapshot.mjs --check",
+    "import:specimens": "node scripts/import-svgrepo.mjs",
     "scaffold:version": "node scripts/scaffold-version.mjs"
   },
   "dependencies": {

@@ -69,7 +69,7 @@ verified.
 - Unit and security suites plus native Chromium, Firefox, and WebKit tests.
 - Packed Vanilla, React, and tree-shaking consumers on all three browsers.
 - Documentation unit, component, production browser, prerender, link, SEO,
-  API-reflection, and 21-specimen tests.
+  API-reflection, and 30-specimen tests.
 - Docker build and runtime smoke checks.
 - Registry verification for package metadata, public access, provenance,
   installability, and root plus `/react` imports.

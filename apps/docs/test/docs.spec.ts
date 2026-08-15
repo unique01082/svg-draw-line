@@ -87,17 +87,13 @@ test("renders and animates every licensed specimen", async ({
   browserName,
 }) => {
   test.skip(browserName !== "chromium");
-  await page.goto("/playground?icon=mango-juice&preset=draw");
+  await page.goto("/playground?icon=bachelor-hat&preset=draw");
   await waitForReady(page);
-  const specimens = page
-    .getByRole("button", { pressed: false })
-    .filter({ has: page.locator("img") });
-  await expect(page.locator(".specimen-list > button")).toHaveCount(21);
+  await expect(page.locator(".specimen-list > button")).toHaveCount(30);
   for (const button of await page.locator(".specimen-list > button").all()) {
     await button.click();
     await waitForReady(page);
     await expect(page.locator("[data-stage] svg path").first()).toBeAttached();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect
       .poll(() =>
         page
@@ -106,15 +102,64 @@ test("renders and animates every licensed specimen", async ({
       )
       .toBeGreaterThan(0);
   }
-  expect(await specimens.count()).toBeGreaterThanOrEqual(0);
+});
+
+test("playground continuously replays motion without manual transport", async ({
+  page,
+}) => {
+  await page.goto("/playground?icon=bachelor-hat&preset=draw");
+  await waitForReady(page);
+  await expect(page.getByLabel("Autoplay")).toBeChecked();
+  await page.getByLabel("Duration (ms)").fill("180");
+  await waitForReady(page);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-stage] svg")
+        .evaluate((svg) =>
+          svg
+            .getAnimations({ subtree: true })
+            .some((animation) => animation.playState === "running"),
+        ),
+    )
+    .toBe(true);
+  await page.waitForTimeout(500);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-stage] svg")
+        .evaluate((svg) =>
+          svg
+            .getAnimations({ subtree: true })
+            .some((animation) => animation.playState === "running"),
+        ),
+    )
+    .toBe(true);
+});
+
+test("home page renders every visual specimen as live motion", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("[data-motion-preview]")).toHaveCount(4);
+  for (const preview of await page.locator("[data-motion-preview]").all()) {
+    await expect(preview.locator("svg")).toBeVisible();
+    await expect
+      .poll(() =>
+        preview
+          .locator("svg")
+          .evaluate((svg) => svg.getAnimations({ subtree: true }).length),
+      )
+      .toBeGreaterThan(0);
+  }
 });
 
 test("shares icon and preset and exposes native controller actions", async ({
   page,
 }) => {
-  await page.goto("/playground?icon=coffee&preset=scale");
+  await page.goto("/playground?icon=computer&preset=scale");
   await waitForReady(page);
-  await expect(page.getByRole("button", { name: /Coffee/ })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: /Computer/ })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -175,7 +220,7 @@ test("shares icon and preset and exposes native controller actions", async ({
         ),
     )
     .toBe(true);
-  await expect(page).toHaveURL(/icon=coffee.*preset=scale/);
+  await expect(page).toHaveURL(/icon=computer.*preset=scale/);
 });
 
 test("accepts markup, URL and File sources and disables controls on error", async ({
@@ -255,16 +300,37 @@ test("matches the locked Precision Lab Night Glass compositions", async ({
   browserName,
 }) => {
   test.skip(browserName !== "chromium");
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await expect(page.locator("[data-motion-preview] svg")).toHaveCount(4);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-motion-preview] svg")
+        .evaluateAll((svgs) =>
+          svgs.some((svg) => svg.getAnimations({ subtree: true }).length > 0),
+        ),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-motion-preview] svg")
+        .evaluateAll((svgs) =>
+          svgs.map((svg) => svg.getAnimations({ subtree: true }).length),
+        ),
+    )
+    .toEqual([0, 0, 0, 0]);
   await expect(page).toHaveScreenshot("home-desktop.png", {
-    animations: "disabled",
+    animations: "allow",
     maxDiffPixelRatio: 0.04,
   });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/playground");
   await waitForReady(page);
+  await expect(page.locator("[data-motion-status]")).toHaveText("finished");
   await expect(page).toHaveScreenshot("playground-mobile.png", {
-    animations: "disabled",
+    animations: "allow",
     maxDiffPixelRatio: 0.04,
   });
 });

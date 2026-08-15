@@ -91,6 +91,16 @@ describe("documentation application", () => {
     }
   });
 
+  it("uses live motion previews throughout the home page", () => {
+    renderAt("/");
+    expect(document.querySelectorAll("[data-motion-preview]")).toHaveLength(4);
+    expect(
+      screen
+        .getByRole("link", { name: "Visit baole.space" })
+        .getAttribute("href"),
+    ).toBe("https://baole.space");
+  });
+
   it("keeps Playground transport disabled until a controller is ready", () => {
     renderAt("/playground");
     expect(

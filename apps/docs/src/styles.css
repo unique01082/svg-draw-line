@@ -181,6 +181,13 @@ input:disabled {
     monospace;
   letter-spacing: 0.12em;
 }
+.site-footer a {
+  color: var(--blue);
+  text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--text);
+}
 .eyebrow {
   margin: 0;
   color: var(--blue);
@@ -321,14 +328,8 @@ input:disabled {
 .capability-strip article:last-child {
   border-right: 0;
 }
-.capability-strip span {
-  color: var(--orange);
-  font:
-    800 0.7rem ui-monospace,
-    monospace;
-}
 .capability-strip h2 {
-  margin: 2rem 0 0.5rem;
+  margin: 1rem 0 0.5rem;
   font-size: 1.45rem;
 }
 .capability-strip p {
@@ -357,6 +358,14 @@ input:disabled {
 }
 .motion-preview--compact svg {
   max-height: 15rem;
+}
+.capability-icon {
+  min-height: 12rem;
+  border-bottom: 1px solid var(--rule);
+  background: rgb(101 169 255 / 4%);
+}
+.capability-icon svg {
+  max-height: 10rem;
 }
 .docs-grid {
   display: grid;

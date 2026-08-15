@@ -26,7 +26,7 @@ export interface DocPageMeta {
 export interface Specimen {
   readonly slug: string;
   readonly label: string;
-  readonly chineseName: string;
+  readonly originalName: string;
   readonly source: string;
   readonly file: string;
   readonly sha256: string;
@@ -38,6 +38,7 @@ export interface MotionPreviewProps {
   readonly preset?: SvgMotionPreset;
   readonly duration?: number;
   readonly autoplay?: boolean;
+  readonly loop?: boolean;
   readonly compact?: boolean;
   readonly className?: string;
   readonly easing?: string;

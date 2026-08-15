@@ -1,4 +1,10 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import { SvgMotion, type SvgMotionHandle } from "@baolq/svg-motion/react";
 import type { MotionPreviewProps } from "../contracts";
 
@@ -13,6 +19,7 @@ export const MotionPreview = forwardRef<SvgMotionHandle, MotionPreviewProps>(
       preset = "draw",
       duration = 1200,
       autoplay = false,
+      loop = false,
       compact = false,
       className = "",
       easing = "ease-in-out",
@@ -27,6 +34,16 @@ export const MotionPreview = forwardRef<SvgMotionHandle, MotionPreviewProps>(
     forwardedRef,
   ) {
     const innerRef = useRef<SvgMotionHandle>(null);
+    const replayFrame = useRef<number | null>(null);
+    useEffect(
+      () => () => {
+        if (replayFrame.current !== null) {
+          window.cancelAnimationFrame(replayFrame.current);
+          replayFrame.current = null;
+        }
+      },
+      [loop, revision],
+    );
     useImperativeHandle(
       forwardedRef,
       () => ({
@@ -71,6 +88,27 @@ export const MotionPreview = forwardRef<SvgMotionHandle, MotionPreviewProps>(
           onFinish={() => {
             onFinish?.();
             onStatus?.("finished", innerRef.current?.controller ?? null);
+            if (
+              loop &&
+              !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ) {
+              if (replayFrame.current !== null) {
+                window.cancelAnimationFrame(replayFrame.current);
+              }
+              replayFrame.current = window.requestAnimationFrame(() => {
+                replayFrame.current = null;
+                try {
+                  innerRef.current?.controller?.restart();
+                  onStatus?.(
+                    innerRef.current?.controller?.state ?? "loading",
+                    innerRef.current?.controller ?? null,
+                  );
+                } catch (error) {
+                  onError?.(error);
+                  onStatus?.("error", innerRef.current?.controller ?? null);
+                }
+              });
+            }
           }}
           onCancel={() => {
             onCancel?.();

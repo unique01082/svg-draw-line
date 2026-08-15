@@ -10,7 +10,29 @@ export function HomePage() {
       "Animate any SVG with a safe, framework-agnostic TypeScript library.",
     canonicalPath: "/",
   });
-  const hero = specimenBySlug("lemon-juice");
+  const hero = specimenBySlug("bachelor-hat");
+  const capabilities = [
+    {
+      specimen: specimenBySlug("reagent-bottle"),
+      preset: "draw" as const,
+      title: "Prepare",
+      description:
+        "Validate, sanitize and namespace before a source reaches the page.",
+    },
+    {
+      specimen: specimenBySlug("notebook"),
+      preset: "stagger" as const,
+      title: "Compose",
+      description: "Five presets cover line work, leaves and compositions.",
+    },
+    {
+      specimen: specimenBySlug("globe"),
+      preset: "pulse" as const,
+      title: "Control",
+      description:
+        "Seek, reverse, finish and restore through a typed lifecycle.",
+    },
+  ];
   return (
     <main>
       <section className="hero">
@@ -55,7 +77,7 @@ export function HomePage() {
         </div>
         <div className="hero-instrument">
           <header>
-            <span>SPECIMEN / LEMON JUICE</span>
+            <span>SPECIMEN / BACHELOR HAT</span>
             <strong>DRAW</strong>
           </header>
           <MotionPreview
@@ -73,23 +95,21 @@ export function HomePage() {
         </div>
       </section>
       <section className="capability-strip" aria-label="Library capabilities">
-        <article>
-          <span>01</span>
-          <h2>Prepare</h2>
-          <p>
-            Validate, sanitize and namespace before a source reaches the page.
-          </p>
-        </article>
-        <article>
-          <span>02</span>
-          <h2>Compose</h2>
-          <p>Five presets cover line work, leaves and complete compositions.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>Control</h2>
-          <p>Seek, reverse, finish and restore through a typed lifecycle.</p>
-        </article>
+        {capabilities.map(({ specimen, preset, title, description }) => (
+          <article key={title}>
+            <MotionPreview
+              className="capability-icon"
+              source={specimen.source}
+              label={`${title}: ${specimen.label}`}
+              preset={preset}
+              duration={1400}
+              autoplay
+              compact
+            />
+            <h2>{title}</h2>
+            <p>{description}</p>
+          </article>
+        ))}
       </section>
     </main>
   );

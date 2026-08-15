@@ -1,157 +1,252 @@
 {
-  "collectionId": 54491,
-  "collectionName": "果汁饮品",
-  "creator": "美少女壮士a",
-  "sourceUrl": "https://www.iconfont.cn/collections/detail?cid=54491",
+  "collectionId": "education-duotone-line-icons",
+  "collectionName": "Education Duotone Line Icons",
+  "creator": "Jack Liu",
+  "creatorUrl": "https://dribbble.com/strayguy",
+  "sourceUrl": "https://www.svgrepo.com/collection/education-duotone-line-icons/",
+  "acquisitionMirror": "https://www.svgviewer.dev/",
   "acquisitionDate": "2026-08-15",
-  "rights": "Commercial use and raw SVG redistribution confirmed by the repository owner.",
+  "license": "Public Domain (CC0)",
   "specimens": [
     {
-      "slug": "mango-juice",
-      "label": "Mango juice",
-      "chineseName": "芒果汁",
-      "file": "mango-juice.svg",
-      "sha256": "618f23af5d5078f8558c203aef5712e0d5576f059e28a6ca1ec5db7dd02581e8"
+      "slug": "jug",
+      "label": "Jug",
+      "originalName": "Jug",
+      "file": "jug.svg",
+      "sourceId": 386922,
+      "sha256": "42929074b36bbe4d9ed632e959a08f75996c9ddf8245da881af862756e2d40e5"
     },
     {
-      "slug": "congee",
-      "label": "Congee",
-      "chineseName": "粥",
-      "file": "congee.svg",
-      "sha256": "bcecc91dcc59f336669f331e4cd1502b918aef12253cf80b9999d6ecd96ec868"
+      "slug": "box",
+      "label": "Box",
+      "originalName": "Box",
+      "file": "box.svg",
+      "sourceId": 386923,
+      "sha256": "8ad7ac3478294f600024760473da91ef8865f234450054404f545a8252f07228"
     },
     {
-      "slug": "walnut-drink",
-      "label": "Walnut drink",
-      "chineseName": "核桃露",
-      "file": "walnut-drink.svg",
-      "sha256": "ce83796e35edf92dabadc65ae98eda720ae087a18e277f3692e71799a55f4c21"
+      "slug": "shopping-cart",
+      "label": "Shopping Cart",
+      "originalName": "Shopping Cart",
+      "file": "shopping-cart.svg",
+      "sourceId": 386924,
+      "sha256": "83b8299592d1edbe2f2ae0c25812649a6bf21b56ff3ce14c696c3ae16070ce66"
     },
     {
-      "slug": "mineral-water",
-      "label": "Mineral water",
-      "chineseName": "矿泉水",
-      "file": "mineral-water.svg",
-      "sha256": "de5eb17cf2b27bdbf5156745e0558c396f13c6315de60438e7391cc7f9f4843e"
+      "slug": "alarm-clock",
+      "label": "Alarm Clock",
+      "originalName": "Alarm Clock",
+      "file": "alarm-clock.svg",
+      "sourceId": 386925,
+      "sha256": "bb45347b661e52e54a0c8639ad6da718e4e6e5d232342a0834731f007184ad61"
     },
     {
-      "slug": "soup",
-      "label": "Soup",
-      "chineseName": "汤",
-      "file": "soup.svg",
-      "sha256": "b6f0042a449e1f8ccfdafbc5adac909ddbb3eb0377ee05c647169d37444a303b"
+      "slug": "pig",
+      "label": "Pig",
+      "originalName": "Pig",
+      "file": "pig.svg",
+      "sourceId": 386926,
+      "sha256": "2c9460de38b9ed035f1a611ab0c5e5d8c83efbf008991a659a966ab0bb604e1e"
     },
     {
-      "slug": "soda-water",
-      "label": "Soda water",
-      "chineseName": "苏打水",
-      "file": "soda-water.svg",
-      "sha256": "95f49b4ae255cab3b9e672a03c13b568f5d78ad4a2c43f3b5dff5416a9f13146"
+      "slug": "folder",
+      "label": "Folder",
+      "originalName": "Folder",
+      "file": "folder.svg",
+      "sourceId": 386927,
+      "sha256": "bd7ee35fbe18b75186957fc6bbccfa3409035b4998859721020afd2d66749e46"
     },
     {
-      "slug": "coffee",
-      "label": "Coffee",
-      "chineseName": "咖啡",
-      "file": "coffee.svg",
-      "sha256": "dc1fb86fdd3c0cceb26c40bd1b372b306d3ea4ce1d7079f3e1d088cdac1bf5e6"
+      "slug": "avatar",
+      "label": "Avatar",
+      "originalName": "Avatar",
+      "file": "avatar.svg",
+      "sourceId": 386928,
+      "sha256": "00c727e8af24a26f24fa7f92191291b52a1946a332a1419a917f23a8aa93bc16"
     },
     {
-      "slug": "beer",
-      "label": "Beer",
-      "chineseName": "啤酒",
-      "file": "beer.svg",
-      "sha256": "56b3d4803d951adbb392413616568eb3b1104307afd59837813fbe6ffa942fb5"
+      "slug": "lighting",
+      "label": "Lighting",
+      "originalName": "Lighting",
+      "file": "lighting.svg",
+      "sourceId": 386929,
+      "sha256": "c4d0abae4f4f1bef8c6bb522be2454632abc7ccdcfdb4c126fd5d9615cffd8a8"
     },
     {
-      "slug": "cola",
-      "label": "Cola",
-      "chineseName": "可乐",
-      "file": "cola.svg",
-      "sha256": "c17e00fd0eaa00bd065b7c6f6e67c4e978795e63ca480974c93a3c45f4e35192"
+      "slug": "camera-1",
+      "label": "Camera I",
+      "originalName": "Camera",
+      "file": "camera-1.svg",
+      "sourceId": 386930,
+      "sha256": "afc849063fa2dc8941636611746645c4ba1d66ed27dd6868da5ad9e91409350f"
     },
     {
-      "slug": "milk",
-      "label": "Milk",
-      "chineseName": "牛奶",
-      "file": "milk.svg",
-      "sha256": "458b122b057d6137d1a8357df4ebd047bec8d1c606d71e911b71ce7a502b3f29"
+      "slug": "notebook",
+      "label": "Notebook",
+      "originalName": "Notebook",
+      "file": "notebook.svg",
+      "sourceId": 386931,
+      "sha256": "23f65c40d6d38a7e00067c80da05be2d5aa760acebf358dbbe1ece409c67527f"
     },
     {
-      "slug": "almond-drink",
-      "label": "Almond drink",
-      "chineseName": "杏仁露",
-      "file": "almond-drink.svg",
-      "sha256": "acc53a7ac2d1327af4649fd9ac7f093d20ee42b8476a8db2a7a3ebccca3940a9"
+      "slug": "house",
+      "label": "House",
+      "originalName": "House",
+      "file": "house.svg",
+      "sourceId": 386932,
+      "sha256": "8d68ed5aa7e7c37026ccf13f8d8fa8b706ccfc1940ba5a4baf8b98819a832889"
     },
     {
-      "slug": "watermelon-juice",
-      "label": "Watermelon juice",
-      "chineseName": "西瓜汁",
-      "file": "watermelon-juice.svg",
-      "sha256": "ff39148232aa3573910e917e9e99b6a755b4beeb7e8bf0f9686df4ad5be83dca"
+      "slug": "office-1",
+      "label": "Office I",
+      "originalName": "Office",
+      "file": "office-1.svg",
+      "sourceId": 386933,
+      "sha256": "bf936f6976cef5d6334928d1475f923af08becedc4b4044cbaff1c6981379012"
     },
     {
-      "slug": "soft-drink",
-      "label": "Soft drink",
-      "chineseName": "汽水",
-      "file": "soft-drink.svg",
-      "sha256": "d70d4d84885b7c0eaa3ef428f8656ed5a52fc932686d6f6cda47df664a3c973d"
+      "slug": "office-2",
+      "label": "Office II",
+      "originalName": "Office",
+      "file": "office-2.svg",
+      "sourceId": 386934,
+      "sha256": "e34979a268a9780c42984154ec6697140bc173f5b72c8983f74ab9c745ff3239"
     },
     {
-      "slug": "tomato-juice",
-      "label": "Tomato juice",
-      "chineseName": "番茄汁",
-      "file": "tomato-juice.svg",
-      "sha256": "5fc55d7de74f330a7994d993e7e0cd0db590621583e87fa2e7a0be194935d6ea"
+      "slug": "car",
+      "label": "Car",
+      "originalName": "Car",
+      "file": "car.svg",
+      "sourceId": 386935,
+      "sha256": "cc2d053f0047525ec58c1a15f9024f04b6270b3c339cdb6f06132a7cf7c6e542"
     },
     {
-      "slug": "milk-tea",
-      "label": "Milk tea",
-      "chineseName": "奶茶",
-      "file": "milk-tea.svg",
-      "sha256": "616a0eec6472cd38c9b388cccd88599120a54919d00dc284282f1529bf7fd649"
+      "slug": "bachelor-hat",
+      "label": "Bachelor Hat",
+      "originalName": "Bachelor Hat",
+      "file": "bachelor-hat.svg",
+      "sourceId": 386936,
+      "sha256": "e447e9357ad565c7e2e1c0b382cb926727af6caa005f76cff399246747fec7e3"
     },
     {
-      "slug": "coconut-drink",
-      "label": "Coconut drink",
-      "chineseName": "椰汁",
-      "file": "coconut-drink.svg",
-      "sha256": "dbea7f27fe0f089791f12077d13282e397e0df065e4bd3d6a8cb8e9c08c22bcf"
+      "slug": "computer",
+      "label": "Computer",
+      "originalName": "Computer",
+      "file": "computer.svg",
+      "sourceId": 386937,
+      "sha256": "29814d1161570c0736b4bd8dea9d5f235e1a98017297f436c4f05518ada3db65"
     },
     {
-      "slug": "apple-juice",
-      "label": "Apple juice",
-      "chineseName": "苹果汁",
-      "file": "apple-juice.svg",
-      "sha256": "0bf59aa3c072fdc3370ffca586d77b2eafc05c52028a86c4b73c65ef810e6104"
+      "slug": "writing-bowl",
+      "label": "Writing Bowl",
+      "originalName": "Writing Bowl",
+      "file": "writing-bowl.svg",
+      "sourceId": 386938,
+      "sha256": "6fc2d1ccbb6f980708ac6b0dd9582665510c42ea6d17626464751b8c9d997d62"
     },
     {
-      "slug": "mixed-juice",
-      "label": "Mixed juice",
-      "chineseName": "其他果汁",
-      "file": "mixed-juice.svg",
-      "sha256": "2caf7f8d96cd290995be8b3ab2a250f65bedb60d0d9a7a562fd4b7cd56165563"
+      "slug": "file-board",
+      "label": "File Board",
+      "originalName": "File Board",
+      "file": "file-board.svg",
+      "sourceId": 386939,
+      "sha256": "997d7c8f2a1b4f8b8569b653bcdbf015707979234ba78df693469464a639cb1e"
     },
     {
-      "slug": "yogurt",
-      "label": "Yogurt",
-      "chineseName": "酸奶",
-      "file": "yogurt.svg",
-      "sha256": "e8abf0b7ef15554e4ab07f04711ecf9b53030a6f359672b422bc3b2c6ab7c7bc"
+      "slug": "camera-2",
+      "label": "Camera II",
+      "originalName": "Camera",
+      "file": "camera-2.svg",
+      "sourceId": 386940,
+      "sha256": "c3ff83badac91f0599be272a435a44861d45d4f77da599e13a4cfc361b6349ea"
     },
     {
-      "slug": "lemon-juice",
-      "label": "Lemon juice",
-      "chineseName": "柠檬汁",
-      "file": "lemon-juice.svg",
-      "sha256": "9fe37df72d245a114672b3261c1ca360202b2fdd525defae7224af403639aac8"
+      "slug": "u-disk",
+      "label": "U Disk",
+      "originalName": "U Disk",
+      "file": "u-disk.svg",
+      "sourceId": 386941,
+      "sha256": "9cfef2da9da082f6911c85e4b3aedfd5fcc171d1c55fc7d9b0069e6be72dff2c"
     },
     {
-      "slug": "herbal-medicine",
-      "label": "Herbal medicine",
-      "chineseName": "中药",
-      "file": "herbal-medicine.svg",
-      "sha256": "22900e4d14e811cbce230122c288d72fdb159f9d1173cf2e4dd1249640cb65b9"
+      "slug": "bowl",
+      "label": "Bowl",
+      "originalName": "Bowl",
+      "file": "bowl.svg",
+      "sourceId": 386942,
+      "sha256": "ec0766e59189da875c36ba7034046cc5dc8293d28153149e2e43925b3965cad7"
+    },
+    {
+      "slug": "clothing",
+      "label": "Clothing",
+      "originalName": "Clothing",
+      "file": "clothing.svg",
+      "sourceId": 386943,
+      "sha256": "dbef8c2d91caf70d7bf2672c137b597e9dc0d0c6d5d7005af976a28c3de445f2"
+    },
+    {
+      "slug": "globe",
+      "label": "Globe",
+      "originalName": "Globe",
+      "file": "globe.svg",
+      "sourceId": 386944,
+      "sha256": "99380b879d73b93fa5222c6577c344bb1f6c12d3cfbb0031fff0d42f0f457b70"
+    },
+    {
+      "slug": "book",
+      "label": "Book",
+      "originalName": "Book",
+      "file": "book.svg",
+      "sourceId": 386945,
+      "sha256": "5446ce630b994a216f7e4d322b81c9bfefa60b51fd40fcfff241d83d057b31c1"
+    },
+    {
+      "slug": "office-3",
+      "label": "Office III",
+      "originalName": "Office",
+      "file": "office-3.svg",
+      "sourceId": 386946,
+      "sha256": "e896d344b290b19484975e912c6907a3ff054df8a9decc3a68e75df5fe26fb42"
+    },
+    {
+      "slug": "documentation-1",
+      "label": "Documentation I",
+      "originalName": "Documentation",
+      "file": "documentation-1.svg",
+      "sourceId": 386947,
+      "sha256": "e13e34e61641b4f531b9af5e18b53e695aaa753230e22df77e4abc9d63f45650"
+    },
+    {
+      "slug": "documentation-2",
+      "label": "Documentation II",
+      "originalName": "Documentation",
+      "file": "documentation-2.svg",
+      "sourceId": 386948,
+      "sha256": "056d4e02e31990852093655c2cdc6331a3569525591bb4446373aa69f6e4d87e"
+    },
+    {
+      "slug": "reagent-bottle",
+      "label": "Reagent Bottle",
+      "originalName": "Reagent Bottle",
+      "file": "reagent-bottle.svg",
+      "sourceId": 386949,
+      "sha256": "b8b16f98ce5252fa74984e85019b2eea6bcd689b8afa59a5aa38308f24656f5d"
+    },
+    {
+      "slug": "trophies",
+      "label": "Trophies",
+      "originalName": "Trophies",
+      "file": "trophies.svg",
+      "sourceId": 386950,
+      "sha256": "25b2cdd5cddc71046a0c35d24dfef48b33fe853ee794392563bef44920c37a29"
+    },
+    {
+      "slug": "tv",
+      "label": "TV",
+      "originalName": "Tv",
+      "file": "tv.svg",
+      "sourceId": 386951,
+      "sha256": "b4f2aa2337d078c2d123c2d5b5f26d855b162ac78838c81aa353aa38fb422871"
     }
   ]
 }
