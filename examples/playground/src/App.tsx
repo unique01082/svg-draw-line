@@ -1,10 +1,14 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type SvgDiagnostic,
   type SvgMotionController,
   type SvgSource,
 } from "@baole-space/svg-motion";
-import { SvgMotion, type SvgMotionHandle } from "@baole-space/svg-motion/react";
+import {
+  SvgMotion,
+  type SvgMotionHandle,
+  type SvgMotionStatus,
+} from "@baole-space/svg-motion/react";
 import {
   DEFAULT_FIXTURE,
   DEMO_FIXTURES,
@@ -35,6 +39,7 @@ export function App() {
   const motionRef = useRef<SvgMotionHandle>(null);
   const labHeadingRef = useRef<HTMLHeadingElement>(null);
   const markupTimeoutRef = useRef<number | null>(null);
+  const readySequenceRef = useRef(0);
   const [sourceMode, setSourceMode] = useState<SourceMode>("markup");
   const [source, setSource] = useState<SvgSource>(DEFAULT_FIXTURE.source);
   const [sourceEditor, setSourceEditor] = useState(DEFAULT_FIXTURE.source);
@@ -44,11 +49,31 @@ export function App() {
   const [duration, setDuration] = useState(1200);
   const [easing, setEasing] = useState("ease-in-out");
   const [stagger, setStagger] = useState<"auto" | number>("auto");
+  const [autoplay, setAutoplay] = useState(false);
   const [progress, setProgress] = useState(0);
   const [sourceRevision, setSourceRevision] = useState(0);
-  const [status, setStatus] = useState("loading");
+  const [readySequence, setReadySequence] = useState(0);
+  const [status, setStatus] = useState<SvgMotionStatus>("loading");
   const [diagnostics, setDiagnostics] = useState<readonly SvgDiagnostic[]>([]);
   const [error, setError] = useState<unknown>(null);
+  const transportDisabled =
+    status === "loading" ||
+    status === "error" ||
+    motionRef.current?.controller === null;
+
+  const clearMarkupTimeout = () => {
+    if (markupTimeoutRef.current !== null) {
+      window.clearTimeout(markupTimeoutRef.current);
+      markupTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(
+    () => () => {
+      clearMarkupTimeout();
+    },
+    [],
+  );
 
   const run = (action: (controller: SvgMotionController) => void) => {
     const controller = motionRef.current?.controller;
@@ -72,9 +97,7 @@ export function App() {
   };
 
   const openFixture = (fixture: DemoFixture) => {
-    if (markupTimeoutRef.current !== null) {
-      window.clearTimeout(markupTimeoutRef.current);
-    }
+    clearMarkupTimeout();
     setSourceMode("markup");
     setSourceEditor(fixture.source);
     setPreset(fixture.preset);
@@ -105,18 +128,16 @@ export function App() {
   };
 
   const changeSourceMode = (nextMode: SourceMode) => {
-    if (nextMode !== "markup" && markupTimeoutRef.current !== null) {
-      window.clearTimeout(markupTimeoutRef.current);
-      markupTimeoutRef.current = null;
-    }
+    if (nextMode !== "markup") clearMarkupTimeout();
     setSourceMode(nextMode);
   };
 
   const updateMarkup = (nextMarkup: string) => {
     setSourceEditor(nextMarkup);
-    if (markupTimeoutRef.current !== null) {
-      window.clearTimeout(markupTimeoutRef.current);
-    }
+    setActiveTitle("Custom SVG markup");
+    setError(null);
+    setStatus("loading");
+    clearMarkupTimeout();
     markupTimeoutRef.current = window.setTimeout(() => {
       setError(null);
       setStatus("loading");
@@ -300,6 +321,16 @@ export function App() {
                 <option value="120">120 ms</option>
               </select>
             </div>
+            <label className="checkbox-label" htmlFor="autoplay">
+              <input
+                id="autoplay"
+                data-testid="autoplay"
+                type="checkbox"
+                checked={autoplay}
+                onChange={(event) => setAutoplay(event.currentTarget.checked)}
+              />
+              Autoplay
+            </label>
           </div>
 
           <div className="field-group">
@@ -311,6 +342,7 @@ export function App() {
               min="0"
               max="100"
               value={progress}
+              disabled={transportDisabled}
               onChange={(event) => {
                 const nextProgress = Number(event.currentTarget.value);
                 setProgress(nextProgress);
@@ -322,36 +354,42 @@ export function App() {
           <div className="transport" aria-label="Motion transport">
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.play())}
             >
               Play
             </button>
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.pause())}
             >
               Pause
             </button>
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.reverse())}
             >
               Reverse
             </button>
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.restart())}
             >
               Restart
             </button>
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.finish())}
             >
               Finish
             </button>
             <button
               type="button"
+              disabled={transportDisabled}
               onClick={() => run((controller) => controller.cancel())}
             >
               Cancel
@@ -366,21 +404,24 @@ export function App() {
               {status}
             </output>
           </div>
-          <div data-stage>
+          <div data-stage data-ready-sequence={readySequence}>
             <SvgMotion
               key={sourceRevision}
               ref={motionRef}
               className="motion-stage"
               source={source}
               preset={preset}
+              autoplay={autoplay}
               duration={duration}
               easing={easing}
               stagger={stagger}
               svgProps={{ role: "img", "aria-label": activeTitle }}
               onReady={(handle) => {
-                setStatus(handle.controller?.state ?? "idle");
+                setStatus(handle.controller?.state ?? "loading");
                 setDiagnostics(handle.controller?.diagnostics ?? []);
                 setError(null);
+                readySequenceRef.current += 1;
+                setReadySequence(readySequenceRef.current);
               }}
               onFinish={() => setStatus("finished")}
               onCancel={() => setStatus("cancelled")}

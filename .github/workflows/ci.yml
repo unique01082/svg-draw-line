@@ -22,3 +22,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm verify
+      - run: pnpm --dir examples/playground install --frozen-lockfile
+      - run: pnpm demo:build
+      - run: pnpm --dir examples/playground exec playwright install --with-deps chromium
+      - run: pnpm demo:test
