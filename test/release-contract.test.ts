@@ -171,6 +171,68 @@ describe("release contract", () => {
     expect(license).toContain("Copyright (c) 2026 Bao Le");
   });
 
+  it("presents a professional package landing page", async () => {
+    const readme = await readFile(new URL("README.md", ROOT), "utf8");
+
+    for (const badge of [
+      "actions/workflows/ci.yml/badge.svg",
+      "npmjs.com/package/@baole-space/svg-motion",
+      "License-MIT",
+    ]) {
+      expect(readme).toContain(badge);
+    }
+    for (const destination of [
+      "./CONTRIBUTING.md",
+      "./SECURITY.md",
+      "./CHANGELOG.md",
+    ]) {
+      expect(readme).toContain(destination);
+    }
+    for (const capability of [
+      "Any SVG source",
+      "Framework-agnostic",
+      "React adapter",
+      "Secure by default",
+      "Web Animations API",
+    ]) {
+      expect(readme).toContain(capability);
+    }
+    expect(readme).toContain('from "@baole-space/svg-motion"');
+    expect(readme).toContain('from "@baole-space/svg-motion/react"');
+    expect(readme).toMatch(/Chromium.*Firefox.*WebKit/s);
+  });
+
+  it("ships contributor, security, and release-history guidance", async () => {
+    const [contributing, security, changelog] = await Promise.all([
+      readFile(new URL("CONTRIBUTING.md", ROOT), "utf8"),
+      readFile(new URL("SECURITY.md", ROOT), "utf8"),
+      readFile(new URL("CHANGELOG.md", ROOT), "utf8"),
+    ]);
+
+    expect(contributing).toContain("Node.js 22");
+    expect(contributing).toContain("pnpm 10.33.0");
+    expect(contributing).toContain("pnpm verify");
+    expect(contributing).toContain("Pull request");
+
+    expect(security).toContain("0.1.x");
+    expect(security).toMatch(/private/i);
+    expect(security).toContain("Security advisory");
+    expect(security).toContain("Do not open a public issue");
+
+    expect(changelog).toContain("Keep a Changelog");
+    expect(changelog).toContain("## [0.1.0] - 2026-08-15");
+    for (const releaseFeature of [
+      "prepareSvg",
+      "animateSvg",
+      "mountSvgMotion",
+      "React",
+      "sanitization",
+      "Chromium, Firefox, and WebKit",
+    ]) {
+      expect(changelog).toContain(releaseFeature);
+    }
+  });
+
   it("keeps a dedicated packed-package tree-shaking consumer", async () => {
     await expect(
       exists("test/consumers/tree-shake/package.json"),

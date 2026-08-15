@@ -1,6 +1,21 @@
 # @baole-space/svg-motion
 
-Animate arbitrary SVG documents with a small browser-first TypeScript API. The package is ESM-only and includes a framework-agnostic core plus an optional React adapter.
+[![CI](https://github.com/unique01082/svg-draw-line/actions/workflows/ci.yml/badge.svg)](https://github.com/unique01082/svg-draw-line/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@baole-space/svg-motion)](https://www.npmjs.com/package/@baole-space/svg-motion)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
+Safe, browser-native animation for any SVG. `@baole-space/svg-motion` is an ESM-only TypeScript library with a framework-agnostic core and an optional React adapter.
+
+| Capability              | What it provides                                                           |
+| ----------------------- | -------------------------------------------------------------------------- |
+| Any SVG source          | Markup, URL, `File`, `Blob`, or an existing `SVGSVGElement`                |
+| Framework-agnostic      | Prepare, animate, or mount SVGs without a UI framework                     |
+| React adapter           | `<SvgMotion>` and `useSvgMotion()` from a separate optional entry          |
+| Secure by default       | Sanitization, resource hardening, byte limits, and namespaced internal IDs |
+| Web Animations API      | Native playback control with no Anime.js dependency                        |
+| Verified across engines | Real-browser coverage in evergreen Chromium, Firefox, and WebKit           |
+
+[Install](#install) · [Vanilla](#vanilla) · [React](#react) · [Security](#security-cors-and-csp) · [Contributing](./CONTRIBUTING.md) · [Security policy](./SECURITY.md) · [Changelog](./CHANGELOG.md)
 
 ## Install
 
@@ -126,7 +141,9 @@ The runtime targets evergreen Chromium, Firefox, and WebKit browsers with Web An
 
 Pull requests and pushes run `pnpm verify`. Tags matching `vX.Y.Z` run the same gates, reject a tag that differs from `package.json`, and publish with public access and provenance.
 
-For the first `0.1.0` release, make the GitHub repository public, confirm control of the npm `@baole-space` scope, add a short-lived granular npm token as the `NPM_TOKEN` Actions secret, then push `v0.1.0`. Configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-draw-line` and the `publish.yml` workflow, restricted to `npm publish`. Revoke and remove the bootstrap token afterward; later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
+The initial `0.1.0` release bootstraps publication with a short-lived granular npm token stored as the `NPM_TOKEN` Actions secret. After the package exists, configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-draw-line` and the `publish.yml` workflow, restricted to `npm publish`, then revoke and remove the bootstrap token. Later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## License
 
