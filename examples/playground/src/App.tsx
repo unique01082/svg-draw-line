@@ -362,7 +362,7 @@ export function App() {
         <div className="stage-panel">
           <div className="stage-meta">
             <p>{activeTitle}</p>
-            <output data-motion-status aria-live="polite">
+            <output role="status" data-motion-status aria-live="polite">
               {status}
             </output>
           </div>
@@ -420,7 +420,7 @@ export function App() {
               </div>
               <h3>{fixture.title}</h3>
               <p>{fixture.description}</p>
-              <ul aria-label="Capabilities">
+              <ul aria-label={`${fixture.title} capabilities`}>
                 {fixture.capability.map((item) => (
                   <li key={item}>{item}</li>
                 ))}

@@ -156,6 +156,8 @@ legend {
 }
 
 textarea {
+  width: 100%;
+  max-width: 100%;
   min-height: 12rem;
   padding: 0.65rem;
   resize: vertical;
@@ -227,6 +229,8 @@ input[type="range"] {
 
 .motion-stage {
   display: grid;
+  min-width: 0;
+  max-width: 100%;
   min-height: 22rem;
   place-items: center;
   border: 1px solid var(--rule);
@@ -235,6 +239,7 @@ input[type="range"] {
 
 .motion-stage svg {
   width: min(100%, 48rem);
+  max-width: 100%;
   height: auto;
 }
 
@@ -328,6 +333,17 @@ h2 {
 @media (max-width: 880px) {
   .lab-grid {
     grid-template-columns: 1fr;
+  }
+
+  .control-panel,
+  .stage-panel,
+  .lab-grid,
+  .gallery-grid,
+  .timing-fields,
+  .source-form-row,
+  .transport {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 

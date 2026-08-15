@@ -46,9 +46,7 @@ test("loads every gallery specimen into the lab", async ({ page }) => {
   await page
     .getByRole("button", { name: "Open Layered signal in Lab" })
     .click();
-  await expect(
-    page.getByRole("img", { name: "Layered signal" }),
-  ).toBeVisible();
+  await expect(page.getByRole("img", { name: "Layered signal" })).toBeVisible();
   await expect(page.getByLabel("Preset")).toHaveValue("scale");
 });
 
@@ -61,7 +59,9 @@ test("loads URL and File sources", async ({ page }) => {
   );
   await page
     .getByLabel("SVG markup")
-    .fill('<svg xmlns="http://www.w3.org/2000/svg"><title>Pending</title></svg>');
+    .fill(
+      '<svg xmlns="http://www.w3.org/2000/svg"><title>Pending</title></svg>',
+    );
   await page.getByLabel("URL source").check();
   await page.waitForTimeout(300);
   await expect(page.locator("[data-stage] svg title")).toHaveText(
@@ -80,4 +80,24 @@ test("loads URL and File sources", async ({ page }) => {
     ),
   });
   await expect(page.locator("[data-stage] svg title")).toHaveText("Local");
+});
+
+test("is keyboard labelled and mobile-safe", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Geometry atlas" })).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(":focus-visible")).toBeVisible();
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  const lifecycleStatus = page.getByRole("status");
+  await expect(lifecycleStatus).toContainText(
+    /idle|running|paused|finished|cancelled/,
+  );
+  await expect(lifecycleStatus).toHaveAttribute("role", "status");
+  await expect(lifecycleStatus).toHaveAttribute("aria-live", "polite");
 });

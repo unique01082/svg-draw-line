@@ -25,6 +25,19 @@ pnpm add @baole-space/svg-motion
 
 Add `react >=18` only when using the React entry.
 
+## Local Motion Lab
+
+The interactive playground and gallery install the published `0.1.0` package,
+not the repository source:
+
+```bash
+pnpm --dir examples/playground install
+pnpm demo
+```
+
+Open the URL printed by Vite. Use `pnpm demo:test` for its unit and browser
+checks.
+
 ## Vanilla
 
 ```ts

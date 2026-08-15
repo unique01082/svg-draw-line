@@ -45,9 +45,12 @@
     "format:write": "prettier --write . --ignore-unknown",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.node-next.json",
     "verify:package": "node test/package-runtime.mjs && tsc --noEmit -p tsconfig.package.json",
-    "test": "vitest run --exclude 'test/browser/**'",
+    "test": "vitest run --exclude 'test/browser/**' --exclude 'examples/playground/test/**'",
     "test:browser": "playwright test",
     "test:consumer": "node scripts/consumer-smoke.mjs",
+    "demo": "pnpm --dir examples/playground dev",
+    "demo:build": "pnpm --dir examples/playground build",
+    "demo:test": "pnpm --dir examples/playground test && pnpm --dir examples/playground test:e2e",
     "verify": "pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm test:browser && pnpm build && pnpm verify:package && pnpm test:consumer"
   },
   "dependencies": {
