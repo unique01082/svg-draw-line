@@ -9,6 +9,7 @@ import {
   DEFAULT_FIXTURE,
   DEMO_FIXTURES,
   fixtureById,
+  type DemoFixture,
   type PresetName,
 } from "./fixtures";
 
@@ -79,21 +80,18 @@ export function App() {
     setSourceRevision((current) => current + 1);
   };
 
-  const loadFixture = (id: string) => {
-    const fixture = fixtureById(id);
+  const openFixture = (fixture: DemoFixture) => {
     setSourceMode("markup");
     setSourceEditor(fixture.source);
     setPreset(fixture.preset);
     applySource(fixture.source, fixture.title);
   };
 
+  const loadFixture = (id: string) => openFixture(fixtureById(id));
+
   const resetSource = () => {
-    const fixture = DEFAULT_FIXTURE;
-    setSourceMode("markup");
-    setSourceEditor(fixture.source);
     setSourceUrl("");
-    setPreset(fixture.preset);
-    applySource(fixture.source, fixture.title);
+    openFixture(DEFAULT_FIXTURE);
   };
 
   const submitUrl = (event: React.FormEvent<HTMLFormElement>) => {

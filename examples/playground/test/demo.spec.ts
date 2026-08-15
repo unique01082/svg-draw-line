@@ -20,6 +20,10 @@ test("exercises all presets and transport controls", async ({ page }) => {
   }
   await page.getByRole("button", { name: "Pause" }).click();
   await expect(page.locator("[data-motion-status]")).toHaveText("paused");
+  await page.getByRole("button", { name: "Play" }).click();
+  await expect(page.locator("[data-motion-status]")).toHaveText("running");
+  await page.getByRole("button", { name: "Pause" }).click();
+  await expect(page.locator("[data-motion-status]")).toHaveText("paused");
   await page.getByLabel("Progress").fill("50");
   await page.getByRole("button", { name: "Reverse" }).click();
   await page.getByRole("button", { name: "Restart" }).click();
