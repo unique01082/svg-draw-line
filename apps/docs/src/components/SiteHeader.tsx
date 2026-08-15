@@ -15,7 +15,7 @@ export function SiteHeader() {
         <NavLink to="/docs/0.1/getting-started">Docs</NavLink>
         <NavLink to="/playground">Playground</NavLink>
         <NavLink to="/changelog">Changelog</NavLink>
-        <a href="https://github.com/unique01082/svg-draw-line">GitHub</a>
+        <a href="https://github.com/unique01082/svg-motion">GitHub</a>
       </nav>
     </header>
   );

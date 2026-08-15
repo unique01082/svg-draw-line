@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
-import { SvgMotion, type SvgMotionHandle } from "@baole-space/svg-motion/react";
+import { SvgMotion, type SvgMotionHandle } from "@baolq/svg-motion/react";
 import type { MotionPreviewProps } from "../contracts";
 
 const SSR_PLACEHOLDER =

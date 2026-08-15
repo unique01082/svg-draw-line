@@ -125,6 +125,16 @@ describe("documentation site delivery contract", () => {
     ).toBe(true);
   });
 
+  it("isolates production browser checks from the local docs server", () => {
+    const config = readFileSync(
+      resolve(docsRoot, "playwright.config.ts"),
+      "utf8",
+    );
+    expect(config).toContain("DOCS_TEST_PORT");
+    expect(config).toMatch(/baseURL:\s*origin/);
+    expect(config).toMatch(/--port \$\{port\}/);
+  });
+
   it("scaffolds a new minor snapshot without rewriting an existing line", () => {
     const fixture = mkdtempSync(resolve(tmpdir(), "svg-motion-docs-version-"));
     try {

@@ -22,6 +22,7 @@ async function textFiles(directory = root): Promise<string[]> {
         if (
           [
             ".git",
+            ".superpowers",
             ".worktrees",
             "node_modules",
             "dist",
@@ -64,10 +65,15 @@ test("uses the canonical package identity in active files", async () => {
   );
 
   const oldScope = `@${"baole-space"}/svg-motion`;
+  const retainedRuntimeKey = `${oldScope}.instance-sequence`;
   const violations: string[] = [];
   for (const path of await textFiles()) {
-    if ((await readFile(path, "utf8")).includes(oldScope))
-      violations.push(relative(root, path));
+    const name = relative(root, path);
+    const text = (await readFile(path, "utf8")).replace(
+      name === "src/index.ts" ? retainedRuntimeKey : "",
+      "",
+    );
+    if (text.includes(oldScope)) violations.push(relative(root, path));
   }
   expect(violations).toEqual([]);
 });

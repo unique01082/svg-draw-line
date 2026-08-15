@@ -4,11 +4,8 @@ import type {
   SvgDiagnostic,
   SvgMotionController,
   SvgSource,
-} from "@baole-space/svg-motion";
-import type {
-  SvgMotionHandle,
-  SvgMotionStatus,
-} from "@baole-space/svg-motion/react";
+} from "@baolq/svg-motion";
+import type { SvgMotionHandle, SvgMotionStatus } from "@baolq/svg-motion/react";
 import { MotionPreview } from "../components/MotionPreview";
 import { specimens, specimenBySlug } from "../specimens/specimens";
 import { usePageMeta } from "../hooks/usePageMeta";

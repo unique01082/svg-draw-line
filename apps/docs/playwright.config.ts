@@ -1,9 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = Number(process.env.DOCS_TEST_PORT ?? 4317);
+const origin = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: "./test",
   use: {
-    baseURL: "http://127.0.0.1:4317",
+    baseURL: origin,
   },
   projects: [
     {
@@ -20,9 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command:
-      "pnpm build && pnpm exec vite preview --host 127.0.0.1 --port 4317",
-    url: "http://127.0.0.1:4317",
+    command: `pnpm build && pnpm exec vite preview --host 127.0.0.1 --port ${port}`,
+    url: origin,
     reuseExistingServer: false,
   },
 });

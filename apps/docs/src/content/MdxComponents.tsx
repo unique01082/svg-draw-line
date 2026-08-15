@@ -1,6 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 import { useRef, useState } from "react";
-import type { SvgMotionHandle } from "@baole-space/svg-motion/react";
+import type { SvgMotionHandle } from "@baolq/svg-motion/react";
 import { specimenBySlug } from "../specimens/specimens";
 import { ApiTable } from "./ApiTable";
 import { CodeBlock } from "../components/CodeBlock";

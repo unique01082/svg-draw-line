@@ -2,11 +2,8 @@ import type {
   SvgMotionController,
   SvgMotionPreset,
   SvgSource,
-} from "@baole-space/svg-motion";
-import type {
-  SvgMotionHandle,
-  SvgMotionStatus,
-} from "@baole-space/svg-motion/react";
+} from "@baolq/svg-motion";
+import type { SvgMotionHandle, SvgMotionStatus } from "@baolq/svg-motion/react";
 
 export interface DocsVersionMeta {
   readonly id: string;

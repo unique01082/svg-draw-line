@@ -54,6 +54,7 @@
     "docs:api": "pnpm build && pnpm --dir apps/docs api:generate",
     "docs:api:check": "pnpm build && pnpm --dir apps/docs api:check",
     "docs:docker:smoke": "node scripts/docker-smoke.mjs",
+    "docs:candidate:verify": "node scripts/docs-candidate-smoke.mjs",
     "docs:scaffold": "pnpm --dir apps/docs scaffold:version",
     "demo": "pnpm docs:dev",
     "demo:build": "pnpm docs:build",

@@ -9,7 +9,7 @@ All notable changes to this project are documented in this file. The format is b
 - Framework-agnostic `prepareSvg`, `animateSvg`, and `mountSvgMotion` APIs for SVG markup, URL, `File`, `Blob`, and `SVGSVGElement` sources.
 - Draw, fade, scale, stagger, and pulse presets backed by the browser Web Animations API.
 - Playback controllers with play, pause, reverse, restart, finish, cancel, seek, destroy, state, diagnostics, and observable completion.
-- Optional React component and hook entry at `@baole-space/svg-motion/react`, including lifecycle callbacks, typed status, source cancellation, SSR-safe imports, and accessible SVG defaults.
+- Optional React component and hook entry at `@baolq/svg-motion/react`, including lifecycle callbacks, typed status, source cancellation, SSR-safe imports, and accessible SVG defaults.
 - DOMPurify-based sanitization with SVG-specific CSS and resource hardening, safe bitmap support, internal ID namespacing, byte limits, typed errors, and code/count-only diagnostics.
 - Strict TypeScript declarations and ESM packaging for Node.js 22 and evergreen browsers.
 - Unit, security, package, and native integration coverage across Chromium, Firefox, and WebKit, plus packed Vanilla and React consumer tests.
