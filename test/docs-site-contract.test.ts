@@ -28,6 +28,15 @@ describe("documentation site delivery contract", () => {
     const rootPackage = readJson<{ scripts: Record<string, string> }>(
       resolve(root, "package.json"),
     );
+    const docsPackage = readJson<{
+      dependencies: Record<string, string>;
+      name: string;
+    }>(resolve(docsRoot, "package.json"));
+    expect(docsPackage.name).toBe("@baolq/svg-motion-docs");
+    expect(docsPackage.dependencies["@baolq/svg-motion"]).toBe("0.1.0");
+    expect(
+      docsPackage.dependencies[`@${"baole-space"}/svg-motion`],
+    ).toBeUndefined();
     expect(rootPackage.scripts).toMatchObject({
       "docs:dev": expect.any(String),
       "docs:build": expect.any(String),
@@ -35,6 +44,7 @@ describe("documentation site delivery contract", () => {
       "docs:api": expect.any(String),
       "docs:api:check": expect.any(String),
       "docs:docker:smoke": expect.any(String),
+      "docs:candidate:verify": expect.stringMatching(/docs-candidate-smoke/),
     });
   });
 

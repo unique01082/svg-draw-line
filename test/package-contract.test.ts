@@ -29,7 +29,7 @@ it("publishes ESM-only core and optional external React entries", async () => {
     readFile(new URL("../tsconfig.json", import.meta.url), "utf8"),
   ]);
 
-  expect(packageJson.name).toBe("@baole-space/svg-motion");
+  expect(packageJson.name).toBe("@baolq/svg-motion");
   expect(packageJson.version).toBe("0.1.0");
   expect(packageJson.type).toBe("module");
   expect(packageJson.license).toBe("MIT");

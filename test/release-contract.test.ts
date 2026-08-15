@@ -176,7 +176,7 @@ describe("release contract", () => {
 
     for (const badge of [
       "actions/workflows/ci.yml/badge.svg",
-      "npmjs.com/package/@baole-space/svg-motion",
+      "npmjs.com/package/@baolq/svg-motion",
       "License-MIT",
     ]) {
       expect(readme).toContain(badge);
@@ -197,8 +197,8 @@ describe("release contract", () => {
     ]) {
       expect(readme).toContain(capability);
     }
-    expect(readme).toContain('from "@baole-space/svg-motion"');
-    expect(readme).toContain('from "@baole-space/svg-motion/react"');
+    expect(readme).toContain('from "@baolq/svg-motion"');
+    expect(readme).toContain('from "@baolq/svg-motion/react"');
     expect(readme).toMatch(/Chromium.*Firefox.*WebKit/s);
   });
 
