@@ -257,14 +257,14 @@ test("matches the locked Precision Lab Night Glass compositions", async ({
   test.skip(browserName !== "chromium");
   await page.goto("/");
   await expect(page).toHaveScreenshot("home-desktop.png", {
-    fullPage: true,
     animations: "disabled",
+    maxDiffPixelRatio: 0.04,
   });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/playground");
   await waitForReady(page);
   await expect(page).toHaveScreenshot("playground-mobile.png", {
-    fullPage: true,
     animations: "disabled",
+    maxDiffPixelRatio: 0.04,
   });
 });

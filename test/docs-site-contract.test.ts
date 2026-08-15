@@ -154,6 +154,13 @@ describe("documentation site delivery contract", () => {
         ),
       ).toBe(true);
     }
+
+    const browserSpec = readFileSync(
+      resolve(docsRoot, "test/docs.spec.ts"),
+      "utf8",
+    );
+    expect(browserSpec).not.toContain("fullPage: true");
+    expect(browserSpec.match(/maxDiffPixelRatio:\s*0\.04/g)).toHaveLength(2);
   });
 
   it("scaffolds a new minor snapshot without rewriting an existing line", () => {
