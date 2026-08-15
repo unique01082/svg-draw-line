@@ -88,13 +88,29 @@ describe("release contract", () => {
     expect(ci).toMatch(/push:/);
     expect(ci).toMatch(/pnpm verify/);
     expect(release).toMatch(/tags:\s*\n\s*- ["']v\*\.\*\.\*["']/);
+    expect(release).toMatch(/npm-baolq-v\*\.\*\.\*/);
     expect(release).toMatch(/id-token:\s*write/);
     expect(release).toMatch(/pnpm verify/);
     expect(release).toMatch(/assert-release-tag\.mjs/);
     expect(release).toMatch(/npm@11\.11\.1/);
     expect(tagGuard).toMatch(/package\.json/);
     expect(tagGuard).toMatch(/GITHUB_REF_NAME/);
+    expect(tagGuard).toContain("@baolq/svg-motion");
     expect(release).toMatch(/npm publish --access public --provenance/);
+    const previousPackage = `@${"baole-space"}/svg-motion`;
+    expect(release).toContain(
+      `npm deprecate ${previousPackage}@0.1.0 "Moved to @baolq/svg-motion"`,
+    );
+    const publishIndex = release.indexOf(
+      "npm publish --access public --provenance",
+    );
+    const registrySmokeIndex = release.indexOf("Verify published entries");
+    const deprecateIndex = release.indexOf(
+      "Deprecate the previous package identity",
+    );
+    expect(publishIndex).toBeGreaterThan(-1);
+    expect(registrySmokeIndex).toBeGreaterThan(publishIndex);
+    expect(deprecateIndex).toBeGreaterThan(registrySmokeIndex);
 
     const screenshotTolerance = playwrightConfig.match(
       /maxDiffPixelRatio:\s*([\d.]+)/,
@@ -130,6 +146,8 @@ describe("release contract", () => {
       });
 
     expect(() => run("v0.1.0")).not.toThrow();
+    expect(() => run("npm-baolq-v0.1.0")).not.toThrow();
+    expect(() => run("npm-baolq-v0.1.1")).toThrow();
     expect(() => run("v0.1.1")).toThrow();
     expect(() => run(undefined)).toThrow();
   });
@@ -163,6 +181,8 @@ describe("release contract", () => {
       "NPM_TOKEN",
       "Trusted Publisher",
       "publish.yml",
+      "npm-baolq-v0.1.0",
+      "@baolq/svg-motion@0.1.0",
     ]) {
       expect(readme).toContain(contract);
     }

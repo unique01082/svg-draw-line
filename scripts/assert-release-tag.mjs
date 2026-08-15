@@ -6,9 +6,12 @@ const packageJson = JSON.parse(
 );
 const expected = `v${packageJson.version}`;
 const actual = process.env.GITHUB_REF_NAME;
+const migration =
+  actual === "npm-baolq-v0.1.0" &&
+  packageJson.name === "@baolq/svg-motion" &&
+  packageJson.version === "0.1.0";
 
-assert.equal(
-  actual,
-  expected,
-  `Release tag ${actual ?? "(missing)"} must equal package version ${expected}.`,
+assert.ok(
+  actual === expected || migration,
+  `Release tag ${actual ?? "(missing)"} must equal ${expected} or the guarded package-migration tag.`,
 );

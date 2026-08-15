@@ -156,7 +156,7 @@ The runtime targets evergreen Chromium, Firefox, and WebKit browsers with Web An
 
 Pull requests and pushes run `pnpm verify`. Tags matching `vX.Y.Z` run the same gates, reject a tag that differs from `package.json`, and publish with public access and provenance.
 
-The initial `0.1.0` release bootstraps publication with a short-lived granular npm token stored as the `NPM_TOKEN` Actions secret. After the package exists, configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-motion` and the `publish.yml` workflow, restricted to `npm publish`, then revoke and remove the bootstrap token. Later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
+The one-time scope migration publishes `@baolq/svg-motion@0.1.0` from the guarded `npm-baolq-v0.1.0` tag with a short-lived granular npm token stored as the `NPM_TOKEN` Actions secret. The workflow verifies the registry artifact before applying the migration notice to the previous package identity. After publication, configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-motion` and the `publish.yml` workflow, restricted to `npm publish`, then revoke and remove the bootstrap token. Later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [CHANGELOG.md](./CHANGELOG.md) for release history.
 

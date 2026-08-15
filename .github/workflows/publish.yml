@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+      - "npm-baolq-v*.*.*"
 
 permissions:
   contents: read
@@ -26,6 +27,30 @@ jobs:
       - run: npm install --global npm@11.11.1
       - run: node scripts/assert-release-tag.mjs
       - run: pnpm verify
+      - name: Resolve package specifier
+        id: package
+        run: |
+          spec="$(node -p 'const p=require("./package.json"); p.name+"@"+p.version')"
+          echo "spec=$spec" >> "$GITHUB_OUTPUT"
+      - name: Require an unpublished target version
+        run: |
+          if npm view "${{ steps.package.outputs.spec }}" version >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing package ${{ steps.package.outputs.spec }}."
+            exit 1
+          fi
       - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify published entries
+        run: |
+          test "$(npm view '${{ steps.package.outputs.spec }}' version)" = "0.1.0"
+          mkdir "$RUNNER_TEMP/svg-motion-registry-smoke"
+          cd "$RUNNER_TEMP/svg-motion-registry-smoke"
+          npm init --yes
+          npm install "${{ steps.package.outputs.spec }}" react@18
+          node --input-type=module -e 'const core=await import("@baolq/svg-motion"); const react=await import("@baolq/svg-motion/react"); if(!core.prepareSvg||!react.SvgMotion) process.exit(1)'
+      - name: Deprecate the previous package identity
+        if: github.ref_name == 'npm-baolq-v0.1.0'
+        run: npm deprecate @baole-space/svg-motion@0.1.0 "Moved to @baolq/svg-motion"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
