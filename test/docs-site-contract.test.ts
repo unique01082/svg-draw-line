@@ -142,6 +142,20 @@ describe("documentation site delivery contract", () => {
     expect(runner).toContain("DOCS_TEST_PORT");
   });
 
+  it("keeps visual baselines for local macOS and Linux CI", () => {
+    const snapshots = resolve(docsRoot, "test/docs.spec.ts-snapshots");
+    for (const platform of ["darwin", "linux"]) {
+      expect(
+        existsSync(resolve(snapshots, `home-desktop-chromium-${platform}.png`)),
+      ).toBe(true);
+      expect(
+        existsSync(
+          resolve(snapshots, `playground-mobile-chromium-${platform}.png`),
+        ),
+      ).toBe(true);
+    }
+  });
+
   it("scaffolds a new minor snapshot without rewriting an existing line", () => {
     const fixture = mkdtempSync(resolve(tmpdir(), "svg-motion-docs-version-"));
     try {
