@@ -7,7 +7,7 @@ delete globalThis.document;
 delete globalThis.DOMParser;
 delete globalThis.XMLSerializer;
 
-const reactEntry = await import("@baole-space/svg-motion/react");
+const reactEntry = await import("@baolq/svg-motion/react");
 assert.equal(typeof reactEntry.SvgMotion, "object");
 assert.equal(typeof reactEntry.useSvgMotion, "function");
 

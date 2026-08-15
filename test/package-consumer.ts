@@ -3,7 +3,7 @@ import {
   type SvgMotionHandle,
   type UseSvgMotionOptions,
   useSvgMotion,
-} from "@baole-space/svg-motion/react";
+} from "@baolq/svg-motion/react";
 import {
   SVG_ANIMATION_ERROR_CODES,
   SvgAnimationError,
@@ -19,7 +19,7 @@ import {
   type SvgMotionPreset,
   type SvgSource,
   type SvgTrustMode,
-} from "@baole-space/svg-motion";
+} from "@baolq/svg-motion";
 
 const options = {
   source: '<svg xmlns="http://www.w3.org/2000/svg" />',

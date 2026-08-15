@@ -1,4 +1,4 @@
-import { SvgMotion, type SvgMotionHandle } from "@baole-space/svg-motion/react";
+import { SvgMotion, type SvgMotionHandle } from "@baolq/svg-motion/react";
 import { createRef } from "react";
 import { createRoot } from "react-dom/client";
 

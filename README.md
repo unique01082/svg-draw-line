@@ -1,10 +1,10 @@
-# @baole-space/svg-motion
+# @baolq/svg-motion
 
-[![CI](https://github.com/unique01082/svg-draw-line/actions/workflows/ci.yml/badge.svg)](https://github.com/unique01082/svg-draw-line/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@baole-space/svg-motion)](https://www.npmjs.com/package/@baole-space/svg-motion)
+[![CI](https://github.com/unique01082/svg-motion/actions/workflows/ci.yml/badge.svg)](https://github.com/unique01082/svg-motion/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@baolq/svg-motion)](https://www.npmjs.com/package/@baolq/svg-motion)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-Safe, browser-native animation for any SVG. `@baole-space/svg-motion` is an ESM-only TypeScript library with a framework-agnostic core and an optional React adapter.
+Safe, browser-native animation for any SVG. `@baolq/svg-motion` is an ESM-only TypeScript library with a framework-agnostic core and an optional React adapter.
 
 | Capability              | What it provides                                                           |
 | ----------------------- | -------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@ Safe, browser-native animation for any SVG. `@baole-space/svg-motion` is an ESM-
 ## Install
 
 ```sh
-pnpm add @baole-space/svg-motion
+pnpm add @baolq/svg-motion
 ```
 
 Add `react >=18` only when using the React entry.
@@ -43,7 +43,7 @@ self-hosted rollout; repository implementation does not modify live DNS or serve
 ## Vanilla
 
 ```ts
-import { mountSvgMotion } from "@baole-space/svg-motion";
+import { mountSvgMotion } from "@baolq/svg-motion";
 
 const container = document.querySelector("#logo")!;
 const motion = await mountSvgMotion(container, "/logo.svg", {
@@ -65,7 +65,7 @@ For a caller-owned SVG node, use `animateSvg(svg, options)`. To prepare without 
 
 ```tsx
 import { useRef } from "react";
-import { SvgMotion, type SvgMotionHandle } from "@baole-space/svg-motion/react";
+import { SvgMotion, type SvgMotionHandle } from "@baolq/svg-motion/react";
 
 export function Logo() {
   const motion = useRef<SvgMotionHandle>(null);
@@ -156,7 +156,7 @@ The runtime targets evergreen Chromium, Firefox, and WebKit browsers with Web An
 
 Pull requests and pushes run `pnpm verify`. Tags matching `vX.Y.Z` run the same gates, reject a tag that differs from `package.json`, and publish with public access and provenance.
 
-The initial `0.1.0` release bootstraps publication with a short-lived granular npm token stored as the `NPM_TOKEN` Actions secret. After the package exists, configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-draw-line` and the `publish.yml` workflow, restricted to `npm publish`, then revoke and remove the bootstrap token. Later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
+The initial `0.1.0` release bootstraps publication with a short-lived granular npm token stored as the `NPM_TOKEN` Actions secret. After the package exists, configure [npm Trusted Publisher](https://docs.npmjs.com/trusted-publishers/) for `unique01082/svg-motion` and the `publish.yml` workflow, restricted to `npm publish`, then revoke and remove the bootstrap token. Later tags authenticate through GitHub OIDC (`id-token: write`) and retain provenance.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [CHANGELOG.md](./CHANGELOG.md) for release history.
 

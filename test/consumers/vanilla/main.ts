@@ -3,7 +3,7 @@ import {
   mountSvgMotion,
   prepareSvg,
   type SvgMotionController,
-} from "@baole-space/svg-motion";
+} from "@baolq/svg-motion";
 
 const source =
   '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h10" stroke="black" /></svg>';

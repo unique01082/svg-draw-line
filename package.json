@@ -1,5 +1,5 @@
 {
-  "name": "@baole-space/svg-motion",
+  "name": "@baolq/svg-motion",
   "version": "0.1.0",
   "description": "Framework-agnostic SVG preparation and motion primitives",
   "type": "module",
@@ -32,12 +32,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/unique01082/svg-draw-line.git"
+    "url": "https://github.com/unique01082/svg-motion.git"
   },
   "bugs": {
-    "url": "https://github.com/unique01082/svg-draw-line/issues"
+    "url": "https://github.com/unique01082/svg-motion/issues"
   },
-  "homepage": "https://github.com/unique01082/svg-draw-line#readme",
+  "homepage": "https://github.com/unique01082/svg-motion#readme",
   "scripts": {
     "build": "vite build",
     "lint": "eslint src test scripts apps/docs/src apps/docs/scripts apps/docs/vite.config.ts apps/docs/playwright.config.ts vite.config.ts playwright.config.ts",

@@ -1,4 +1,4 @@
-import { prepareSvg } from "@baole-space/svg-motion";
+import { prepareSvg } from "@baolq/svg-motion";
 
 const prepared = await prepareSvg(
   '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h10" /></svg>',

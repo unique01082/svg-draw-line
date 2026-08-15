@@ -70,7 +70,7 @@ async function installConsumer(name, tarball, { nodeRuntime = true } = {}) {
 
   const packagePath = join(target, "package.json");
   const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
-  packageJson.dependencies["@baole-space/svg-motion"] = `file:${tarball}`;
+  packageJson.dependencies["@baolq/svg-motion"] = `file:${tarball}`;
   await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   run(

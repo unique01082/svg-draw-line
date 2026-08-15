@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping improve `@baole-space/svg-motion`. Contributions should preserve its small, browser-native core, secure defaults, and framework-independent public API.
+Thank you for helping improve `@baolq/svg-motion`. Contributions should preserve its small, browser-native core, secure defaults, and framework-independent public API.
 
 ## Requirements
 
